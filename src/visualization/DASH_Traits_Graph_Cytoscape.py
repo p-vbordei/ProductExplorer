@@ -1,6 +1,6 @@
 #%%
 import pandas as pd
-from sqlalchemy import create_engine
+
 
 import dash
 import dash_cytoscape as cyto
@@ -279,20 +279,41 @@ cyto_stylesheet =[
 
 
 # Create an SQLAlchemy engine to connect to the database
-engine = create_engine('postgresql://postgres:mysecretpassword@localhost/postgres')
+# from sqlalchemy import create_engine
+# engine = create_engine('postgresql://postgres:mysecretpassword@localhost/postgres')
+# Query the weighted_trait_graph table for the required data
+# query = f"""
+#     SELECT asin, data_label, cluster_label, type, rating_avg, rating, id, cluster_problem_statement, cluster_solution_1_title, cluster_solution_1_description, cluster_solution_2_title, cluster_solution_2_description, cluster_solution_3_title, cluster_solution_3_description
+#     FROM weighted_trait_graph 
+#     WHERE asin IN ({','.join(['%s']*len(asin_list))})
+# """
+# weighted_trait_df_graph = pd.read_sql_query(query, engine, params=asin_list)
+# Query the products table for the required data
+# query = f"""
+#     SELECT asin, main_image, title 
+#     FROM products 
+#     WHERE asin IN ({','.join(['%s']*len(asin_list))})
+# """
+# products_df = pd.read_sql_query(query, engine, params=asin_list)
 
-# Read the ASIN values from the CSV file
+
+# ASIN values to be used for filtering
+asin_list_path = 'data/external/asin_list.csv'
 asin_list = pd.read_csv('asin_list.csv')['asin'].tolist()
 
+# Read the cluster_solutions table for the required data
+cluster_solution_path = 'data/processed/cluster_solutions_export.csv'
 solutions_df = pd.read_csv('cluster_solutions.csv')
 
-# Query the weighted_trait_graph table for the required data
-query = f"""
-    SELECT asin, data_label, cluster_label, type, rating_avg, rating, id, cluster_problem_statement, cluster_solution_1_title, cluster_solution_1_description, cluster_solution_2_title, cluster_solution_2_description, cluster_solution_3_title, cluster_solution_3_description
-    FROM weighted_trait_graph 
-    WHERE asin IN ({','.join(['%s']*len(asin_list))})
-"""
-weighted_trait_df_graph = pd.read_sql_query(query, engine, params=asin_list)
+review_path = 'data/processed/reviews_export.csv'
+reviews_df = pd.read_csv(review_path)
+
+products_path = 'data/processed/products_export.csv'
+products_df = pd.read_csv(products_path)
+
+# Read the traits information from the database
+weighted_trait_df_graph_path = 'data/processed/weighted_trait_graph_export.csv'
+weighted_trait_df_graph = pd.read_csv(weighted_trait_df_graph_path)
 weighted_trait_df_graph['id'] = weighted_trait_df_graph['id'].map(eval)
 
 # Function to concatenate the lists but keep only distinct elements
@@ -306,14 +327,7 @@ grouped_df = weighted_trait_df_graph.groupby('cluster_label').agg({'id': unique_
 weighted_trait_df_graph = pd.merge(weighted_trait_df_graph, grouped_df, how="left", on="cluster_label")
 weighted_trait_df_graph.rename(columns={"id_y": "cluster_id_list", "id_x":"id"}, inplace=True)
 
-# Query the products table for the required data
-query = f"""
-    SELECT asin, main_image, title 
-    FROM products 
-    WHERE asin IN ({','.join(['%s']*len(asin_list))})
-"""
 
-products_enhanced = pd.read_sql_query(query, engine, params=asin_list)
 
 def normalize_observation_count(count, min_val=1, max_val=10):
     # Assumes count is a number from 1 to infinity
@@ -384,8 +398,8 @@ for idx, row in solutions_df.iterrows():
 nodes = root_nodes + child_nodes + solution_nodes
 edges = root_edges + child_edges + solution_edges
 
-# Add nodes and images for products_enhanced
-for idx, row in products_enhanced.iterrows():
+# Add nodes and images for products_df
+for idx, row in products_df.iterrows():
     source_node = row['asin']
     image = row['main_image']
     product_title = row['title']
@@ -484,7 +498,7 @@ def display_node_data(data):
     node_type = data['type']
 
     if node_type == 'Product':
-        selected_data = products_enhanced[products_enhanced['asin'] == node_id]
+        selected_data = products_df[products_df['asin'] == node_id]
         columns = [{'name': column, 'id': column} for column in selected_data.columns]
         data = selected_data.to_dict('records')
         return data, columns
@@ -492,12 +506,10 @@ def display_node_data(data):
     elif node_type in ['Fact', 'Improvement', 'Issue', 'ProblemChild']:
         id_list = data['id_list']
         params = asin_list + id_list
-        query = """
-                SELECT asin_variant, rating, review_summary, review
-                FROM reviews 
-                WHERE asin IN ({}) AND id IN ({})
-                """.format(','.join(['%s']*len(asin_list)), ','.join(['%s']*len(id_list)))
-        selected_data = pd.read_sql_query(query, engine, params=params)
+
+        selected_data = reviews_df[(reviews_df['asin'].isin(asin_list)) & (reviews_df['id'].isin(id_list))]
+        selected_data = selected_data[['asin_variant', 'rating', 'review_summary', 'review']]
+
         columns = [{'name': column, 'id': column} for column in selected_data.columns]
         data = selected_data.to_dict('records')
         return data, columns
