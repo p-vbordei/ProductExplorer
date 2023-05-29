@@ -8,6 +8,171 @@ from dash import dcc, html, dash_table
 from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
 
+
+
+
+# Create an SQLAlchemy engine to connect to the database
+# from sqlalchemy import create_engine
+# engine = create_engine('postgresql://postgres:mysecretpassword@localhost/postgres')
+# Query the weighted_trait_graph table for the required data
+# query = f"""
+#     SELECT asin, data_label, cluster_label, type, rating_avg, rating, id, cluster_problem_statement, cluster_solution_1_title, cluster_solution_1_description, cluster_solution_2_title, cluster_solution_2_description, cluster_solution_3_title, cluster_solution_3_description
+#     FROM weighted_trait_graph 
+#     WHERE asin IN ({','.join(['%s']*len(asin_list))})
+# """
+# weighted_trait_df_graph = pd.read_sql_query(query, engine, params=asin_list)
+# Query the products table for the required data
+# query = f"""
+#     SELECT asin, main_image, title 
+#     FROM products 
+#     WHERE asin IN ({','.join(['%s']*len(asin_list))})
+# """
+# products_df = pd.read_sql_query(query, engine, params=asin_list)
+
+
+##########################
+##### Get Nodes Data #####
+##########################
+
+# ASIN values to be used for filtering
+asin_list_path = './data/external/asin_list.csv'
+asin_list = pd.read_csv(asin_list_path)['asin'].tolist()
+
+# Read the cluster_solutions table for the required data
+cluster_solution_path = './data/processed/cluster_solutions.csv'
+solutions_df = pd.read_csv(cluster_solution_path)
+
+review_path = './data/processed/reviews_export.csv'
+reviews_df = pd.read_csv(review_path)
+
+products_path = './data/processed/products_export.csv'
+products_df = pd.read_csv(products_path)
+
+# Read the traits information from the database
+weighted_trait_df_graph_path = './data/processed/weighted_trait_graph_export.csv'
+weighted_trait_df_graph = pd.read_csv(weighted_trait_df_graph_path)
+weighted_trait_df_graph['id'] = weighted_trait_df_graph['id'].map(eval)
+
+# Function to concatenate the lists but keep only distinct elements
+def unique_elements(lst):
+    return list(set([i for sublist in lst for i in sublist]))
+
+# Group the DataFrame by 'cluster_label', apply the function to 'id_list'
+grouped_df = weighted_trait_df_graph.groupby('cluster_label').agg({'id': unique_elements}).reset_index()
+
+# Merge this DataFrame with the original one to create the 'cluster_id_list' column
+weighted_trait_df_graph = pd.merge(weighted_trait_df_graph, grouped_df, how="left", on="cluster_label")
+weighted_trait_df_graph.rename(columns={"id_y": "cluster_id_list", "id_x":"id"}, inplace=True)
+
+
+
+def normalize_observation_count(count, min_val=1, max_val=10):
+    # Assumes count is a number from 1 to infinity
+    # Adjust these parameters according to your requirements
+    MIN_OBSERVATIONS = 1
+    MAX_OBSERVATIONS = 20  # set this to a higher number if you have a very large number of observations
+    return int(round(min_val + (max_val - min_val) * (count - MIN_OBSERVATIONS) / (MAX_OBSERVATIONS - MIN_OBSERVATIONS),0))
+
+def normalize_font_size(count, min_font_size=20, max_font_size=40):
+    # Assumes count is a number from 1 to infinity
+    # Adjust these parameters according to your requirements
+    MIN_OBSERVATIONS = 1
+    MAX_OBSERVATIONS = 30  # set this to a higher number if you have a very large number of observations
+    font_size = round(min_font_size + (max_font_size - min_font_size) * (count - MIN_OBSERVATIONS) / (MAX_OBSERVATIONS - MIN_OBSERVATIONS),0)
+    return int(max(min_font_size, font_size))
+
+
+# Create the nodes and edges of the graph
+root_nodes = []
+root_edges = []
+
+# Add cluster nodes and product nodes and edges
+for idx, row in weighted_trait_df_graph.iterrows():
+    asin = row['asin']
+    target_node = row['cluster_label']
+    trait_type = row['type']
+    id_list = row['cluster_id_list']
+    width = normalize_observation_count(len(id_list))
+    width = max(1, width)
+    font_size = normalize_font_size(len(id_list))
+    root_nodes.append({'data': {'id': asin, 'label': asin, 'type': 'Product', 'asin': asin}})
+    root_nodes.append({'data': {'id': target_node, 'label': target_node, 'type': trait_type,  'asin': asin, 'id_list': id_list, 'fontSize': font_size}})
+    root_edges.append({'data': {'source': asin, 'target': target_node, 'rating': int(round(row['rating_avg'], 0)), 'width': width, 'label': str(width)}})
+
+
+# Add child nodes and edges
+child_nodes = []
+child_edges = []
+
+for idx, row in weighted_trait_df_graph.iterrows():
+    asin = row['asin']
+    source_node = row['asin']
+    parent_node = row['cluster_label']
+    target_node = row['data_label']
+    trait_type = row['type']
+    id_list = row['id']
+    width = normalize_observation_count(len(id_list))
+    width = max(1, width)
+    child_nodes.append({'data': {'id': target_node, 'label': target_node,  'parent': parent_node, 'type': 'ProblemChild', 'asin': asin, 'id_list': id_list, 'observationsCount': len(id_list)}})
+    child_edges.append({'data': {'source': parent_node, 'target': target_node, 'rating': int(round(row['rating_avg'], 0)), 'width': width, 'label': str(width)}})
+
+
+
+# Add solution nodes and edges
+solution_nodes = []
+solution_edges = []
+
+for idx, row in solutions_df.iterrows():
+    if row.isnull().any():
+    # If any value is null, skip to the next iteration
+        continue
+    source_node = row['cluster_label']
+    target_node = row['solution_title']
+    trait_type = row['type']
+    solution_nodes.append({'data': {'id': target_node, 'label': target_node, 'type': 'Solution'}})
+    solution_edges.append({'data': {'source': source_node, 'target': target_node, 'width': 1 }})
+
+nodes = root_nodes + child_nodes + solution_nodes
+edges = root_edges + child_edges + solution_edges
+
+# Add nodes and images for products_df
+for idx, row in products_df.iterrows():
+    source_node = row['asin']
+    image = row['main_image']
+    product_title = row['title']
+    title = product_title[:50]
+    
+    # Check if the image value is not None
+    if image is not None:
+        # Find the existing node with the same id
+        existing_node = next((node for node in nodes if node['data']['id'] == source_node), None)
+        
+        # If the node is found, update the faveIcon and label values
+        if existing_node:
+            existing_node['data']['faveIcon'] = image
+            existing_node['data']['label'] = title  # Update the label value
+        # If the node is not found, do nothing (skip to the next iteration)
+        else:
+            continue
+
+
+
+
+
+# Combine nodes and edges into a single elements list
+# elements = root_nodes + root_edges + child_nodes + child_edges + solution_nodes + solution_edges
+nodes = root_nodes + solution_nodes
+elements = root_nodes + root_edges + solution_nodes + solution_edges
+# %%
+
+
+
+############################
+##### Cytoscape Styling ####
+############################
+
+
+
 # Load extra layouts and stylesheets
 cyto.load_extra_layouts()
 
@@ -276,157 +441,10 @@ cyto_stylesheet =[
 ]
 
 
+###################
+##### DASH APP ####
+###################
 
-
-# Create an SQLAlchemy engine to connect to the database
-# from sqlalchemy import create_engine
-# engine = create_engine('postgresql://postgres:mysecretpassword@localhost/postgres')
-# Query the weighted_trait_graph table for the required data
-# query = f"""
-#     SELECT asin, data_label, cluster_label, type, rating_avg, rating, id, cluster_problem_statement, cluster_solution_1_title, cluster_solution_1_description, cluster_solution_2_title, cluster_solution_2_description, cluster_solution_3_title, cluster_solution_3_description
-#     FROM weighted_trait_graph 
-#     WHERE asin IN ({','.join(['%s']*len(asin_list))})
-# """
-# weighted_trait_df_graph = pd.read_sql_query(query, engine, params=asin_list)
-# Query the products table for the required data
-# query = f"""
-#     SELECT asin, main_image, title 
-#     FROM products 
-#     WHERE asin IN ({','.join(['%s']*len(asin_list))})
-# """
-# products_df = pd.read_sql_query(query, engine, params=asin_list)
-
-
-# ASIN values to be used for filtering
-asin_list_path = 'data/external/asin_list.csv'
-asin_list = pd.read_csv('asin_list.csv')['asin'].tolist()
-
-# Read the cluster_solutions table for the required data
-cluster_solution_path = 'data/processed/cluster_solutions_export.csv'
-solutions_df = pd.read_csv('cluster_solutions.csv')
-
-review_path = 'data/processed/reviews_export.csv'
-reviews_df = pd.read_csv(review_path)
-
-products_path = 'data/processed/products_export.csv'
-products_df = pd.read_csv(products_path)
-
-# Read the traits information from the database
-weighted_trait_df_graph_path = 'data/processed/weighted_trait_graph_export.csv'
-weighted_trait_df_graph = pd.read_csv(weighted_trait_df_graph_path)
-weighted_trait_df_graph['id'] = weighted_trait_df_graph['id'].map(eval)
-
-# Function to concatenate the lists but keep only distinct elements
-def unique_elements(lst):
-    return list(set([i for sublist in lst for i in sublist]))
-
-# Group the DataFrame by 'cluster_label', apply the function to 'id_list'
-grouped_df = weighted_trait_df_graph.groupby('cluster_label').agg({'id': unique_elements}).reset_index()
-
-# Merge this DataFrame with the original one to create the 'cluster_id_list' column
-weighted_trait_df_graph = pd.merge(weighted_trait_df_graph, grouped_df, how="left", on="cluster_label")
-weighted_trait_df_graph.rename(columns={"id_y": "cluster_id_list", "id_x":"id"}, inplace=True)
-
-
-
-def normalize_observation_count(count, min_val=1, max_val=10):
-    # Assumes count is a number from 1 to infinity
-    # Adjust these parameters according to your requirements
-    MIN_OBSERVATIONS = 1
-    MAX_OBSERVATIONS = 20  # set this to a higher number if you have a very large number of observations
-    return int(round(min_val + (max_val - min_val) * (count - MIN_OBSERVATIONS) / (MAX_OBSERVATIONS - MIN_OBSERVATIONS),0))
-
-def normalize_font_size(count, min_font_size=20, max_font_size=40):
-    # Assumes count is a number from 1 to infinity
-    # Adjust these parameters according to your requirements
-    MIN_OBSERVATIONS = 1
-    MAX_OBSERVATIONS = 30  # set this to a higher number if you have a very large number of observations
-    font_size = round(min_font_size + (max_font_size - min_font_size) * (count - MIN_OBSERVATIONS) / (MAX_OBSERVATIONS - MIN_OBSERVATIONS),0)
-    return int(max(min_font_size, font_size))
-
-
-# Create the nodes and edges of the graph
-root_nodes = []
-root_edges = []
-
-# Add cluster nodes and product nodes and edges
-for idx, row in weighted_trait_df_graph.iterrows():
-    asin = row['asin']
-    target_node = row['cluster_label']
-    trait_type = row['type']
-    id_list = row['cluster_id_list']
-    width = normalize_observation_count(len(id_list))
-    width = max(1, width)
-    font_size = normalize_font_size(len(id_list))
-    root_nodes.append({'data': {'id': asin, 'label': asin, 'type': 'Product', 'asin': asin}})
-    root_nodes.append({'data': {'id': target_node, 'label': target_node, 'type': trait_type,  'asin': asin, 'id_list': id_list, 'fontSize': font_size}})
-    root_edges.append({'data': {'source': asin, 'target': target_node, 'rating': int(round(row['rating_avg'], 0)), 'width': width, 'label': str(width)}})
-
-
-# Add child nodes and edges
-child_nodes = []
-child_edges = []
-
-for idx, row in weighted_trait_df_graph.iterrows():
-    asin = row['asin']
-    source_node = row['asin']
-    parent_node = row['cluster_label']
-    target_node = row['data_label']
-    trait_type = row['type']
-    id_list = row['id']
-    width = normalize_observation_count(len(id_list))
-    width = max(1, width)
-    child_nodes.append({'data': {'id': target_node, 'label': target_node,  'parent': parent_node, 'type': 'ProblemChild', 'asin': asin, 'id_list': id_list, 'observationsCount': len(id_list)}})
-    child_edges.append({'data': {'source': parent_node, 'target': target_node, 'rating': int(round(row['rating_avg'], 0)), 'width': width, 'label': str(width)}})
-
-
-
-# Add solution nodes and edges
-solution_nodes = []
-solution_edges = []
-
-for idx, row in solutions_df.iterrows():
-    if row.isnull().any():
-    # If any value is null, skip to the next iteration
-        continue
-    source_node = row['cluster_label']
-    target_node = row['solution_title']
-    trait_type = row['type']
-    solution_nodes.append({'data': {'id': target_node, 'label': target_node, 'type': 'Solution'}})
-    solution_edges.append({'data': {'source': source_node, 'target': target_node, 'width': 1 }})
-
-nodes = root_nodes + child_nodes + solution_nodes
-edges = root_edges + child_edges + solution_edges
-
-# Add nodes and images for products_df
-for idx, row in products_df.iterrows():
-    source_node = row['asin']
-    image = row['main_image']
-    product_title = row['title']
-    title = product_title[:50]
-    
-    # Check if the image value is not None
-    if image is not None:
-        # Find the existing node with the same id
-        existing_node = next((node for node in nodes if node['data']['id'] == source_node), None)
-        
-        # If the node is found, update the faveIcon and label values
-        if existing_node:
-            existing_node['data']['faveIcon'] = image
-            existing_node['data']['label'] = title  # Update the label value
-        # If the node is not found, do nothing (skip to the next iteration)
-        else:
-            continue
-
-
-
-
-
-# Combine nodes and edges into a single elements list
-# elements = root_nodes + root_edges + child_nodes + child_edges + solution_nodes + solution_edges
-nodes = root_nodes + solution_nodes
-elements = root_nodes + root_edges + solution_nodes + solution_edges
-# %%
 
 app = dash.Dash(__name__,     
                 external_stylesheets=[

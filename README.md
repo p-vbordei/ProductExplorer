@@ -3,6 +3,10 @@ ProductExplorer
 
 A software to enhance product teams work, enabeling them quick access to review insights and proposed solutions. Powered by AI and Knowledge Graphs
 
+
+Run test visuals
+python ./src/visualization/DASH_Traits_Graph_Cytoscape.py
+
 Project Organization
 ------------
 
