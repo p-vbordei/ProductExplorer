@@ -1,3 +1,4 @@
+# %%
 import dash
 import plotly
 import openai
@@ -26,21 +27,45 @@ def generate_response(prompt):
     return response.choices[0].text.strip()
 
 # Assuming the result DataFrame is already created
-filepath = '/Users/vladbordei/Documents/Development/oaie2/resulting_key_data_data_df.csv'
-result = pd.read_csv(filepath)
 
-reviews_db_filepath = '/Users/vladbordei/Documents/Development/oaie2/reviews_db.csv'
-reviews_db = pd.read_csv(reviews_db_filepath)
+# ASIN values to be used for filtering
+#asin_list_path = './data/external/asin_list.csv'
+asin_list_path = '/Users/vladbordei/Documents/Development/ProductExplorer/data/external/asin_list.csv'
+asin_list = pd.read_csv(asin_list_path)['asin'].tolist()
+
+#review_path = './data/processed/reviews_export.csv'
+review_path = '/Users/vladbordei/Documents/Development/ProductExplorer/data/processed/reviews_export.csv'
+reviews_df = pd.read_csv(review_path)
+
+# products_path = './data/processed/products_export.csv'
+products_path = '/Users/vladbordei/Documents/Development/ProductExplorer/data/processed/products_export.csv'
+products_df = pd.read_csv(products_path)
+
+# Read the traits information from the database
+# weighted_trait_df_heatmap_path = './data/processed/weighted_trait_heatmap.csv'
+weighted_trait_df_heatmap_path = '/Users/vladbordei/Documents/Development/ProductExplorer/data/processed/weighted_trait_heatmap.csv'
+weighted_trait_df_heatmap = pd.read_csv(weighted_trait_df_heatmap_path)
+weighted_trait_df_heatmap['id'] = weighted_trait_df_heatmap['id'].map(eval)
+
+
+result = weighted_trait_df_heatmap[weighted_trait_df_heatmap['asin'].isin(asin_list)]
+reviews_db = reviews_df[reviews_df['asin'].isin(asin_list)]
+products_db = products_df[products_df['asin'].isin(asin_list)]
+
+# %%
+
 
 database = {
-    "ASIN": result["asin.original"].unique(),
+    "ASIN": result["asin"].unique(),
     "data_label": result["data_label"].unique(),
     "selection": result
 }
 
+# %%
+
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
-heatmap_data_positive = result.pivot_table(index='data_label', columns='asin.original', values='weighted_positive_sentiment')
+heatmap_data_positive = result.pivot_table(index='cluster_label', columns='asin', values='positive_sentiment')
 
 heatmap = go.Heatmap(
     z=heatmap_data_positive.values,
@@ -51,7 +76,7 @@ heatmap = go.Heatmap(
 )
 
 layout = go.Layout(
-    title='Heatmap of Weighted Positive Sentiment by ASIN and Main Characteristic',
+    title='Heatmap of Positive Sentiment by ASIN and Main Characteristic',
     xaxis=dict(title='ASIN'),
     yaxis=dict(title='Main Characteristic'),
     autosize=True,
@@ -99,8 +124,8 @@ def update_database_selection(click_info):
         asin, main_char = click_info.split(" - ")
 
         selection = result.loc[
-            (result['asin.original'] == asin) &
-            (result['data_label'] == main_char)
+            (result['asin'] == asin) &
+            (result['cluster_label'] == main_char)
         ]
 
         if not selection.empty:
@@ -137,3 +162,5 @@ def update_chat_output(n_clicks, user_input):
 if __name__ == '__main__':
     app.run_server(debug=True)
 
+
+# %%
