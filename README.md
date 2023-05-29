@@ -58,4 +58,38 @@ Project Organization
 
 --------
 
+
+
+#### Copy code
+
+!docker run --name my_postgres -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 -d postgres
+
+!pip install psycopg2-binary
+
+!docker pull dpage/pgadmin4
+
+!docker run --name my_pgadmin -p 80:80 -e "PGADMIN_DEFAULT_EMAIL=binarybear@gmail.com" -e 
+"PGADMIN_DEFAULT_PASSWORD=admin" --link my_postgres -d dpage/pgadmin4
+
+
+
+#### Run all
+
+Open your browser and navigate to [http://localhost](http://localhost) (or [http://127.0.0.1](http://127.0.0.1)) to access the pgAdmin web interface.
+
+Log in to pgAdmin using the email and password you set in the `my_pgadmin` container.
+
+Add the PostgreSQL server to pgAdmin:
+
+1. Right-click on "Servers" in the left-side pane and select "Create > Server".
+2. In the "General" tab, provide a name for the connection (e.g., "My PostgreSQL Server").
+3. In the "Connection" tab, set the following fields:
+   - Hostname/address: `my_postgres`
+   - Port: `5432`
+   - Maintenance database: `postgres`
+   - Username: `postgres`
+   - Password: `mysecretpassword` (the one you set in the `my_postgres` container)
+4. Click "Save" to add the server.
+
+
 <p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
