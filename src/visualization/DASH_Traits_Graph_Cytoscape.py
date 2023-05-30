@@ -127,7 +127,7 @@ for idx, row in solutions_df.iterrows():
     # If any value is null, skip to the next iteration
         continue
     source_node = row['cluster_label']
-    target_node = row['solution_title']
+    target_node = row['improvement_title']
     trait_type = row['type']
     solution_nodes.append({'data': {'id': target_node, 'label': target_node, 'type': 'Solution'}})
     solution_edges.append({'data': {'source': source_node, 'target': target_node, 'width': 1 }})
@@ -533,8 +533,8 @@ def display_node_data(data):
         return data, columns
     
     elif  node_type == 'Solution':
-        selected_data = solutions_df.loc[solutions_df['solution_title'] == node_id, ['solution_details', 'problem_statement']].drop_duplicates()
-        columns = [{'name': column, 'id': column} for column in ['solution_details','problem_statement']]
+        selected_data = solutions_df.loc[solutions_df['improvement_title'] == node_id, ['improvement_title', 'improvement_objective', 'improvement_solution', 'improvement_steps', 'improvement_considerations']].drop_duplicates()
+        columns = [{'name': column, 'id': column} for column in ['improvement_title', 'improvement_objective', 'improvement_solution', 'improvement_steps', 'improvement_considerations']]
         data = selected_data.to_dict('records')
         return data, columns
 
