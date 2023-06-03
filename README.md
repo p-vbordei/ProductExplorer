@@ -114,3 +114,16 @@ Agent Chain: The initialize_agent function is called to create an agent chain th
 User Interaction Loop: A while loop is used to accept user inputs, process them with the agent chain, and print the assistant's responses.
 
 The application, as a whole, allows users to ask questions and get responses from the AI assistant, which can use various tools and its memory to provide accurate and relevant answers. It can also learn from the reviews and questions it processes, which can help improve its responses over time.
+
+
+
+######### SEMANTIC SIMMILARITY MODELS
+
+https://www.sbert.net/docs/pretrained_models.html
+https://huggingface.co/sentence-transformers/all-mpnet-base-v2
+
+
+
+######### Topic Clustering
+
+https://www.sbert.net/examples/applications/clustering/README.html
