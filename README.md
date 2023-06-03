@@ -93,3 +93,24 @@ Add the PostgreSQL server to pgAdmin:
 
 
 <p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
+
+
+######## Project Description
+
+The primary goal of this application is to analyze customer reviews of a product, answer questions about the product, and suggest possible improvements based on the reviews. 
+
+Here is a brief overview of the architecture:
+- Web Scrape product data and reviews data from Amazon
+- Processing Reviews: For each review, the assistant generates a response using the chat model and stores the responses in the memory, as a JSON. The responses are split between improvements, facts and issues.
+- Improvements, facts and issues are clustered toghtether based on simmilarity
+- Problem Statements are identified and described for each of the clusters
+- Solutions for the Problem Statements are created and clustered. They are presented as solutions prepared by junior engineers.
+- Product Improvements are generated based on product understanding and previously presented solution clusters.
+
+
+####### NOT YET IMPLEMENTED
+Conversation Memory: The ConversationBufferMemory is initialized to store the conversation history.
+Agent Chain: The initialize_agent function is called to create an agent chain that combines the initialized tools, language model, memory, and conversation template.
+User Interaction Loop: A while loop is used to accept user inputs, process them with the agent chain, and print the assistant's responses.
+
+The application, as a whole, allows users to ask questions and get responses from the AI assistant, which can use various tools and its memory to provide accurate and relevant answers. It can also learn from the reviews and questions it processes, which can help improve its responses over time.
