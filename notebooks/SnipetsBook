@@ -1,0 +1,80 @@
+def clean_data(dataframe, column_name):
+    # Extract single values from lists
+    dataframe[column_name] = dataframe[column_name].apply(lambda x: x[0] if isinstance(x, list) and len(x) == 1 else [x][0] if not isinstance(x, list) else x)
+
+    # Replace missing values with NaN
+    dataframe[column_name].replace(['', 'NA', 'N/A', 'missing', 'NaN', 'unknown', 'Unknown', ['Unknown']], np.nan, inplace=True)
+
+    # Drop NaN values
+    dataframe.dropna(subset=[column_name], inplace=True)
+
+    # Replace missing values with 'Unknown'
+    dataframe[column_name].fillna(value='unknown', inplace=True)
+
+    # Drop 'Unknown' values
+    dataframe = dataframe[dataframe[column_name] != 'unknown']
+    
+    return dataframe
+
+def transform_string(input_string):
+    words = input_string.split('_')  # Split the string by underscores
+    capitalized_words = [word.capitalize() for word in words]  # Capitalize each word
+    transformed_string = ' '.join(capitalized_words)  # Join the words back into a string
+    return transformed_string
+
+
+
+####### IN VERSIUNEA ASTA DATELE SUNT INCARCATE COLOANA CU COLOANA #######
+
+df_index_columns = ['anger',
+ 'asin',
+ 'asin_variant',
+ 'delight',
+ 'disappointment',
+ 'id',
+ 'media',
+ 'negative_sentiment',
+ 'positive_sentiment',
+ 'rating',
+ 'sentiment']
+df_data_columns = ['review_summary', 'product_facts', 'improvements_expected','issues_identified', "review",'anger_reason',  'delight_reason', 'disappointment_reason', 'time', 'season', 'weather', 'user_description','title','where_product_is_used','how_product_is_used']
+df_index = df[df_index_columns].copy()
+
+from langchain.document_loaders import DataFrameLoader
+
+for column in df_data_columns:
+    df_data = df[[column] + df_index_columns].copy()
+    df_data = clean_data(df_data, column)
+    df_data[column] = transform_string(column) + ": " + df_data[column].astype(str)
+    df_data['record_type'] = column
+
+    try:
+        loader = DataFrameLoader(df_data, page_content_column=column)
+        documents = loader.load()
+    except:
+        print(column)
+        pass
+
+
+
+####### IN VERSIUNEA ASTA DATELE SUNT INLANTUITE INTR-UN SINGUR STRING #######
+
+df_index_columns = ['anger',
+ 'asin',
+ 'asin_variant',
+ 'delight',
+ 'disappointment',
+ 'id',
+ 'media',
+ 'negative_sentiment',
+ 'positive_sentiment',
+ 'rating',
+ 'sentiment']
+df_data_columns = ['review_summary', 'product_facts', 'improvements_expected','issues_identified', "review",'anger_reason',  'delight_reason', 'disappointment_reason', 'time', 'season', 'weather', 'user_description','title','where_product_is_used','how_product_is_used']
+df_index = df[df_index_columns].copy()
+df_data = df[df_data_columns]
+data_dict = df_data.to_dict(orient='records')
+df_data_page = df_index.copy()
+df_data_page['data'] = str(data_dict)
+loader = DataFrameLoader(df_data_page, page_content_column='data')
+documents = loader.load()
