@@ -70,6 +70,7 @@ df_index_columns = ['anger',
  'positive_sentiment',
  'rating',
  'sentiment']
+
 df_data_columns = ['review_summary', 'product_facts', 'improvements_expected','issues_identified', "review",'anger_reason',  'delight_reason', 'disappointment_reason', 'time', 'season', 'weather', 'user_description','title','where_product_is_used','how_product_is_used']
 df_index = df[df_index_columns].copy()
 df_data = df[df_data_columns]
