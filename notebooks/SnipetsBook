@@ -79,3 +79,24 @@ df_data_page = df_index.copy()
 df_data_page['data'] = str(data_dict)
 loader = DataFrameLoader(df_data_page, page_content_column='data')
 documents = loader.load()
+
+
+
+
+
+
+####### CREAT ASIN LIST
+
+import pandas as pd
+
+asin_list = ['B07XCRVK2Y', 'B07X7YFZWG', 'B07XCRT49W', 'B07Q899BPB', 'B07QXMLSS5', 'B01M4OV4Q4', 'B085Q4W3WX', 'B09R9MMW6J', 'B07ZJ8HRN8', 'B085Q3TLF8', 'B07ZJ8FDPK', 'B09VBZZ9C8']
+
+# create a pandas dataframe
+df = pd.DataFrame(asin_list, columns=['asin'])
+
+# save the dataframe as a CSV file
+df.to_csv('asin_list.csv', index=False)
+
+
+
+###################
