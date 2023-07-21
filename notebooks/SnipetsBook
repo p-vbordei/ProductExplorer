@@ -196,3 +196,76 @@ for i in product.index:
 
 ###############################
 
+
+# https://lucolivi.medium.com/the-proper-way-to-make-calls-to-chatgpt-api-52e635bea8ff
+
+ASYNC
+
+
+import asyncio
+import aiohttp
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_random_exponential,
+)
+
+headers = {
+    "Content-Type": "application/json",
+    "Authorization": f"Bearer {OPENAI_API_KEY}"
+}
+
+class ProgressLog:
+    def __init__(self, total):
+        self.total = total
+        self.done = 0
+
+    def increment(self):
+        self.done = self.done + 1
+
+    def __repr__(self):
+        return f"Done runs {self.done}/{self.total}."
+
+@retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(20), before_sleep=print, retry_error_callback=lambda _: None)
+async def get_completion(content, session, semaphore, progress_log):
+    async with semaphore:
+
+        async with session.post("https://api.openai.com/v1/chat/completions", headers=headers, json={
+            "model": "gpt-3.5-turbo",
+            "messages": [{"role": "user", "content": content}],
+            "temperature": 0
+        }) as resp:
+
+            response_json = await resp.json()
+
+            progress_log.increment()
+            print(progress_log)
+
+            return response_json["choices"][0]['message']["content"]
+
+async def get_completion_list(content_list, max_parallel_calls, timeout):
+    semaphore = asyncio.Semaphore(value=max_parallel_calls)
+    progress_log = ProgressLog(len(content_list))
+
+    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(timeout)) as session:
+        return await asyncio.gather(*[get_completion(content, session, semaphore, progress_log) for content in content_list])
+    
+
+    ####
+
+    messages = [
+    {"role": "user", "content": f"REVIEW: ```{review}```"},
+]
+
+# Send the request to the LLM and get the response
+response =  chat_completion_request(
+    messages=messages,
+    functions=functions,
+    function_call={"name": "review_data_function"},
+    temperature=0,
+    model=GPT_MODEL
+)
+
+# Process the response and store in the dictionary
+
+main_product_summary_response = response.json()["choices"]
