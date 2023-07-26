@@ -29,21 +29,21 @@ def generate_response(prompt):
 # Assuming the result DataFrame is already created
 
 # ASIN values to be used for filtering
-#asin_list_path = './data/external/asin_list.csv'
-asin_list_path = '/Users/vladbordei/Documents/Development/ProductExplorer/data/external/asin_list.csv'
+asin_list_path = './data/external/asin_list.csv'
+#asin_list_path = '/Users/vladbordei/Documents/Development/ProductExplorer/data/external/asin_list.csv'
 asin_list = pd.read_csv(asin_list_path)['asin'].tolist()
 
-#review_path = './data/processed/reviews_export.csv'
-review_path = '/Users/vladbordei/Documents/Development/ProductExplorer/data/processed/reviews_export.csv'
+review_path = './data/processed/reviews_export.csv'
+#review_path = '/Users/vladbordei/Documents/Development/ProductExplorer/data/processed/reviews_export.csv'
 reviews_df = pd.read_csv(review_path)
 
-# products_path = './data/processed/products_export.csv'
-products_path = '/Users/vladbordei/Documents/Development/ProductExplorer/data/processed/products_export.csv'
+products_path = './data/processed/products_export.csv'
+#products_path = '/Users/vladbordei/Documents/Development/ProductExplorer/data/processed/products_export.csv'
 products_df = pd.read_csv(products_path)
 
 # Read the traits information from the database
-# weighted_trait_df_heatmap_path = './data/processed/weighted_trait_heatmap.csv'
-weighted_trait_df_heatmap_path = '/Users/vladbordei/Documents/Development/ProductExplorer/data/processed/weighted_trait_heatmap.csv'
+weighted_trait_df_heatmap_path = './data/processed/weighted_trait_heatmap.csv'
+#weighted_trait_df_heatmap_path = '/Users/vladbordei/Documents/Development/ProductExplorer/data/processed/weighted_trait_heatmap.csv'
 weighted_trait_df_heatmap = pd.read_csv(weighted_trait_df_heatmap_path)
 weighted_trait_df_heatmap['id'] = weighted_trait_df_heatmap['id'].map(eval)
 
@@ -160,7 +160,7 @@ def update_chat_output(n_clicks, user_input):
     return ""
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(port = 8052, debug=True)
 
 
 # %%
