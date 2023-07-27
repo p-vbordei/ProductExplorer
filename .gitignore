@@ -91,3 +91,5 @@ target/
 
 #Docker Compose for now
 docker/
+
+notebooks/productexplorerdata-firebase-adminsdk-ulb3d-465f23dff3.json
