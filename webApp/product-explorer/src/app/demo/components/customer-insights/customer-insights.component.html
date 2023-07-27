@@ -1,0 +1,26 @@
+<div class="grid">
+    <div class="col-12 xl:col-6">
+        <div class="card">
+            <h5>Who Is It Used</h5>
+            <p-chart type="bar" [data]="whoChartData" [options]="whoChartOptions"></p-chart>
+        </div>
+        <div class="card">
+            <h5>Where Is It Used</h5>
+            <p-chart type="bar" [data]="whereChartData" [options]="whereChartOptions"></p-chart>
+        </div>
+    </div>
+
+
+    <div class="col-12 xl:col-6">
+        <div class="card">
+            <h5>What Is It Used</h5>
+            <p-chart type="bar" [data]="whatChartData" [options]="whatChartOptions"></p-chart>
+        </div>
+        
+        <div class="card">
+            <h5>When Is It Used</h5>
+            <p-chart type="bar" [data]="whenChartData" [options]="whenChartOptions"></p-chart>
+        </div>
+    </div>
+</div>
+

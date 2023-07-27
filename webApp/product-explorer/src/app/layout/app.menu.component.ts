@@ -20,7 +20,7 @@ export class AppMenuComponent implements OnInit {
                     { label: 'Dashboard', icon: 'pi pi-fw pi-home', routerLink: ['/'] },
                     { label: 'Product Explorer', icon: 'pi pi-fw pi-search-plus', routerLink: ['/explorer'] },
                     { label: 'Product Insights', icon: 'pi pi-fw pi-eye', routerLink: ['/product'] },
-                    { label: 'Customer Insights', icon: 'pi pi-fw pi-user', routerLink: ['/customer'] },
+                    { label: 'Customer Insights', icon: 'pi pi-fw pi-user', routerLink: ['/customer-insights'] },
                 ]
             },
             {
@@ -157,9 +157,6 @@ export class AppMenuComponent implements OnInit {
                 items: [
                     {
                         label: 'Documentation', icon: 'pi pi-fw pi-question', routerLink: ['/documentation']
-                    },
-                    {
-                        label: 'View Source', icon: 'pi pi-fw pi-search', url: ['https://github.com/primefaces/product-explorer'], target: '_blank'
                     }
                 ]
             }
