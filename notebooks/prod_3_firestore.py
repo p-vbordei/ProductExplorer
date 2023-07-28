@@ -595,9 +595,6 @@ for main_key in product_data_interim.keys():
 product_data['median_product_price'] = median_product_price
 
 
-
-
-
 # to insert data into Firestore:
 product_data = db.collection('product_data')
 for index, row in product.iterrows():

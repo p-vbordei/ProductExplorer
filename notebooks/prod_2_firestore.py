@@ -6,7 +6,6 @@ from tenacity import retry, wait_random_exponential, stop_after_attempt
 
 load_dotenv()
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-HUGGINGFACEHUB_API_TOKEN = os.getenv('HUGGINGFACEHUB_API_TOKEN')
 GPT_MODEL = "gpt-3.5-turbo"
 
 db = firestore.Client()  # Make sure you have set GOOGLE_APPLICATION_CREDENTIALS environment variable for this to work
