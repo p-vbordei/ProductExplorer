@@ -22,5 +22,32 @@
             <p-chart type="bar" [data]="whenChartData" [options]="whenChartOptions"></p-chart>
         </div>
     </div>
+
+    <div class="col-12">
+        <div class="card">
+            <p-table #dt [columns]="cols" [value]="positiveFeedbackData" [exportHeader]="'customExportHeader'" [tableStyle]="{ 'min-width': '50rem' }">
+                <ng-template pTemplate="caption">
+                    <div class="flex">
+                        <p-tag class="text-lg" severity="success" value="Positive Feedback"></p-tag>
+                        <button type="button" pButton pRipple icon="pi pi-file-excel" (click)="exportExcel(positiveFeedbackData)" class="p-button-success ml-auto" pTooltip="XLS" tooltipPosition="bottom"></button>
+                    </div>
+                </ng-template>
+                <ng-template pTemplate="header" let-columns>
+                    <tr>
+                        <th *ngFor="let col of columns">
+                            {{ col.header }}
+                        </th>
+                    </tr>
+                </ng-template>
+                <ng-template pTemplate="body" let-rowData let-columns="columns">
+                    <tr [pSelectableRow]="rowData">
+                        <td>{{rowData.label}}</td>
+                        <td><p-progressBar [value]="rowData.value"></p-progressBar></td>
+                        <td>{{rowData.description}}</td>
+                    </tr>
+                </ng-template>
+            </p-table>
+        </div>
+    </div>
 </div>
 

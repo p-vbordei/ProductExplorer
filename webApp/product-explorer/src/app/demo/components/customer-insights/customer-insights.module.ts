@@ -9,6 +9,8 @@ import { ButtonModule } from 'primeng/button';
 import { StyleClassModule } from 'primeng/styleclass';
 import { PanelMenuModule } from 'primeng/panelmenu';
 import { CustomerInsightsRoutingModule } from './customer-insights.-routing.module';
+import { ProgressBarModule } from 'primeng/progressbar';
+import { TagModule } from 'primeng/tag';
 
 
 @NgModule({
@@ -21,6 +23,8 @@ import { CustomerInsightsRoutingModule } from './customer-insights.-routing.modu
     StyleClassModule,
     PanelMenuModule,
     ButtonModule,
+    ProgressBarModule,
+    TagModule,
     CustomerInsightsRoutingModule
 ],
 declarations: [CustomerInsightsComponent]
