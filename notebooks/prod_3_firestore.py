@@ -478,8 +478,6 @@ response =  chat_completion_request(
 # Process the response and store in the dictionary
 main_product_packaging_description_response = response.json()["choices"]
 
-
-
 # %% [markdown]
 # ### Season Description
 

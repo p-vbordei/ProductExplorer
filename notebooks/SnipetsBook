@@ -269,3 +269,78 @@ response =  chat_completion_request(
 # Process the response and store in the dictionary
 
 main_product_summary_response = response.json()["choices"]
+
+
+
+
+#########
+###############
+Sample de extras info din rapid api in async, fara timing
+
+
+import asyncio
+import nest_asyncio
+nest_asyncio.apply()
+import aiohttp
+import json
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import firestore
+
+# Your ASINs
+asin_list = [
+    'B08X2324ZL', 'B09MQ689XL', 'B0BCW8X98V', 'B09NR5JW8Y', 
+    'B0BHS5VPCZ', 'B0BCVY1DHR', 'B0BNXCJ3MV', 'B0BCTTCSBZ', 
+    'B091325ZMB', 'B093HCXGC9', 'B0BL6MR1KN', 'B09PN11Y65', 
+    'B0BLNBS36G', 'B0BVZ3H4MB', 'B0BW8Y2B8Z', 'B0BDFZPNVY'
+]
+
+# Amazon Scraper details
+base_url = "https://h-amazon-data-scraper2.p.rapidapi.com/products/"
+api_key = "70201ee0c8ed29661bc6ae00a84341fb"
+headers = {
+    "X-RapidAPI-Key": "4da31a08e5mshaca05d98a3d9d6ep1fffb1jsn019717508cc8",
+    "X-RapidAPI-Host": "h-amazon-data-scraper2.p.rapidapi.com"
+}
+
+# Firestore details
+cred_path = '/Users/vladbordei/Documents/Development/ProductExplorer/notebooks/productexplorerdata-firebase-adminsdk-ulb3d-465f23dff3.json'
+
+# Initialize Firestore
+cred = credentials.Certificate(cred_path)
+if not firebase_admin._apps:
+    firebase_admin.initialize_app(cred)
+db = firestore.client()
+
+async def get_product_details(asin):
+    async with aiohttp.ClientSession() as session:
+        url = f"{base_url}{asin}"
+        async with session.get(url, headers=headers, params={"api_key": api_key}) as response:
+            return await response.text()
+
+async def get_product_reviews(asin):
+    async with aiohttp.ClientSession() as session:
+        url = f"{base_url}{asin}/reviews"
+        async with session.get(url, headers=headers, params={"api_key": api_key}) as response:
+            return await response.text()
+
+def update_firestore(asin, details, reviews):
+    doc_ref = db.collection('products').document(asin)
+    doc_ref.set({
+        'details': json.loads(details),
+        'reviews': json.loads(reviews)
+    }, merge=True)
+
+async def main():
+    for asin in asin_list:
+        details = await get_product_details(asin)
+        reviews = await get_product_reviews(asin)
+        update_firestore(asin, details, reviews)
+
+loop = asyncio.get_event_loop()
+loop.run_until_complete(main())
+
+
+
+#########
+###################

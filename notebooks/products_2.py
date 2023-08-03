@@ -22,7 +22,7 @@ from termcolor import colored
 
 load_dotenv()
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-HUGGINGFACEHUB_API_TOKEN = os.getenv('HUGGINGFACEHUB_API_TOKEN')
+
 
 if os.getenv("OPENAI_API_KEY") is not None:
     print ("OPENAI_API_KEY is ready")

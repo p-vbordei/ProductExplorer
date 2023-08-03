@@ -4,7 +4,6 @@
 #     - Create the asin list
 #     - Create reviews lists, parse by ASIN
 #     - Create products lists, parse by ASIN
-# - Run sentiment analysis on reviews
 # - Save results
 # 
 # 
@@ -16,13 +15,6 @@ from dotenv import load_dotenv
 import os
 
 load_dotenv()
-HUGGINGFACEHUB_API_TOKEN = os.getenv('HUGGINGFACEHUB_API_TOKEN')
-
-if os.getenv("HUGGINGFACEHUB_API_TOKEN") is not None:
-    print ("HUGGINGFACEHUB_API_TOKEN is ready")
-else:
-    print ("HUGGINGFACEHUB_API_TOKEN environment variable not found")
-
 # %%
 # asin_list_path = './data/external/asin_list.csv'
 asin_list_path = '/Users/vladbordei/Documents/Development/ProductExplorer/data/external/asin_list.csv'
@@ -40,41 +32,6 @@ def read_data(folder_path):
     
     return reviews
 
-# %%
-import torch
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
-
-# Load the pre-trained BERT model for sentiment analysis
-model_name = "nlptown/bert-base-multilingual-uncased-sentiment"
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForSequenceClassification.from_pretrained(model_name)
-
-def get_sentiment_probabilities(text):
-    # Tokenize the text and truncate if it's too long
-    inputs = tokenizer.encode_plus(text, return_tensors="pt", truncation=True, max_length=512)
-    outputs = model(**inputs)
-    logits = outputs.logits
-    probabilities = torch.softmax(logits, dim=-1)
-
-    # Combine probabilities for positive (4-5 stars) and negative (1-2 stars) sentiment
-    positive = probabilities[0, 3] + probabilities[0, 4]
-    negative = probabilities[0, 0] + probabilities[0, 1]
-
-    return positive.item(), negative.item()
-
-
-def process_review(row):
-    review_text = row["review"]
-    print(f"Review text: {review_text}")
-
-    # Check if review_text is a valid string
-    if not isinstance(review_text, str):
-        return pd.Series([0.5, 0.5])
-
-    positive, negative = get_sentiment_probabilities(review_text)
-    print(f"Sentiment allocation - Positive: {positive}, Negative: {negative}")
-    
-    return pd.Series([positive, negative])
 
 
 # %%
@@ -100,16 +57,8 @@ try:
 except:
     pass
 
-# %%
-# Apply the sentiment analysis to the "review" column
-reviews[["positive_sentiment", "negative_sentiment"]] = reviews.apply(process_review, axis=1)
 
 # %%
-# save_path = './data/interim/reviews_with_sentiment.csv'
-save_path = '/Users/vladbordei/Documents/Development/ProductExplorer/data/interim/reviews_with_sentiment.csv'
+# save_path = './data/interim/reviews.csv'
+save_path = '/Users/vladbordei/Documents/Development/ProductExplorer/data/interim/reviews.csv'
 reviews.to_csv(save_path, index=False)
-
-# %%
-
-
-
