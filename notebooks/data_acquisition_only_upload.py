@@ -64,8 +64,7 @@ async def upload_reviews_to_firestore(filename):
         f = await aiofiles.open(os.path.join(rev_path, filename), 'r')
         data = await f.read()
         data = json.loads(data)
-        data = data[0]
-        asin = data['asin']['original']
+        asin = data[0]['asin']['original']
         doc_ref = db.collection('products').document(asin)
         doc_ref.set({
             'reviews': data,
