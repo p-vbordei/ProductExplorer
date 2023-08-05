@@ -1,20 +1,42 @@
+#%%
 import os
-import openai
-import requests
-from google.cloud import firestore
-from tenacity import retry, wait_random_exponential, stop_after_attempt
+import pandas as pd
+from dotenv import load_dotenv
+from tqdm import tqdm
+import asyncio
+import aiofiles
+import nest_asyncio
+from pathlib import Path
+
 
 load_dotenv()
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 GPT_MODEL = "gpt-3.5-turbo"
 
-db = firestore.Client()  # Make sure you have set GOOGLE_APPLICATION_CREDENTIALS environment variable for this to work
+import json
+from google.cloud import firestore
+import firebase_admin
+from firebase_admin import credentials, firestore
+
+# Firestore details
+cred_path = '/Users/vladbordei/Documents/Development/ProductExplorer/notebooks/productexplorerdata-firebase-adminsdk-ulb3d-465f23dff3.json'
+
+# Initialize Firestore
+cred = credentials.Certificate(cred_path)
+if not firebase_admin._apps:
+    firebase_admin.initialize_app(cred)
+db = firestore.client()
+
+import openai
+import requests
+from tenacity import retry, wait_random_exponential, stop_after_attempt
 
 if OPENAI_API_KEY is not None:
     print("OPENAI_API_KEY is ready")
 else:
     print("OPENAI_API_KEY environment variable not found")
 
+#%%
 
 def extract_brand_name(string):
     if isinstance(string, str) and ("Brand: " in string or "Visit the " in string):
@@ -29,17 +51,56 @@ def extract_brand_name(string):
             pass
     return string
 
+def remove_brand(strings, brand_column):
+    cleaned_strings = []
+    for string, brand in zip(strings, brand_column):
+        cleaned_string = string.replace(brand, '').strip()
+        cleaned_strings.append(cleaned_string)
+    return cleaned_strings
 
 
-products = read_data("/Users/vladbordei/Documents/Development/ProductExplorer/data/raw/RaisedGardenBed")
-products['product_information.brand'] = products['product_information.brand'].apply(extract_brand_name)
+#%%
 
 
-product = products.copy()
-product.reset_index(drop=True, inplace=True)
-asin_list = pd.read_csv('/Users/vladbordei/Documents/Development/ProductExplorer/data/external/asin_list.csv')['asin'].tolist()
+def get_asins_from_investigation(investigation_id):
+    # Retrieve the investigation from Firestore
+    investigation_ref = db.collection(u'investigations').document(investigation_id)
+    investigation = investigation_ref.get()
+
+    if investigation.exists:
+        # Retrieve the asins from the investigation
+        asins = investigation.get('asins')
+        return asins
+    else:
+        print('Investigation does not exist')
+        return None
+
+def get_product_details_from_asin(asin):
+    # Retrieve the product details from Firestore
+    product_ref = db.collection('products').document(asin)
+    product = product_ref.get()
+
+    if product.exists:
+        product_details = product.get('details')
+        return product_details
+    else:
+        print(f'No product details found for ASIN {asin}')
+        return None
+
+def get_investigation_and_product_details(investigation_id):
+    asins = get_asins_from_investigation(investigation_id)
+    products = []
+
+    if asins is not None:
+        for asin in asins:
+            product_details = get_product_details_from_asin(asin)
+            if product_details is not None:
+                products.append(product_details)
+
+    return products
 
 
+#%%
 @retry(wait=wait_random_exponential(min=1, max=40), stop=stop_after_attempt(3))
 def chat_completion_request(messages, functions=None, function_call=None, temperature=0, model=GPT_MODEL):
     headers = {
@@ -64,18 +125,13 @@ def chat_completion_request(messages, functions=None, function_call=None, temper
         return e
 
 
-def remove_brand(strings, brand_column):
-    cleaned_strings = []
-    for string, brand in zip(strings, brand_column):
-        cleaned_string = string.replace(brand, '').strip()
-        cleaned_strings.append(cleaned_string)
-    return cleaned_strings
+#%%
+# user = "userId1"
+investigation = "investigationId1"
+products= get_investigation_and_product_details("investigationId1")
 
 
-product['product_information_title'] = remove_brand(product.title, product.product_information_brand)
-product_tile = product['product_information_title'].iloc[0]
-product_tile
-
+#%%
 
 functions = [
     {
@@ -130,13 +186,27 @@ functions = [
     }
 ]
 
+# %%
+# GPT CALL
+# THIS CAN BE DONE IN ASYNC
+
 chatbot_responses = dict()
 
-for i in product.index:
-    print(i)
-    title = product['title'][i]
-    asin = product['asin'][i]
-    bullets = product['feature_bullets'][i]
+
+for product in products:
+    clean_brand = extract_brand_name(product['product_information']['brand'])
+    product['clean_brand'] = clean_brand
+    title = product.get('title')
+    clean_title = remove_brand(title, clean_brand)
+    product['clean_title'] = clean_title  # assuming you want to update the title in the product dictionary
+    if product.get('investigations_list') is not None:
+        product['investigations_list'].append(investigation)
+    else:
+        product['investigations_list'] = [investigation] 
+    
+    title = clean_title
+    asin = product['asin']
+    bullets = product['feature_bullets']
 
     print(asin)
     print(bullets)
@@ -154,26 +224,39 @@ for i in product.index:
         model=GPT_MODEL
     )
 
-    chatbot_responses[asin] = response.json()["choices"]
-    product.loc[i, 'product_description_data'] = chatbot_responses[asin]
-
-
-for i in product.index:
-    if isinstance(product.product_description_data[i], list):
-        first_element = product.product_description_data[i][0]
-        product.product_description_data[i] = first_element
+    if response.status_code == 200:
+        response = response.json()
+        print(response)
+        product['product_description_data'] = response
     else:
-        pass
+        print("Unable to generate ChatCompletion response")
+        print(f"Response: {response}")
 
-for i in product.index:
-    try:
-        data = eval(product.product_description_data[i]['message']['function_call']['arguments'])
-    except:
-        data = product.product_description_data[i]['message']['function_call']['arguments']
-    product['product_description_data'][i] = data
 
+#%%
+
+def clean_description_data(data):
+  if isinstance(data, list):
+    return data[0]
+  return data
+
+# %%
+for product in products:
+  # Clean the description data
+  product['clean_product_description_data'] = clean_description_data(product['product_description_data'])
+  data = eval(product['clean_product_description_data']['choices'][0]['message']['function_call']['arguments'])
+  product['clean_product_description_data'] = data
+
+
+#########
+#%%
 
 # Update the Firestore database
-for _, row in product.iterrows():
-    doc_ref = db.collection('products').document(row['asin'])
-    doc_ref.set(row.to_dict())
+for product in tqdm(products):
+    doc_ref = db.collection('products').document(product['asin'])
+    try:
+        doc_ref.set(product, merge=True)  # Use set() with merge=True to update or create a new document
+    except Exception as e:
+        print(f"Error updating document {product['asin']}: {e}")
+
+

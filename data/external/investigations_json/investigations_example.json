@@ -1,12 +1,32 @@
 {
     "investigationId1": {
         "user_id": "userId1",
-        "timestamp": "2023-06-01T13:15:00",
-        "asins": ["B0BCTTCSBZ", "B0BLNBS36G", "B0BW8Y2B8Z", "B091325ZMB"]
+        "received_timestamp": "2023-07-01T09:00:00",
+        "asins": ["B0BCTTCSBZ", "B0BLNBS36G"],
+        "status": "received"
     },
     "investigationId2": {
         "user_id": "userId1",
-        "timestamp": "2023-06-02T14:22:00",
-        "asins": ["B08X2324ZL", "B09NR5JW8Y"]
+        "received_timestamp": "2023-07-02T09:00:00",
+        "started_timestamp": "2023-07-02T09:30:00",
+        "asins": ["B0BW8Y2B8Z", "B091325ZMB"],
+        "status": "started"
+    },
+    "investigationId3": {
+        "user_id": "userId1",
+        "received_timestamp": "2023-07-03T09:00:00",
+        "started_timestamp": "2023-07-03T09:30:00",
+        "finished_timestamp": "2023-07-03T10:00:00",
+        "asins": ["B08X2324ZL", "B09NR5JW8Y"],
+        "status": "finished"
+    },
+    "investigationId4": {
+        "user_id": "userId1",
+        "received_timestamp": "2023-07-04T09:00:00",
+        "started_timestamp": "2023-07-04T09:30:00",
+        "finished_timestamp": "2023-07-04T10:00:00",
+        "reviewed_timestamps": ["2023-07-04T10:30:00", "2023-07-04T11:00:00"],
+        "asins": ["B08X2324ZL", "B09NR5JW8Y"],
+        "status": "reviewed"
     }
 }
