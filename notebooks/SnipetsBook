@@ -344,3 +344,23 @@ loop.run_until_complete(main())
 
 #########
 ###################
+
+
+# %%
+# Data Testing
+
+import json
+from pathlib import Path
+
+file_path = '/Users/vladbordei/Documents/Development/ProductExplorer/data/external/review_jsons/reviews(B0BCTTCSBZ)_1691131250529.json'
+# Read product JSON
+with open(file_path) as f:
+    product_data = json.load(f)
+    product_data = product_data[0]
+    asin = product_data['asin']
+    print(asin)
+    print(product_data['title'])
+
+    ##########
+
+    
