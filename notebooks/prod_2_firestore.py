@@ -30,17 +30,6 @@ def extract_brand_name(string):
     return string
 
 
-def read_data(folder_path):
-    product = pd.DataFrame()
-
-    for file_name in os.listdir(folder_path):
-        if file_name.startswith("asin"):
-            file_path = os.path.join(folder_path, file_name)
-            df = pd.read_csv(file_path)
-            product = pd.concat([product, df])
-
-    return product
-
 
 products = read_data("/Users/vladbordei/Documents/Development/ProductExplorer/data/raw/RaisedGardenBed")
 products['product_information.brand'] = products['product_information.brand'].apply(extract_brand_name)
