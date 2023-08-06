@@ -148,7 +148,7 @@ def update_investigation_status(investigation_id, new_status):
 #%%
 # user = "userId1"
 update_investigation_status(investigation, "started_products")
-products= get_investigation_and_product_details("investigationId1")
+products= get_investigation_and_product_details(investigation)
 
 
 #%%
@@ -219,11 +219,7 @@ for product in products:
     title = product.get('title')
     clean_title = remove_brand(title, clean_brand)
     product['clean_title'] = clean_title  # assuming you want to update the title in the product dictionary
-    if product.get('investigations_list') is not None:
-        product['investigations_list'].append(investigation)
-    else:
-        product['investigations_list'] = [investigation] 
-    
+
     title = clean_title
     asin = product['asin']
     bullets = product['feature_bullets']
@@ -267,15 +263,21 @@ for product in products:
   data = eval(product['clean_product_description_data']['choices'][0]['message']['function_call']['arguments'])
   product['clean_product_description_data'] = data
 
+new_products_list = [] 
+for product in products:
+  asin_level_data = {}
+  asin_level_data['details'] = product
+  new_products_list.append(asin_level_data)
+  
 
 ###########################################################
 #%%
 
 # Update the Firestore database
-for product in tqdm(products):
+for product in tqdm(new_products_list):
     doc_ref = db.collection('products').document(product['asin'])
     try:
-        doc_ref.set(product, merge=True)  # Use set() with merge=True to update or create a new document
+        doc_ref.set(asin_level_data, merge=True)  # Use set() with merge=True to update or create a new document
     except Exception as e:
         print(f"Error updating document {product['asin']}: {e}")
 
