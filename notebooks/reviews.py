@@ -61,29 +61,7 @@ if not firebase_admin._apps:
     firebase_admin.initialize_app(cred)
 db = firestore.client()
 
-# %%
-def num_tokens_from_string(string: str, encoding_name = "cl100k_base") -> int:
-    """Returns the number of tokens in a text string."""
-    encoding = tiktoken.get_encoding(encoding_name)
-    num_tokens = len(encoding.encode(string))
-    return num_tokens
-
-# %%
-def extract_asin(url):
-    pattern = r'ASIN=(\w{10})'
-    match = re.search(pattern, url)
-    if match:
-        return match.group(1)
-    else:
-        return None
-
-def clean_review(review):
-    try:
-        return re.sub(r'[^a-zA-Z0-9\s]+', '', review)
-    except TypeError as e:
-        print(f"Error cleaning review: {e}")
-        return ""
-
+#%%
 
 def initial_review_clean_data(df, limit=3000):
     # Add the asin column to the dataframe
@@ -97,6 +75,31 @@ def initial_review_clean_data(df, limit=3000):
 
     return df
 
+def num_tokens_from_string(string: str, encoding_name = "cl100k_base") -> int:
+    """Returns the number of tokens in a text string."""
+    encoding = tiktoken.get_encoding(encoding_name)
+    num_tokens = len(encoding.encode(string))
+    return num_tokens
+
+def clean_review(review_body):
+    try:
+        return re.sub(r'[^a-zA-Z0-9\s]+', '', review_body)
+    except TypeError as e:
+        print(f"Error cleaning review: {e}")
+        return ""
+
+def initial_review_clean_data(reviews_list, limit=3000):
+    # Process the reviews in the list of dictionaries
+    for review_dict in reviews_list:
+        review_dict['review'] = clean_review(review_dict['review'])
+        review_dict['num_tokens'] = num_tokens_from_string(review_dict['review'])
+        if review_dict['num_tokens'] > limit:
+            review_dict['review'] = review_dict['review'][:limit * 3]
+        review_dict['review_num_tokens'] = num_tokens_from_string(review_dict['review'])
+    return reviews_list
+
+
+#%%
 def update_investigation_status(investigation_id, new_status):
     investigation_ref = db.collection(u'investigations').document(investigation_id)
     investigation = investigation_ref.get()
@@ -137,7 +140,6 @@ def get_reviews_from_asin(asin):
         return None
 
 
-
 def get_investigation_and_reviews(investigation_id):
     asins = get_asins_from_investigation(investigation_id)
     reviews_list = []
@@ -168,49 +170,9 @@ for review in reviews_list:
     review['asin'] = review['asin']['original']
 
 
-reviews = pd.DataFrame(reviews_list)
-
 # %%
-# reviews['asin'] = reviews['URL'].apply(extract_asin)
+clean_reviews_list = initial_review_clean_data(reviews_list)
 
-# %%
-# Get the value counts for each unique value of 'asin.original'
-counts = reviews['asin'].value_counts()
-
-# Keep only the top values
-top = counts.head(1000)
-
-# Filter the reviews DataFrame to keep only rows with asin.original in the top 10
-reviews_filtered = reviews[reviews['asin'].isin(top.index)]
-
-# Get the datetime object for 12 months ago
-date_12_months_ago = datetime.today() - timedelta(days=365)
-
-# Convert the 'Date' column to datetime format
-# reviews_filtered['date'] = pd.to_datetime(reviews_filtered['date'].apply(lambda s: s.split(' on ')[-1]))
-
-# Convert the 'date.date' column to datetime format
-#reviews_filtered['date'] = pd.to_datetime(reviews_filtered['date'])
-
-# Filter the reviews dataframe to only include reviews from the last 12 months
-#reviews_last_12_months = reviews_filtered[reviews_filtered['date'] >= date_12_months_ago]
-
-# keep only latest  x reviews
-#reviews_count_filtered = reviews_last_12_months.groupby('asin').tail(30)
-reviews_count_filtered = reviews_filtered.groupby('asin').tail(100)
-
-# reset index
-reviews_count_filtered = reviews_count_filtered.reset_index(drop=True)
-
-
-# %%
-reviews_df = initial_review_clean_data(reviews_count_filtered)
-
-# %%
-try:
-    reviews_df.drop(columns = ["index", "level_0", "Author"], inplace = True)
-except:
-    pass
 
 # %% [markdown]
 # #### WRITING DOWN TASKS FOR AI TO PROCESS IN PARALLEL
@@ -382,8 +344,8 @@ function_call = {"name": "review_data_function"}
 
 # Create a list of messages for all reviews
 content_list = []
-for id in reviews_df['id']:
-    review = reviews_df[reviews_df['id'] == id]['review'].values[0]
+for review_dict in clean_reviews_list:
+    review = review_dict['review']
     messages = [
         {"role": "user", "content": f"REVIEW: ```{review}```"},
     ]
@@ -394,60 +356,57 @@ async def main():
     responses = await get_completion_list(content_list, max_parallel_calls, timeout, functions, function_call)
     return responses
 
-# Now you can run your code using an await expression:
+#####################
+#%%
+# Run the main coroutine
 responses = await main()
+#####################
+
 
 # %%
-reviews_df['initial_response'] = responses
-
-# %%
-initial_responses = responses.copy()
-
-# %%
+# Evaluate responses and add them to clean_reviews_list
 eval_responses = []
-for item in initial_responses:
+for i, item in enumerate(responses):
     data = item['function_call']['arguments']
     # Replace 'null' with 'None' in the data string before evaluation
     data = data.replace('null', 'None')
     eval_data = eval(data)
     eval_responses.append(eval_data)
+    clean_reviews_list[i]['eval_response'] = eval_data
 
-reviews_df['eval_response'] = eval_responses
-
-new_cols = list(reviews_df['eval_response'][3].keys())
-
-# %%
-for col in new_cols:
-    reviews_df[col] = np.nan
-
-for i in reviews_df.index:
-        for col in new_cols:
-                try:
-                    reviews_df[col][i] = reviews_df['eval_response'][i][col]
-                except:
-                     pass
-
-
-
+# Assuming that the new columns are the keys of the eval_response dictionaries
+new_cols = list(clean_reviews_list[1]['eval_response'].keys())
 
 # %%
+# Add new columns to the dictionaries in clean_reviews_list
+for review_dict in clean_reviews_list:
+    for col in new_cols:
+        try:
+            review_dict[col] = review_dict['eval_response'][col]
+        except:
+            review_dict[col] = None
+
+# Replace 'asin_data' with 'asin' in the dictionaries in clean_reviews_list
+for review_dict in clean_reviews_list:
+    review_dict['asin'] = review_dict.pop('asin_data')
+
+
+# %%
+# Write to firestore
 import logging
-
-# assuming `df` is your DataFrame
-for index, row in reviews_df.iterrows():
+for review_dict in clean_reviews_list:
     # extract review_id
-    review_id = row['id']
-    # create a dictionary from row data
-    data = row.to_dict()
+    review_id = review_dict['id']
     # create a reference to the document location
     doc_ref = db.collection('reviews').document(str(review_id))
     try:
         # use set() with merge=True to update or create a new document
-        doc_ref.set(data, merge=True)  
+        doc_ref.set(review_dict, merge=True)  
         logging.info(f"Successfully saved/updated review with id {review_id}")
     except Exception as e:
         logging.error(f"Error saving/updating review with id {review_id}: {e}", exc_info=True)
 
-
 update_investigation_status(investigation, "finished_reviews_extraction")
-# %%
+#%%
+
+# NU PARE CA FAC UPDATE CORECT A DATELOR IN FIRESTORE. DE TESTAT IN CONTINUARE
