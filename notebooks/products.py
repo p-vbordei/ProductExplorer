@@ -821,9 +821,6 @@ for main_key in product_data_interim.keys():
 # %%
 product_data['median_product_price'] = median_product_price
 
-
-
-
 general_product_keys_to_keep = ['Product Summary', 'product_summary','In_the_Box', 'in_the_box', 'technical_facts', 'features', 'how_the_product_is_used',  'where_the_product_is_used', 'user_description','median_product_price']
 
 short_product_data = {}
@@ -842,11 +839,13 @@ data['short_product_data'] = short_product_data
 data['other_product_data'] = other_product_data
 # I need to write product data to investigations in the firebase
 
+
+
 # %%
 doc_ref = db.collection('investigations').document(investigation)
 try:
     doc_ref.set(data, merge=True)  # Use set() with merge=True to update or create a new document
 except Exception as e:
-    print(f"Error saving investigation results with id {investigation}: {e}"
+    print(f"Error saving investigation results with id {investigation}: {e}")
           
-update_investigation_status(investigation, "finished_products")
+update_investigation_status(investigation, 'finished_products')
