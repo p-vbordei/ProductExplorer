@@ -127,8 +127,26 @@ def chat_completion_request(messages, functions=None, function_call=None, temper
 
 
 #%%
+
+def update_investigation_status(investigation_id, new_status):
+    investigation_ref = db.collection(u'investigations').document(investigation_id)
+    investigation = investigation_ref.get()
+    if investigation.exists:
+        investigation_ref.update({
+            'status': new_status,
+            f'{new_status}_timestamp': firestore.SERVER_TIMESTAMP,
+        })
+        return True  # update was successful
+    else:
+        return False  # investigation does not exist
+    
+
+
+
+#%%
 # user = "userId1"
 investigation = "investigationId1"
+update_investigation_status(investigation, "started_products")
 products= get_investigation_and_product_details("investigationId1")
 
 
@@ -261,7 +279,7 @@ for product in tqdm(products):
         print(f"Error updating document {product['asin']}: {e}")
 
 
-
+update_investigation_status(investigation, "finished_individual_products")
 ###########################################################################
 
 
@@ -803,11 +821,32 @@ for main_key in product_data_interim.keys():
 # %%
 product_data['median_product_price'] = median_product_price
 
+
+
+
+general_product_keys_to_keep = ['Product Summary', 'product_summary','In_the_Box', 'in_the_box', 'technical_facts', 'features', 'how_the_product_is_used',  'where_the_product_is_used', 'user_description','median_product_price']
+
+short_product_data = {}
+for key in general_product_keys_to_keep:
+    if key in product_data.keys():
+        short_product_data[key] = product_data[key]
+
+other_product_data_keys = set(product_data.keys()) - set(short_product_data.keys)
+
+other_product_data = {}
+for key in other_product_data_keys:
+    if key in product_data.keys():
+        short_product_data[key] = product_data[key]
+
+data['short_product_data'] = short_product_data
+data['other_product_data'] = other_product_data
 # I need to write product data to investigations in the firebase
 
 # %%
 doc_ref = db.collection('investigations').document(investigation)
 try:
-    doc_ref.set(product_data, merge=True)  # Use set() with merge=True to update or create a new document
+    doc_ref.set(data, merge=True)  # Use set() with merge=True to update or create a new document
 except Exception as e:
-    print(f"Error saving investigation results with id {investigation}: {e}")
+    print(f"Error saving investigation results with id {investigation}: {e}"
+          
+update_investigation_status(investigation, "finished_products")
