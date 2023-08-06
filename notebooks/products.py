@@ -8,7 +8,9 @@ import asyncio
 import aiofiles
 import nest_asyncio
 from pathlib import Path
+import logging
 
+investigation = "investigationId2"
 
 load_dotenv()
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
@@ -145,7 +147,6 @@ def update_investigation_status(investigation_id, new_status):
 
 #%%
 # user = "userId1"
-investigation = "investigationId1"
 update_investigation_status(investigation, "started_products")
 products= get_investigation_and_product_details("investigationId1")
 
@@ -828,24 +829,27 @@ for key in general_product_keys_to_keep:
     if key in product_data.keys():
         short_product_data[key] = product_data[key]
 
-other_product_data_keys = set(product_data.keys()) - set(short_product_data.keys)
+other_product_data_keys = set(product_data.keys()) - set(short_product_data.keys())  # corrected here
 
 other_product_data = {}
 for key in other_product_data_keys:
     if key in product_data.keys():
-        short_product_data[key] = product_data[key]
-
-data['short_product_data'] = short_product_data
-data['other_product_data'] = other_product_data
-# I need to write product data to investigations in the firebase
-
+        other_product_data[key] = product_data[key]
+        
+final_product_data = {}
+final_product_data['short_product_data'] = short_product_data
+final_product_data['other_product_data'] = other_product_data
 
 
 # %%
 doc_ref = db.collection('investigations').document(investigation)
 try:
-    doc_ref.set(data, merge=True)  # Use set() with merge=True to update or create a new document
+    doc_ref.set(final_product_data, merge=True)  # Use set() with merge=True to update or create a new document
+    logging.info(f"Successfully saved/updated investigation results with id {investigation}")
 except Exception as e:
-    print(f"Error saving investigation results with id {investigation}: {e}")
-          
+    logging.error(f"Error saving/updating investigation results with id {investigation}: {e}", exc_info=True)
+
+#%%
 update_investigation_status(investigation, 'finished_products')
+
+#%%
