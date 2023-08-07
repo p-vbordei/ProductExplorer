@@ -157,14 +157,14 @@ def get_reviews_from_asin(asin):
 
 def get_investigation_and_reviews(investigation_id):
     asins = get_asins_from_investigation(investigation_id)
-    reviews_dict = {}
+    reviews_list = []
 
     if asins is not None:
         for asin in asins:
             asin_reviews = get_reviews_from_asin(asin)
             if asin_reviews is not None:
-                reviews_dict[asin] = asin_reviews
-    return reviews_dict
+                reviews_list.append(asin_reviews)
+    return reviews_list
 
 
 
@@ -179,9 +179,10 @@ def get_investigation_and_reviews(investigation_id):
 update_investigation_status(investigation, "started_reviews")
 reviews_download = get_investigation_and_reviews(investigation)
 
+
+# %%
+
 flattened_reviews = [item for sublist in reviews_download for item in sublist]
-
-
 
 # %%
 reviews_list = flattened_reviews.copy()
@@ -192,9 +193,6 @@ for review in reviews_list:
     review['asin'] = review['asin']['original']
     asins_list.append(review['asin'])
     review_ids_list.append(review['id'])
-
-asins_list = list(set(asins_list))
-review_ids_list = list(set(review_ids_list))
 
 # %%
 clean_reviews_list = initial_review_clean_data(reviews_list)
@@ -411,6 +409,8 @@ for review_dict in clean_reviews_list:
             review_dict[col] = review_dict['insights'][col]
         except:
             review_dict[col] = None
+    review_dict.pop('insights')
+    
 
 # %%
 # Replace 'asin_data' with 'asin' in the dictionaries in clean_reviews_list
