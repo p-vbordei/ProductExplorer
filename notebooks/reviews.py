@@ -15,6 +15,18 @@
 #     - save data
 # 
 
+
+#products (collection)
+#|
+#|- asin (document)
+#|  |- details (field)
+#|
+#|- reviews (sub-collection)
+#   |
+#   |- review_id (document)
+#      |- review fields (fields)
+
+
 # %%
 import pandas as pd
 import numpy as np
@@ -23,7 +35,7 @@ import requests
 import json
 import csv
 import openai
-
+import time
 import tiktoken
 from typing import Dict
 
@@ -129,11 +141,14 @@ def get_asins_from_investigation(investigation_id):
 
 def get_reviews_from_asin(asin):
     # Retrieve the reviews from Firestore
-    product_ref = db.collection('products').document(asin)
-    reviews_from_firestore = product_ref.get()
+    reviews_query = db.collection('products').document(asin).collection('reviews').stream()
 
-    if reviews_from_firestore.exists:
-        product_reviews= reviews_from_firestore.get('reviews')
+    # Store all reviews in a list
+    product_reviews = []
+    for review in reviews_query:
+        product_reviews.append(review.to_dict())
+
+    if product_reviews:
         return product_reviews
     else:
         print(f'No product reviews found for ASIN {asin}')
@@ -142,14 +157,15 @@ def get_reviews_from_asin(asin):
 
 def get_investigation_and_reviews(investigation_id):
     asins = get_asins_from_investigation(investigation_id)
-    reviews_list = []
+    reviews_dict = {}
 
     if asins is not None:
         for asin in asins:
             asin_reviews = get_reviews_from_asin(asin)
             if asin_reviews is not None:
-                reviews_list.append(asin_reviews)
-    return reviews_list
+                reviews_dict[asin] = asin_reviews
+    return reviews_dict
+
 
 
 # #### THIS PART REDUCES THE REVIEW NUMBERS SO WE CAN TEST AT EASE
@@ -164,11 +180,21 @@ update_investigation_status(investigation, "started_reviews")
 reviews_download = get_investigation_and_reviews(investigation)
 
 flattened_reviews = [item for sublist in reviews_download for item in sublist]
-reviews_list = flattened_reviews
+
+
+
+# %%
+reviews_list = flattened_reviews.copy()
+asins_list = []
+review_ids_list = []
 for review in reviews_list:
     review['asin_data'] = review['asin']
     review['asin'] = review['asin']['original']
+    asins_list.append(review['asin'])
+    review_ids_list.append(review['id'])
 
+asins_list = list(set(asins_list))
+review_ids_list = list(set(review_ids_list))
 
 # %%
 clean_reviews_list = initial_review_clean_data(reviews_list)
@@ -372,41 +398,64 @@ for i, item in enumerate(responses):
     data = data.replace('null', 'None')
     eval_data = eval(data)
     eval_responses.append(eval_data)
-    clean_reviews_list[i]['eval_response'] = eval_data
+    clean_reviews_list[i]['insights'] = eval_data
 
 # Assuming that the new columns are the keys of the eval_response dictionaries
-new_cols = list(clean_reviews_list[1]['eval_response'].keys())
+new_cols = list(clean_reviews_list[1]['insights'].keys())
 
 # %%
 # Add new columns to the dictionaries in clean_reviews_list
 for review_dict in clean_reviews_list:
     for col in new_cols:
         try:
-            review_dict[col] = review_dict['eval_response'][col]
+            review_dict[col] = review_dict['insights'][col]
         except:
             review_dict[col] = None
 
+# %%
 # Replace 'asin_data' with 'asin' in the dictionaries in clean_reviews_list
 for review_dict in clean_reviews_list:
     review_dict['asin'] = review_dict.pop('asin_data')
 
 
 # %%
-# Write to firestore
-import logging
-for review_dict in clean_reviews_list:
-    # extract review_id
-    review_id = review_dict['id']
-    # create a reference to the document location
-    doc_ref = db.collection('reviews').document(str(review_id))
-    try:
-        # use set() with merge=True to update or create a new document
-        doc_ref.set(review_dict, merge=True)  
-        logging.info(f"Successfully saved/updated review with id {review_id}")
-    except Exception as e:
-        logging.error(f"Error saving/updating review with id {review_id}: {e}", exc_info=True)
+###########
+# write to firestore
 
-update_investigation_status(investigation, "finished_reviews_extraction")
-#%%
+import time
+from collections import defaultdict
 
-# NU PARE CA FAC UPDATE CORECT A DATELOR IN FIRESTORE. DE TESTAT IN CONTINUARE
+def write_reviews(clean_reviews_list):
+    # Group reviews by ASIN
+    reviews_by_asin = defaultdict(list)
+    for review in clean_reviews_list:
+        asin = review['asin']['original']
+        reviews_by_asin[asin].append(review)
+
+    start_time = time.time()
+
+    # Write reviews for each ASIN in a batch
+    for asin, reviews in reviews_by_asin.items():
+        batch = db.batch()
+
+        for review in reviews:
+            review_id = review['id']
+            review_ref = db.collection('products').document(asin).collection('reviews').document(review_id)
+            batch.set(review_ref, review, merge=True)
+
+        try:
+            batch.commit()
+            print(f"Successfully saved/updated reviews for ASIN {asin}")
+        except Exception as e:
+            print(f"Error saving/updating reviews for ASIN {asin}: {e}")
+
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+
+    print(f"Successfully saved/updated all reviews. Time taken: {elapsed_time} seconds")
+
+# Call the function
+write_reviews(clean_reviews_list)
+
+
+# %%
