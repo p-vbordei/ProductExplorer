@@ -56,6 +56,9 @@ loop.run_until_complete(upload_product_jsons())
 
 
 # %%
+
+# %%
+
 rev_path = '/Users/vladbordei/Documents/Development/ProductExplorer/data/external/review_jsons'
 db = firestore.client()  # assuming db is defined earlier as your Firestore client
 
@@ -65,10 +68,18 @@ async def upload_reviews_to_firestore(filename):
         data = await f.read()
         data = json.loads(data)
         asin = data[0]['asin']['original']
-        doc_ref = db.collection('products').document(asin)
-        doc_ref.set({
-            'reviews': data,
-        }, merge=True)
+
+        # Initialize Firestore batch
+        batch = db.batch()
+
+        # Create a document for each review within the 'reviews' sub-collection of the ASIN document
+        for review in data:
+            review_id = review['id']
+            review_ref = db.collection('products').document(asin).collection('reviews').document(review_id)
+            batch.set(review_ref, review)
+
+        # Commit the batch
+        batch.commit()
     finally:
         await f.close()
 
@@ -78,9 +89,9 @@ async def upload_review_jsons():
     await asyncio.gather(*tasks)
 
 nest_asyncio.apply()
+
 # to run the function
 loop = asyncio.get_event_loop()
 loop.run_until_complete(upload_review_jsons())
-
 
 # %%
