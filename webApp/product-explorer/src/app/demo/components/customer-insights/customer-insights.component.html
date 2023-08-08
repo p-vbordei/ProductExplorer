@@ -1,7 +1,7 @@
 <div class="grid">
     <div class="col-12 xl:col-6">
         <div class="card">
-            <h5>Who Is It Used</h5>
+            <h5>Who Is It Used By</h5>
             <p-chart type="bar" [data]="whoChartData" [options]="whoChartOptions"></p-chart>
         </div>
         <div class="card">
@@ -13,7 +13,7 @@
 
     <div class="col-12 xl:col-6">
         <div class="card">
-            <h5>What Is It Used</h5>
+            <h5>What Is It Used For</h5>
             <p-chart type="bar" [data]="whatChartData" [options]="whatChartOptions"></p-chart>
         </div>
         
@@ -25,13 +25,17 @@
 
     <div class="col-12">
         <div class="card">
+            <div class="flex justify-content-between align-items-center align-content-center flex-column sm:flex-row"> 
+                <h5 class="mb-4">Possitive Feedback</h5>
+                <button class="p-button-outlined mb-4" label="Download" type="button" pButton pRipple icon="pi pi-file-excel" (click)="exportExcel(positiveFeedbackData)"  pTooltip="XLS" tooltipPosition="bottom"></button>
+            </div>
+            <ng-template pTemplate="caption">
+                <div class="flex">
+                    <p-tag class="text-lg" severity="success" value="Positive Feedback"></p-tag>
+                    
+                </div>
+            </ng-template>
             <p-table #dt [columns]="cols" [value]="positiveFeedbackData" [exportHeader]="'customExportHeader'" [tableStyle]="{ 'min-width': '50rem' }">
-                <ng-template pTemplate="caption">
-                    <div class="flex">
-                        <p-tag class="text-lg" severity="success" value="Positive Feedback"></p-tag>
-                        <button type="button" pButton pRipple icon="pi pi-file-excel" (click)="exportExcel(positiveFeedbackData)" class="p-button-success ml-auto" pTooltip="XLS" tooltipPosition="bottom"></button>
-                    </div>
-                </ng-template>
                 <ng-template pTemplate="header" let-columns>
                     <tr>
                         <th *ngFor="let col of columns">
