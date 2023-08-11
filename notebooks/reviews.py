@@ -27,6 +27,16 @@
 #      |- review fields (fields)
 
 
+
+
+#investigations (collection)
+#|- investigation_id (document)
+#|  |- asins (field)
+#|  |- investigation_status (field)
+#|  |- investigation_status_timestamp (field)
+#|  |- user_id (field)
+
+
 # %%
 import pandas as pd
 import numpy as np
@@ -167,6 +177,9 @@ def get_investigation_and_reviews(investigation_id):
     return reviews_list
 
 
+# %%
+
+
 
 # #### THIS PART REDUCES THE REVIEW NUMBERS SO WE CAN TEST AT EASE
 # 
@@ -249,7 +262,7 @@ review_functions = [
                     "type": "string",
                     "description": "Time of day or week of use. Eg: early in the morning"
                 },
-                "Value": {
+                "Appraisal": {
                     "type": "string",
                     "description": "observations on price or value"
                 },
@@ -419,8 +432,7 @@ for review_dict in clean_reviews_list:
 
 
 # %%
-###########
-# write to firestore
+################# write to firestore #################
 
 import time
 from collections import defaultdict
@@ -459,4 +471,330 @@ write_reviews(clean_reviews_list)
 
 
 # %%
+################# ETL Part 2: Clustering#################
+##########################################################
 
+from openai.embeddings_utils import get_embedding
+from sklearn.cluster import AgglomerativeClustering
+
+import requests
+from tenacity import retry, wait_random_exponential, stop_after_attempt
+
+# %%
+reviews_df = pd.DataFrame(clean_reviews_list)
+
+# %%
+# drop useless columns
+drop_columns_proposed = [ 'Verified', 'Helpful', 'Title', 'review','Videos','Variation', 'Style', 'num_tokens', 'review_num_tokens', 'review_data']
+drop_columns = list(set(drop_columns_proposed).intersection(set(reviews_df.columns)))
+reviews_df.drop(columns = drop_columns, inplace = True)
+
+# %%
+data_cols = ["Review Summary","Buyer Motivation", "Customer Expectations", "How the product is used", "Where the product is used", "User Description", "Packaging", "Season", "When the product is used", "Appraisal", "Quality", "Durability", "Ease of Use", "Setup and Instructions", "Noise and Smell", "Size and Fit", "Danger Appraisal", "Design and Appearance", "Parts and Components", "Issues"]
+for col in data_cols:
+    try:
+        reviews_df[col] = reviews_df[col].fillna('')
+        reviews_df[col].replace(['\n', 'not mentioned',np.nan, '',' ', 'NA', 'N/A', 'missing', 'NaN', 'unknown', 'Not mentioned','not specified','Not specified'], 'unknown', inplace = True)
+    except:
+        pass
+
+# %%
+columns_to_pivot = ["Buyer Motivation", "Customer Expectations", "How the product is used", "Where the product is used", "User Description", "Packaging", "Season", "When the product is used", "Appraisal", "Quality", "Durability", "Ease of Use", "Setup and Instructions", "Noise and Smell",  "Size and Fit", "Danger Appraisal", "Design and Appearance", "Parts and Components", "Issues"]
+
+reviews_data_df = reviews_df.melt(id_vars=[col for col in reviews_df.columns if col not in columns_to_pivot], 
+                    value_vars=columns_to_pivot, 
+                    var_name='Attribute', 
+                    value_name='Value')
+#%%
+
+try:
+    df = reviews_data_df[reviews_data_df['Value'] != 'unknown']
+except ValueError as e:
+    if "cannot reindex on an axis with duplicate labels" in str(e):
+        # Check for duplicate indexes
+        if reviews_data_df.index.duplicated().any():
+            print("Detected duplicate indexes. Resetting index...")
+            reviews_data_df = reviews_data_df.reset_index(drop=True)
+        
+        # Check for duplicate columns
+        if reviews_data_df.columns.duplicated().any():
+            duplicate_columns = reviews_data_df.columns[reviews_data_df.columns.duplicated()].tolist()
+            print(f"Detected duplicate columns: {duplicate_columns}. Renaming...")
+            for col in duplicate_columns:
+                reviews_data_df = reviews_data_df.rename(columns={col: col + '_duplicate'})
+        
+        # Retry the operation
+        df = reviews_data_df[reviews_data_df['Value'] != 'unknown']
+    else:
+        # If the error is something else, you might want to raise it to handle it differently
+        raise e
+
+
+# %%
+
+# %%
+###################### Embedding  ######################
+
+embedding_model = "text-embedding-ada-002"
+embedding_encoding = "cl100k_base"  
+max_tokens = 8000  
+encoding = tiktoken.get_encoding(embedding_encoding)
+
+async def get_embedding(text: str, model="text-embedding-ada-002") -> list[float]:
+    async with aiohttp.ClientSession() as session:
+        for attempt in range(6):  # Retry up to 6 times
+            try:
+                async with session.post(
+                    'https://api.openai.com/v1/embeddings',
+                    json={"input": [text], "model": model},
+                    headers={'Authorization': f'Bearer {OPENAI_API_KEY}'}
+                ) as response:
+                    response = await response.json()
+                    return np.array(response["data"][0]["embedding"])  # Convert embedding to numpy array directly
+            except Exception as e:
+                wait_time = random.uniform(1, min(20, 2 ** attempt))  # Exponential backoff
+                print(f"Request failed with {e}, retrying in {wait_time} seconds.")
+                await asyncio.sleep(wait_time)
+        print("Failed to get embedding after 6 attempts, returning None.")
+        return None
+
+
+import nest_asyncio
+nest_asyncio.apply()
+async def process_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    loop = asyncio.get_event_loop()
+    tasks = []
+
+    # Filter rows by token count
+    df["n_tokens"] = df['Value'].apply(lambda x: len(encoding.encode(x)))  # Assuming 'encoding' is defined
+    df = df[df.n_tokens <= max_tokens]
+
+    for index, row in df.iterrows():
+        task = loop.create_task(get_embedding(row['Value'], model=embedding_model))
+        tasks.append(task)
+
+    df['embedding'] = await asyncio.gather(*tasks)
+    return df
+
+# omit reviews that are too long to embed
+df["n_tokens"] = df['Value'].apply(lambda x: len(encoding.encode(x)))
+df = df[df.n_tokens <= max_tokens]
+
+
+# Use asyncio's run method to start the event loop and run process_dataframe
+df = asyncio.run(process_dataframe(df))
+df["embedding"] = df["embedding"].apply(np.array)  # convert string to numpy array
+
+# %%
+###################### Clustering  ######################
+
+max_n_clusters = 2
+df["cluster"] = np.nan
+
+types_list = list(reviews_data_df['Attribute'].unique())
+
+for type in types_list:
+    print(type)
+    df_type = df[df['Attribute'] == type]
+    n_clusters = min(max_n_clusters, len(df_type['Value'].unique()))
+    if n_clusters > 2:
+        clustering = AgglomerativeClustering(n_clusters=n_clusters)
+        matrix = np.vstack(df_type["embedding"].values)
+        labels = clustering.fit_predict(matrix)
+        df_type["cluster"] = labels
+        df.loc[df['Attribute'] == type, "cluster"] = df_type["cluster"]
+    else:
+        df.loc[df['Attribute'] == type, "cluster"] = 0
+
+df['cluster'] = df['cluster'].astype(int)
+cluster_df  = df[['Attribute', 'cluster','Value']]
+cluster_df.drop_duplicates(inplace = True)
+
+# %%
+###################### Labeling  ######################
+
+labeling_function = [
+    {
+        "name": "cluster_label",
+        "description": "Provide a single label for the topic represented in the list of values. ",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "cluster_label": {
+                    "type": "string",
+                    "description": "Provide a single label for the topic represented in the list of values. [7 words]. Example: 'Low perceived quality versus competitors', 'the assembly kit breaks easily and often', 'the speaker has a low sound quality','the taste was better than expected'',' "
+                },
+            },
+            "required": ["cluster_label"]
+        },
+    }
+]
+
+
+# Define maximum parallel calls and timeout
+max_parallel_calls = 100  # Adjust based on how many requests you want to make concurrently
+timeout = 60  # Adjust timeout as per your needs
+
+# Define functions and function call
+functions = labeling_function  # Replace with your functions
+function_call = {"name": "cluster_label"}
+
+# Initialize 'content_list' if it's not already defined
+content_list = []
+
+# Loop through the unique types in the 'Attribute' column of 'cluster_df'
+for type in cluster_df['Attribute'].unique():
+    # Filter 'cluster_df' to get only rows with the current 'type' and loop through the clusters for that type
+    for cluster in cluster_df[cluster_df['Attribute'] == type]['cluster'].unique():
+        # Get the unique values for the current 'type' and 'cluster'
+        values = cluster_df[(cluster_df['Attribute'] == type) & (cluster_df['cluster'] == cluster)]['Value'].unique()
+        # Create the message dictionary
+        messages = [{"role": "user", "content": f"The value presented are part of {type}. Provide a single seven words label for this list of values : ```{values}```. "}]
+        content_list.append(messages)
+
+# Wrap your main coroutine invocation in another async function.
+async def main():
+    responses = await get_completion_list(content_list, max_parallel_calls, timeout, functions, function_call)
+    return responses
+
+# Now you can run your code using an await expression:
+responses = await main()
+
+# %%
+########### Interpret the responses ###############
+
+eval_responses = []
+for item in responses:
+    data = item['function_call']['arguments']
+    eval_data = eval(data)
+    eval_responses.append(eval_data['cluster_label'])
+
+cluster_response_df= cluster_df.drop(columns = ['Value']).drop_duplicates()
+cluster_response_df['cluster_label'] = eval_responses
+
+df_with_clusters = df.merge(cluster_response_df, on = ['Attribute', 'cluster'], how = 'left')
+
+
+# Drop some more columns
+drop_columns_proposed = ['n_tokens', 'embedding','Date', 'Author','Images']
+drop_columns = list(set(drop_columns_proposed).intersection(set(df_with_clusters.columns)))
+df_with_clusters.drop(columns = drop_columns, inplace = True)
+
+# %%
+###############  Save results  ###############
+
+merge_reviews_df = pd.DataFrame(clean_reviews_list)
+
+
+merge_columns_proposed = ['review', 'name', 'date', 'asin', 'id', 'review_data', 'rating','title', 'media', 'verified_purchase', 'num_tokens','review_num_tokens',]
+merge_columns = list(set(merge_columns_proposed).intersection(set(merge_reviews_df.columns)))
+reviews_with_clusters = df_with_clusters.merge(merge_reviews_df[merge_columns], on = ['id'], how = 'left')
+
+
+reviews_with_clusters_path = '/Users/vladbordei/Documents/Development/ProductExplorer/data/interim/reviews_with_clusters.csv'
+reviews_with_clusters.to_csv(reviews_with_clusters_path)
+
+# %% [markdown]
+# # Quantify observations
+
+# %%
+########## Investigation level data quanitification ############
+
+agg_result = df_with_clusters.groupby(['Attribute', 'cluster_label']).agg({
+    'rating': lambda x: list(x),
+    'id': lambda x: list(x),
+    'asin': lambda x: list(x),
+    }).reset_index()
+
+# Aggregate the count separately
+count_result = df_with_clusters.groupby(['Attribute', 'cluster_label']).size().reset_index(name='observation_count')
+attribute_clusters_with_percentage = pd.merge(agg_result, count_result, on=['Attribute', 'cluster_label'])
+
+
+# Calculate the average rating
+m = []
+for e in attribute_clusters_with_percentage['rating']:
+    f =[]
+    for r in e:
+        f.append(int(r))
+    m.append(np.mean(f))
+k = []
+for e in m:
+    f = round(e,0)
+    f = int(f)
+    k.append(f)
+
+attribute_clusters_with_percentage['rating_avg'] = k
+
+# %%
+############# Save Investigation Level Data Quantification #############
+total_observations_per_attribute = df_with_clusters.groupby('Attribute').size()
+
+attribute_clusters_with_percentage = attribute_clusters_with_percentage.set_index('Attribute')  # set 'Attribute' as the index to allow for division
+attribute_clusters_with_percentage['percentage_of_observations_vs_total_number_per_attribute'] = attribute_clusters_with_percentage['observation_count'] / total_observations_per_attribute * 100
+attribute_clusters_with_percentage = attribute_clusters_with_percentage.reset_index()  # reset the index if desired
+
+number_of_reviews = reviews_with_clusters['id'].unique().shape[0]
+number_of_reviews
+attribute_clusters_with_percentage['percentage_of_observations_vs_total_number_of_reviews'] = attribute_clusters_with_percentage['observation_count'] / number_of_reviews * 100
+
+
+
+attribute_clusters_with_percentage.head(3)
+
+
+attribute_clusters_with_percentage_path = '/Users/vladbordei/Documents/Development/ProductExplorer/data/interim/attribute_clusters_with_percentage.csv'
+attribute_clusters_with_percentage.to_csv(attribute_clusters_with_percentage_path, index = False)
+
+# %%
+########## ASIN Level Data Quantification ############
+
+df_with_clusters['asin'] = df_with_clusters['asin'].apply(lambda x: x['original'])
+
+# %%
+agg_result = df_with_clusters.groupby(['Attribute', 'cluster_label', 'asin']).agg({
+    'rating': lambda x: list(x),
+    'id': lambda x: list(x),
+}).reset_index()
+
+
+# %%
+# Aggregate the count separately
+count_result = df_with_clusters.groupby(['Attribute', 'cluster_label', 'asin']).size().reset_index(name='observation_count')
+attribute_clusters_with_percentage_by_asin = pd.merge(agg_result, count_result, on=['Attribute', 'cluster_label', 'asin'])
+
+# Calculate the average rating
+m = []
+for e in attribute_clusters_with_percentage_by_asin['rating']:
+    f = []
+    for r in e:
+        f.append(int(r))
+    m.append(np.mean(f))
+k = []
+for e in m:
+    f = round(e, 0)
+    f = int(f)
+    k.append(f)
+
+attribute_clusters_with_percentage_by_asin['rating_avg'] = k
+
+
+
+# %%
+# Compute the total observations per attribute and asin
+df_with_clusters['total_observations_per_attribute_asin'] = df_with_clusters.groupby(['Attribute', 'asin'])['asin'].transform('count')
+
+# Calculate the percentage
+attribute_clusters_with_percentage_by_asin['percentage_of_observations_vs_total_number_per_attribute'] = attribute_clusters_with_percentage_by_asin['observation_count'] / df_with_clusters['total_observations_per_attribute_asin'] * 100
+
+number_of_reviews = reviews_with_clusters['id'].unique().shape[0]
+attribute_clusters_with_percentage_by_asin['percentage_of_observations_vs_total_number_of_reviews'] = attribute_clusters_with_percentage_by_asin['observation_count'] / number_of_reviews * 100
+
+
+# %%
+attribute_clusters_with_percentage_by_asin.head(3)
+
+# %%
+attribute_clusters_with_percentage_by_asin_path = '/Users/vladbordei/Documents/Development/ProductExplorer/data/interim/attribute_clusters_with_percentage_by_asin.csv'
+attribute_clusters_with_percentage_by_asin.to_csv(attribute_clusters_with_percentage_by_asin_path, index = False)
+# %%
