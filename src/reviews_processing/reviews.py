@@ -68,7 +68,7 @@ else:
     print ("OPENAI_API_KEY environment variable not found")
 
 GPT_MODEL = "gpt-3.5-turbo"
-investigation = "investigationId2"
+INVESTIGATION = "investigationId2"
 
 from google.cloud import firestore
 import firebase_admin
@@ -84,6 +84,8 @@ if not firebase_admin._apps:
 db = firestore.client()
 
 #%%
+
+############### ETL FUNCTIONS ###############
 
 def initial_review_clean_data(df, limit=3000):
     # Add the asin column to the dataframe
@@ -122,6 +124,9 @@ def initial_review_clean_data(reviews_list, limit=3000):
 
 
 #%%
+
+############### FIREBASE FUNCTIONS ###############
+
 def update_investigation_status(investigation_id, new_status):
     investigation_ref = db.collection(u'investigations').document(investigation_id)
     investigation = investigation_ref.get()
@@ -189,8 +194,8 @@ def get_investigation_and_reviews(investigation_id):
 #     - select the number of required reviews
 # %%
 
-update_investigation_status(investigation, "started_reviews")
-reviews_download = get_investigation_and_reviews(investigation)
+update_investigation_status(INVESTIGATION, "started_reviews")
+reviews_download = get_investigation_and_reviews(INVESTIGATION)
 
 
 # %%
@@ -699,6 +704,7 @@ reviews_with_clusters.to_csv(reviews_with_clusters_path)
 
 # %%
 ########## Investigation level data quanitification ############
+df_with_clusters['asin'] = df_with_clusters['asin'].apply(lambda x: x['original'])
 
 agg_result = df_with_clusters.groupby(['Attribute', 'cluster_label']).agg({
     'rating': lambda x: list(x),
@@ -749,7 +755,7 @@ attribute_clusters_with_percentage.to_csv(attribute_clusters_with_percentage_pat
 # %%
 ########## ASIN Level Data Quantification ############
 
-df_with_clusters['asin'] = df_with_clusters['asin'].apply(lambda x: x['original'])
+# df_with_clusters['asin'] = df_with_clusters['asin'].apply(lambda x: x['original'])
 
 # %%
 agg_result = df_with_clusters.groupby(['Attribute', 'cluster_label', 'asin']).agg({

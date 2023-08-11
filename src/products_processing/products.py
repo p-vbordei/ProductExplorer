@@ -10,7 +10,7 @@ import nest_asyncio
 from pathlib import Path
 import logging
 
-investigation = "investigationId2"
+INVESTIGATION = "investigationId2"
 
 load_dotenv()
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
@@ -147,8 +147,8 @@ def update_investigation_status(investigation_id, new_status):
 
 #%%
 # user = "userId1"
-update_investigation_status(investigation, "started_products")
-products= get_investigation_and_product_details(investigation)
+update_investigation_status(INVESTIGATION, "started_products")
+products= get_investigation_and_product_details(INVESTIGATION)
 
 
 #%%
@@ -282,7 +282,7 @@ for product in tqdm(new_products_list):
         print(f"Error updating document {product['asin']}: {e}")
 
 
-update_investigation_status(investigation, "finished_individual_products")
+update_investigation_status(INVESTIGATION, "finished_individual_products")
 ###########################################################################
 
 
@@ -844,14 +844,14 @@ final_product_data['other_product_data'] = other_product_data
 
 
 # %%
-doc_ref = db.collection('investigations').document(investigation)
+doc_ref = db.collection('investigations').document(INVESTIGATION)
 try:
     doc_ref.set(final_product_data, merge=True)  # Use set() with merge=True to update or create a new document
-    logging.info(f"Successfully saved/updated investigation results with id {investigation}")
+    logging.info(f"Successfully saved/updated investigation results with id {INVESTIGATION}")
 except Exception as e:
-    logging.error(f"Error saving/updating investigation results with id {investigation}: {e}", exc_info=True)
+    logging.error(f"Error saving/updating investigation results with id {INVESTIGATION}: {e}", exc_info=True)
 
 #%%
-update_investigation_status(investigation, 'finished_products')
+update_investigation_status(INVESTIGATION, 'finished_products')
 
 #%%
