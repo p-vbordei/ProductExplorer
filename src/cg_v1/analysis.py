@@ -9,20 +9,20 @@ from sklearn.cluster import AgglomerativeClustering
 import aiohttp
 import random
 
-# Embeddings helpers
-embedding_model = "text-embedding-ada-002"
-embedding_encoding = "cl100k_base"
-max_tokens = 8000
-encoding = tiktoken.get_encoding(embedding_encoding)
+# Constants
+EMBEDDING_MODEL = "text-embedding-ada-002"
+EMBEDDING_ENCODING = "cl100k_base"
+MAX_TOKENS = 8000
 
-async def generate_embedding(text, model=embedding_model):
+async def generate_embedding(text, model=EMBEDDING_MODEL, api_key=None):
+    """Generate embeddings for a given text."""
     async with aiohttp.ClientSession() as session:
         for attempt in range(6):
             try:
                 async with session.post(
                     "https://api.openai.com/v1/embeddings",
                     json={"input": [text], "model": model},
-                    headers={"Authorization": f"Bearer {openai.api_key}"},
+                    headers={"Authorization": f"Bearer {api_key or openai.api_key}"},
                 ) as response:
                     data = await response.json()
                     return np.array(data["data"][0]["embedding"])
@@ -32,6 +32,7 @@ async def generate_embedding(text, model=embedding_model):
                 await asyncio.sleep(wait_time)
         print("Failed to get embedding after 6 attempts, returning None.")
         return None
+
         
 def vectorize_reviews(cleaned_reviews):
     """Generate embeddings for each review"""

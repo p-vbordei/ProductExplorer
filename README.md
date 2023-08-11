@@ -100,8 +100,8 @@ Add the PostgreSQL server to pgAdmin:
 The primary goal of this application is to analyze customer reviews of a product, answer questions about the product, and suggest possible improvements based on the reviews. 
 
 Here is a brief overview of the architecture:
-- Web Scrape product data and reviews data from Amazon
-- Processing Reviews: For each review, the assistant generates a response using the chat model and stores the responses in the memory, as a JSON. The responses are split between improvements, facts and issues.
+- Access an API to get product data and reviews data for products sold on Amazon.
+- Processing Reviews: For each review, the assistant generates a response using the chat model. Each response has a series of 
 - Improvements, facts and issues are clustered toghtether based on simmilarity
 - Problem Statements are identified and described for each of the clusters
 - Solutions for the Problem Statements are created and clustered. They are presented as solutions prepared by junior engineers.
@@ -127,3 +127,84 @@ https://huggingface.co/sentence-transformers/all-mpnet-base-v2
 ######### Topic Clustering
 
 https://www.sbert.net/examples/applications/clustering/README.html
+
+
+
+##########
+
+
+FIRESTORE Data Structure:
+
+Investigations (collection)
+Documents (e.g., investigationId1, investigationId2, ...)
+Fields: asins, user_id, status, received_timestamp, and other product data fields.
+payments (collection)
+
+Documents (e.g., paymentId1)
+Fields: subscription_id, date, status, user_id, amount, payment_intent
+products (collection)
+
+Documents (e.g., B08X2324ZL, B091325ZMB, ...)
+Fields: details
+Sub-collection: reviews
+Documents (e.g., R1TPG96Z1XO0JA, ...)
+Fields: review, name, date, asin, id, review_data, rating, title, media, verified_purchase, and other fields.
+users (collection)
+
+Documents (e.g., userId1)
+Fields: remaining_investigations, email, current_package, name
+Sub-collection: subscriptions
+Documents (e.g., subscriptionId1, subscriptionId2, ...)
+Fields: end_date, package, payment_status, start_date, payment_intent
+
+
+
+
+users.py - Implements user management logic including creating users, fetching user data, subscribing users, logging payments, adding/tracking investigations, and checking investigation limits. Relies on Firestore for persistence.
+
+
+
+
+
+
+Module: data_processing_utils.py
+
+Purpose: This module provides utility functions for processing and cleaning review data.
+
+Functions:
+num_tokens_from_string: Calculates the number of tokens in a given text string using a specified encoding.
+clean_review: Cleans a review by removing non-alphanumeric characters.
+initial_review_clean_data: Processes a DataFrame of reviews by cleaning the review text, calculating token counts, and truncating reviews that exceed a specified token limit.
+initial_review_clean_data_list: Similar to the above, but processes a list of review dictionaries instead of a DataFrame.
+
+
+
+
+Module: firebase_utils.py
+
+Purpose: This module provides utility functions for interacting with Firestore, a NoSQL cloud database.
+
+Setup:
+Initializes a connection to Firestore using a provided credentials file.
+Functions:
+update_investigation_status: Updates the status of a specified investigation in Firestore.
+get_asins_from_investigation: Retrieves ASINs (Amazon Standard Identification Numbers) associated with a specified investigation.
+get_reviews_from_asin: Fetches product reviews for a given ASIN from Firestore.
+get_investigation_and_reviews: Retrieves both the investigation and associated reviews for a given investigation ID.
+write_reviews: Writes a list of cleaned reviews to Firestore, grouped by ASIN.
+
+
+
+Module: openai_api.py
+
+Purpose: This module provides utility functions for interacting with the OpenAI API, specifically for generating completions and embeddings.
+
+Setup:
+Defines headers for API requests and initializes asynchronous capabilities with nest_asyncio.
+Functions:
+get_completion: Fetches a completion from the OpenAI API for a given input.
+get_completion_list: Fetches completions for a list of inputs.
+get_embedding: Retrieves an embedding for a given text string from the OpenAI API.
+process_dataframe_async_embedding: Processes a DataFrame to fetch embeddings for each row asynchronously.
+
+

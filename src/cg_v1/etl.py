@@ -9,34 +9,32 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-def load_asins(asin_filepath):
+async def extract_reviews_async(investigation_id, db):
     """
-    Load ASIN list from a CSV file
+    Asynchronous version of extract_reviews using asyncio.
 
     Parameters:
-        asin_filepath (Path): Path to CSV file containing 'asin' column
+        investigation_id (str): ID of the investigation
+        db (google.cloud.firestore.Client): Initialized Firestore client
 
     Returns:
-        asins (List[str]): List of ASIN strings
-
-    Raises:
-        ValueError: If asin_filepath does not exist
-        FileNotFoundError: If asin_filepath does not point to a file
+        reviews (List[List[dict]]): Nested list of review dicts per ASIN
     """
     
-    if not asin_filepath.exists():
-        raise ValueError(f"File {asin_filepath} does not exist.")
-
-    if not asin_filepath.is_file():
-        raise FileNotFoundError(f"{asin_filepath} is not a file.")
-
-    df = pd.read_csv(asin_filepath)
-    asins = df["asin"].tolist()
-
+    # Fetch ASINs associated with the investigation
+    asins = get_asins_from_investigation(investigation_id)
     if not asins:
-        logger.warning("No ASINs found in CSV file.")
+        logger.warning(f"No ASINs found for investigation {investigation_id}.")
+        return []
+
+    tasks = []
+    for asin in asins:
+        task = asyncio.create_task(fetch_reviews_async(asin, db))
+        tasks.append(task)
+
+    reviews = await asyncio.gather(*tasks)
     
-    return asins
+    return reviews
 
 
 async def fetch_reviews_async(asin, db):
@@ -103,20 +101,20 @@ async def extract_reviews_async(asins, db):
     return reviews
 
 
-def prepare_reviews(extracted_reviews):
+
+def prepare_reviews(extracted_reviews, additional_stopwords=None, exclude_stopwords=None):
     """
     Clean, process and transform raw review data.
 
     Parameters:
         extracted_reviews (List[List[dict]]): Extracted review data
+        additional_stopwords (set, optional): Additional stopwords to consider
+        exclude_stopwords (set, optional): Stopwords to exclude from the default list
 
     Returns:
         df (pandas.DataFrame): Cleaned and transformed review data
-    
-    Raises:
-        ValueError: If invalid input format provided
     """
-
+    
     if not isinstance(extracted_reviews, list):
         raise ValueError("extracted_reviews must be a list.")
 
@@ -143,7 +141,7 @@ def prepare_reviews(extracted_reviews):
     # Remove special characters
     df['clean_review'] = df['review'].str.replace(r'[^a-zA-Z0-9\s]+', '')
 
-    # Remove duplicates
+    # Remove duplicates based on the cleaned review
     df.drop_duplicates(subset=['clean_review'], inplace=True)
 
     # Remove reviews with less than 5 words
@@ -151,21 +149,23 @@ def prepare_reviews(extracted_reviews):
     df = df[df['word_count'] > 5]
 
     # Lemmatize text
-    from textblob import Word
     df['clean_review'] = df['clean_review'].apply(lambda x: " ".join([Word(word).lemmatize() for word in x.split()]))
 
     # Convert to lowercase
     df['clean_review'] = df['clean_review'].str.lower()
 
     # Remove stopwords
-    from nltk.corpus import stopwords
     stop_words = set(stopwords.words('english'))
+    
+    if additional_stopwords:
+        stop_words.update(additional_stopwords)
+    
+    if exclude_stopwords:
+        stop_words.difference_update(exclude_stopwords)
+
     df['clean_review'] = df['clean_review'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop_words)]))
 
-    # Save cleaned text 
-    df['clean_review_text'] = df['clean_review']
-
-    # Optionally drop original review text
-    df.drop(columns=['review', 'clean_review'], inplace=True)
+    # Optionally drop original review text and intermediate columns
+    df.drop(columns=['review', 'clean_review', 'word_count'], inplace=True)
 
     return df
