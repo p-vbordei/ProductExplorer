@@ -22,6 +22,9 @@ class ReviewProcessor:
         self.cred_path = cred_path
         self.init_firestore()
         self.reviews = None
+        self.clean_reviews_list = None
+        self.cluster_df = None
+        self.reviews_with_clusters = None
 
 
     def init_firestore(self):
@@ -156,7 +159,7 @@ class ReviewProcessor:
             content_list.append(messages)
 
         async def main():
-            responses = await get_completion_list(content_list, max_parallel_calls, timeout, functions, function_call)
+            responses = await get_completion_list(content_list, functions, function_call)
             return responses
 
         responses = asyncio.run(main())
@@ -166,6 +169,8 @@ class ReviewProcessor:
             data = item['function_call']['arguments']
             data = data.replace('null', 'None')
             eval_data = eval(data)
+
+
             eval_responses.append(eval_data)
             reviews_list[i]['insights'] = eval_data
 
@@ -182,11 +187,10 @@ class ReviewProcessor:
         for review_dict in reviews_list:
             review_dict['asin'] = review_dict.pop('asin_data')
 
+        self.clean_reviews_list = reviews_list
         write_reviews(reviews_list)
 
-
  #############################################
-
 
     def clustering(self):
         from sklearn.cluster import AgglomerativeClustering
@@ -213,33 +217,27 @@ class ReviewProcessor:
         df = reviews_data_df[reviews_data_df['Value'] != 'unknown']
 
         # Embedding
-        embedding_model = "text-embedding-ada-002"
-        embedding_encoding = "cl100k_base"
-        max_tokens = 8000
-        encoding = tiktoken.get_encoding(embedding_encoding)
-        df["n_tokens"] = df['Value'].apply(lambda x: len(encoding.encode(x)))
-        df = df[df.n_tokens <= max_tokens]
         df = asyncio.run(process_dataframe_async_embedding(df))
-        df["embedding"] = df["embedding"].apply(np.array)
+
 
         # Clustering
         max_n_clusters = 2
         df["cluster"] = np.nan
         types_list = reviews_data_df['Attribute'].unique()
         for type in types_list:
-            df_type = df[df['Attribute'] == type]
+            df_type = df[df['Attribute'] == type].copy()  # Explicitly create a copy
             n_clusters = min(max_n_clusters, len(df_type['Value'].unique()))
             if n_clusters > 1:
                 clustering = AgglomerativeClustering(n_clusters=n_clusters)
                 matrix = np.vstack(df_type["embedding"].values)
                 labels = clustering.fit_predict(matrix)
-                df_type["cluster"] = labels
+                df_type["cluster"] = labels  # Modified assignment
                 df.loc[df['Attribute'] == type, "cluster"] = df_type["cluster"]
             else:
                 df.loc[df['Attribute'] == type, "cluster"] = 0
 
         df['cluster'] = df['cluster'].astype(int)
-        self.cluster_df = df[['Attribute', 'cluster', 'Value']].drop_duplicates()
+        self.cluster_df =  df[['Attribute', 'cluster','Value','id']].drop_duplicates()
 
  #############################################
 
@@ -254,7 +252,7 @@ class ReviewProcessor:
                     "properties": {
                         "cluster_label": {
                             "type": "string",
-                            "description": "Provide a single label for the topic represented in the list of values. [7 words]. Example: 'Low perceived quality versus competitors', 'the assembly kit breaks easily and often', 'the speaker has a low sound quality','the taste was better than expected',' "
+                            "description": "Provide a single label for the topic represented in the list of values. [7 words]. Example: 'Low perceived quality versus competitors', 'the assembly kit breaks easily and often', 'the speaker has a low sound quality','the taste was better than expected'',' "
                         },
                     },
                     "required": ["cluster_label"]
@@ -271,25 +269,47 @@ class ReviewProcessor:
                 content_list.append(messages)
 
         # Get responses
-        responses = asyncio.run(self.get_completion_list(content_list, labeling_function, {"name": "cluster_label"}))
+        responses = asyncio.run(get_completion_list(content_list, labeling_function, {"name": "cluster_label"}))
 
         # Interpret the responses
-        eval_responses = [item['function_call']['arguments']['cluster_label'] for item in responses]
+        eval_responses = []
+        for item in responses:
+            data = item['function_call']['arguments']
+            eval_data = eval(data)
+            eval_responses.append(eval_data['cluster_label'])
+
         cluster_response_df = self.cluster_df.drop(columns=['Value']).drop_duplicates()
         cluster_response_df['cluster_label'] = eval_responses
-        df_with_clusters = df.merge(cluster_response_df, on=['Attribute', 'cluster'], how='left')
+
+        # Use self.cluster_df instead of self.df
+        df_with_clusters = self.cluster_df.merge(cluster_response_df, on=['Attribute', 'cluster'], how='left')
         drop_columns = ['n_tokens', 'embedding', 'Date', 'Author', 'Images']
         df_with_clusters = df_with_clusters.drop(columns=drop_columns, errors='ignore')
         self.reviews_with_clusters = df_with_clusters
 
  #############################################
 
-    def save_results_to_firestore(self, clean_reviews_list, df_with_clusters):
+    def save_results_to_firestore(self):
         """Save processed reviews and their clusters to Firestore."""
         # Merge reviews dataframe
-        merge_reviews_df = pd.DataFrame(clean_reviews_list)
+        df_with_clusters = self.reviews_with_clusters
+        print('df_with_clusters')
+        print(df_with_clusters.columns)
+        print("--------------------")
+        merge_reviews_df = pd.DataFrame(self.clean_reviews_list)
+        print('merge_reviews_df')
+        print(merge_reviews_df.columns)
+        print("--------------------")
+        print("Columns in df_with_clusters:", df_with_clusters.columns)
+        print("Columns in merge_reviews_df:", merge_reviews_df.columns)
+        print("Duplicate IDs in df_with_clusters:", df_with_clusters['id'].duplicated().sum())
+        print("Duplicate IDs in merge_reviews_df:", merge_reviews_df['id'].duplicated().sum())
+
+
         merge_columns_proposed = ['review', 'name', 'date', 'asin', 'id', 'review_data', 'rating','title', 'media', 'verified_purchase', 'num_tokens','review_num_tokens',]
         merge_columns = list(set(merge_columns_proposed).intersection(set(merge_reviews_df.columns)))
+        print('merge columns')
+        print(merge_columns)
         reviews_with_clusters = df_with_clusters.merge(merge_reviews_df[merge_columns], on = ['id'], how = 'left')
 
         save_reviews_with_clusters_to_firestore(reviews_with_clusters)
@@ -298,9 +318,22 @@ class ReviewProcessor:
 
     def quantify_observations(self, df_with_clusters, reviews_with_clusters):
         """Quantify observations at both the investigation and ASIN levels."""
+        try:
+            print(df_with_clusters.columns)
+        except:
+            pass
 
-        # Quantify observations at the investigation level
-        df_with_clusters['asin'] = df_with_clusters['asin'].apply(lambda x: x['original'])
+        try:
+            print(df_with_clusters['asin'])
+        except:
+            pass
+
+        # Check if 'asin' column exists in df_with_clusters
+        if 'asin' in df_with_clusters.columns:
+            df_with_clusters['asin'] = df_with_clusters['asin'].apply(lambda x: x['original'])
+        else:
+            print("'asin' column not found in df_with_clusters!")
+            return  # Exit the function
 
         agg_result = df_with_clusters.groupby(['Attribute', 'cluster_label']).agg({
             'rating': lambda x: list(x),
@@ -358,12 +391,14 @@ class ReviewProcessor:
         
         # 4. Label the clusters
         self.cluster_labeling()
+
+        # 5. Save the processed reviews and their clusters to Firestore
+        self.save_results_to_firestore()
         
-        # 5. Quantify the observations
+        #6. Quantify the observations
         self.quantify_observations(self.cluster_df, self.reviews_with_clusters)
         
-        # 6. Save the processed reviews and their clusters to Firestore
-        self.save_results_to_firestore(clean_reviews, self.reviews_with_clusters)
+
 
 
 
