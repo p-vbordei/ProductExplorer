@@ -120,13 +120,21 @@ def save_clusters_to_firestore(investigation_id, attribute_clusters, attribute_c
         'data': attribute_clusters_by_asin.to_dict(orient='records')  # Convert DataFrame to list of dicts
     })
 
+
 def save_reviews_with_clusters_to_firestore(reviews_with_clusters):
     # Iterate over each review in reviews_with_clusters
     for _, review in reviews_with_clusters.iterrows():
-        # Get the reference to the product's review document
-        review_ref = db.collection('products').document(review['asin']).collection('reviews').document(review['id'])
+        # Safely get the 'cluster_info' value
+        cluster_info = review.get('cluster_info')
         
-        # Update the review document with cluster information
-        review_ref.set({
-            'cluster_info': review['cluster_info']  # Assuming 'cluster_info' is the column name in reviews_with_clusters DataFrame
-        }, merge=True)  # merge=True ensures that only the 'cluster_info' field is updated, and other fields remain unchanged
+        if cluster_info is not None:
+            # Get the reference to the product's review document
+            asin_string = review['asin']['original'] if isinstance(review['asin'], dict) else review['asin']
+            review_ref = db.collection('products').document(asin_string).collection('reviews').document(review['id'])
+            
+            # Update the review document with cluster information
+            review_ref.set({
+                'cluster_info': cluster_info
+            }, merge=True)  # merge=True ensures that only the 'cluster_info' field is updated, and other fields remain unchanged
+        else:
+            print(f"Warning: 'cluster_info' not found for review with ID {review['id']}")

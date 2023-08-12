@@ -321,7 +321,8 @@ class ReviewProcessor:
         print('merge columns')
         print(merge_columns)
         reviews_with_clusters = df_with_clusters.merge(merge_reviews_df[merge_columns], on = ['id'], how = 'left')
-
+        print("------------ reviews with clusters columns----------------------------")       
+        print(reviews_with_clusters.columns)
         save_reviews_with_clusters_to_firestore(reviews_with_clusters)
 
  #############################################
@@ -382,7 +383,8 @@ class ReviewProcessor:
         df_with_clusters['total_observations_per_attribute_asin'] = df_with_clusters.groupby(['Attribute', 'asin'])['asin'].transform('count')
         attribute_clusters_with_percentage_by_asin['percentage_of_observations_vs_total_number_per_attribute'] = attribute_clusters_with_percentage_by_asin['observation_count'] / df_with_clusters['total_observations_per_attribute_asin'] * 100
         attribute_clusters_with_percentage_by_asin['percentage_of_observations_vs_total_number_of_reviews'] = attribute_clusters_with_percentage_by_asin['observation_count'] / number_of_reviews * 100
-
+        print("------------ attributeclusters columns----------------------------")       
+        print(attribute_clusters_with_percentage_by_asin.columns)
         save_clusters_to_firestore(self.investigation_id , attribute_clusters_with_percentage, attribute_clusters_with_percentage_by_asin)
 
     
