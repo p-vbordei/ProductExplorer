@@ -6,31 +6,65 @@ import random
 import pandas as pd
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 
+
+import tiktoken
+
+embedding_model = "text-embedding-ada-002"
+embedding_encoding = "cl100k_base"
+max_tokens = 8000
+encoding = tiktoken.get_encoding(embedding_encoding)
+
+GPT_MODEL = "gpt-3.5-turbo"
+
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 HEADERS = {
     "Content-Type": "application/json",
     "Authorization": f"Bearer {OPENAI_API_KEY}"
 }
 
-@retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(20))
-async def get_completion(session, content, functions=None, function_call=None):
-    json_data = {
-        "model": "gpt-3.5-turbo",
-        "messages": content,
-        "temperature": 0
-    }
-    
-    if functions is not None:
-        json_data.update({"functions": functions})
-    if function_call is not None:
-        json_data.update({"function_call": function_call})
+max_parallel_calls = 100
+timeout = 60
 
-    async with session.post("https://api.openai.com/v1/chat/completions", headers=HEADERS, json=json_data) as resp:
-        return await resp.json()
+class ProgressLog:
+    def __init__(self, total):
+        self.total = total
+        self.done = 0
 
-async def get_completion_list(content_list, functions=None, function_call=None):
-    async with aiohttp.ClientSession() as session:
-        return await asyncio.gather(*[get_completion(session, content, functions, function_call) for content in content_list])
+    def increment(self):
+        self.done = self.done + 1
+
+    def __repr__(self):
+        return f"Done runs {self.done}/{self.total}."
+
+
+@retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(20), before_sleep=print, retry_error_callback=lambda _: None)
+async def get_completion(content, session, semaphore, progress_log, functions=None, function_call=None, GPT_MODEL=GPT_MODEL):
+    async with semaphore:
+        json_data = {
+            "model": GPT_MODEL,
+            "messages": content,
+            "temperature": 0
+        }
+        
+        if functions is not None:
+            json_data.update({"functions": functions})
+        if function_call is not None:
+            json_data.update({"function_call": function_call})
+
+        async with session.post("https://api.openai.com/v1/chat/completions", headers=HEADERS, json=json_data) as resp:
+            response_json = await resp.json()
+            progress_log.increment()
+            print(progress_log)
+            return response_json["choices"][0]['message']
+
+async def get_completion_list(content_list, functions=None, function_call=None, GPT_MODEL=GPT_MODEL):
+    semaphore = asyncio.Semaphore(value=max_parallel_calls)
+    progress_log = ProgressLog(len(content_list))
+
+    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(timeout)) as session:
+        return await asyncio.gather(*[get_completion(content, session, semaphore, progress_log, functions, function_call, GPT_MODEL) for content in content_list])
+
+
 
 async def get_embedding(text: str, model="text-embedding-ada-002") -> list[float]:
     async with aiohttp.ClientSession() as session:
@@ -53,8 +87,6 @@ async def get_embedding(text: str, model="text-embedding-ada-002") -> list[float
 import nest_asyncio
 nest_asyncio.apply()
 
-# Assuming you have OpenAI's tokenizer
-from openai import tokenizer
 
 max_tokens = 8048  # Define max tokens or get it from somewhere
 
@@ -63,7 +95,7 @@ async def process_dataframe_async_embedding(df: pd.DataFrame, embedding_model="t
     tasks = []
 
     # Filter rows by token count
-    df["n_tokens"] = df['Value'].apply(lambda x: len(tokenizer.encode(x)))
+    df["n_tokens"] = df['Value'].apply(lambda x: len(encoding.encode(x)))
     df = df[df.n_tokens <= max_tokens]
 
     for index, row in df.iterrows():

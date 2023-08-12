@@ -612,7 +612,7 @@ for type in types_list:
         df.loc[df['Attribute'] == type, "cluster"] = 0
 
 df['cluster'] = df['cluster'].astype(int)
-cluster_df  = df[['Attribute', 'cluster','Value']]
+cluster_df  = df[['Attribute', 'cluster','Value','id']]
 cluster_df.drop_duplicates(inplace = True)
 
 # %%

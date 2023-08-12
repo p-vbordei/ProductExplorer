@@ -6,6 +6,10 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 import os
 
+import time
+from collections import defaultdict
+
+
 # Firestore details
 cred_path = '/Users/vladbordei/Documents/Development/ProductExplorer/notebooks/productexplorerdata-firebase-adminsdk-ulb3d-465f23dff3.json'
 
@@ -57,7 +61,6 @@ def get_reviews_from_asin(asin):
     else:
         print(f'No product reviews found for ASIN {asin}')
         return None
-
 
 def get_investigation_and_reviews(investigation_id):
     asins = get_asins_from_investigation(investigation_id)
