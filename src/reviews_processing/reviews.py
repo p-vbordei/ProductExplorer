@@ -674,9 +674,11 @@ for item in responses:
     eval_data = eval(data)
     eval_responses.append(eval_data['cluster_label'])
 
+# %%
 cluster_response_df= cluster_df.drop(columns = ['Value']).drop_duplicates()
 cluster_response_df['cluster_label'] = eval_responses
 
+# %%
 df_with_clusters = df.merge(cluster_response_df, on = ['Attribute', 'cluster'], how = 'left')
 
 

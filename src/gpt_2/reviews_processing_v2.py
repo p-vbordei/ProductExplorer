@@ -265,11 +265,12 @@ class ReviewProcessor:
         for type in self.cluster_df['Attribute'].unique():
             for cluster in self.cluster_df[self.cluster_df['Attribute'] == type]['cluster'].unique():
                 values = self.cluster_df[(self.cluster_df['Attribute'] == type) & (self.cluster_df['cluster'] == cluster)]['Value'].unique()
-                messages = [{"role": "user", "content": f"The value presented are part of {type}. Provide a single seven words label for this list of values : ```{values}```. "}]
+                messages = [{"role": "user", "content": f"The value presented are part of {type}. Provide a single label of seven words  for this list of values : ```{values}```. "}]
                 content_list.append(messages)
 
         # Get responses
         responses = asyncio.run(get_completion_list(content_list, labeling_function, {"name": "cluster_label"}))
+
 
         # Interpret the responses
         eval_responses = []
@@ -278,10 +279,19 @@ class ReviewProcessor:
             eval_data = eval(data)
             eval_responses.append(eval_data['cluster_label'])
 
-        cluster_response_df = self.cluster_df.drop(columns=['Value']).drop_duplicates()
+
+        # Create a DataFrame to hold unique combinations of 'Attribute' and 'cluster'
+        print(len(eval_responses))
+        print(eval_responses)
+        cluster_response_df = self.cluster_df[['Attribute', 'cluster']]
+        print(cluster_response_df.shape)
+        cluster_response_df.drop_duplicates(inplace= True)
+        print(cluster_response_df.shape)
+        cluster_response_df.reset_index(inplace = True, drop=True)
         cluster_response_df['cluster_label'] = eval_responses
 
-        # Use self.cluster_df instead of self.df
+
+        # Merge the cluster labels back to the main cluster_df
         df_with_clusters = self.cluster_df.merge(cluster_response_df, on=['Attribute', 'cluster'], how='left')
         drop_columns = ['n_tokens', 'embedding', 'Date', 'Author', 'Images']
         df_with_clusters = df_with_clusters.drop(columns=drop_columns, errors='ignore')
