@@ -78,25 +78,25 @@ def write_reviews(clean_reviews_list):
     # Group reviews by ASIN
     reviews_by_asin = defaultdict(list)
     for review in clean_reviews_list:
-        asin = review['asin']['original']
-        reviews_by_asin[asin].append(review)
+        asin_string = review['asin']['original'] if isinstance(review['asin'], dict) else review['asin']
+        reviews_by_asin[asin_string].append(review)
 
     start_time = time.time()
 
     # Write reviews for each ASIN in a batch
-    for asin, reviews in reviews_by_asin.items():
+    for asin_string, reviews in reviews_by_asin.items():
         batch = db.batch()
 
         for review in reviews:
             review_id = review['id']
-            review_ref = db.collection('products').document(asin).collection('reviews').document(review_id)
-            batch.set(review_ref, review, merge=True)
 
+            review_ref = db.collection('products').document(asin_string).collection('reviews').document(review_id)
+            batch.set(review_ref, review, merge=True)
         try:
             batch.commit()
-            print(f"Successfully saved/updated reviews for ASIN {asin}")
+            print(f"Successfully saved/updated reviews for ASIN {asin_string}")
         except Exception as e:
-            print(f"Error saving/updating reviews for ASIN {asin}: {e}")
+            print(f"Error saving/updating reviews for ASIN {asin_string}: {e}")
 
     end_time = time.time()
     elapsed_time = end_time - start_time
@@ -121,20 +121,35 @@ def save_clusters_to_firestore(investigation_id, attribute_clusters, attribute_c
     })
 
 
-def save_reviews_with_clusters_to_firestore(reviews_with_clusters):
-    # Iterate over each review in reviews_with_clusters
-    for _, review in reviews_with_clusters.iterrows():
-        # Safely get the 'cluster_info' value
-        cluster_info = review.get('cluster_info')
-        
-        if cluster_info is not None:
-            # Get the reference to the product's review document
-            asin_string = review['asin']['original'] if isinstance(review['asin'], dict) else review['asin']
-            review_ref = db.collection('products').document(asin_string).collection('reviews').document(review['id'])
-            
-            # Update the review document with cluster information
-            review_ref.set({
-                'cluster_info': cluster_info
-            }, merge=True)  # merge=True ensures that only the 'cluster_info' field is updated, and other fields remain unchanged
-        else:
-            print(f"Warning: 'cluster_info' not found for review with ID {review['id']}")
+
+
+############################################ SAVE RESULTS TO FIRESTORE ############################################
+
+def save_results_to_firestore(df_with_clusters, clean_reviews_list):
+    """Save processed reviews and their clusters to Firestore."""
+    
+    print('df_with_clusters')
+    print(df_with_clusters.columns)
+    print("--------------------")
+    
+    merge_reviews_df = pd.DataFrame(clean_reviews_list)
+
+    print('merge_reviews_df')
+    print(merge_reviews_df.columns)
+    print("--------------------")
+    print("Columns in df_with_clusters:", df_with_clusters.columns)
+    print("Columns in merge_reviews_df:", merge_reviews_df.columns)
+    print("Duplicate IDs in df_with_clusters:", df_with_clusters['id'].duplicated().sum())
+    print("Duplicate IDs in merge_reviews_df:", merge_reviews_df['id'].duplicated().sum())
+
+    merge_columns_proposed = ['review', 'name', 'date', 'asin', 'id', 'review_data', 'rating','title', 'media', 'verified_purchase', 'num_tokens','review_num_tokens',]
+    merge_columns = list(set(merge_columns_proposed).intersection(set(merge_reviews_df.columns)))
+
+    print('merge columns')
+    print(merge_columns)
+
+    reviews_with_clusters = df_with_clusters.merge(merge_reviews_df[merge_columns], on = ['id'], how = 'left')
+
+    print("------------ reviews with clusters columns----------------------------")       
+    print(reviews_with_clusters.columns)
+    save_reviews_with_clusters_to_firestore(reviews_with_clusters)

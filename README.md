@@ -102,7 +102,8 @@ The primary goal of this application is to analyze customer reviews of a product
 Here is a brief overview of the architecture:
 - Access an API to get product data and reviews data for products sold on Amazon.
 - Processing Reviews: For each review, the assistant generates a response using the chat model. Each response has a series of 
-- Improvements, facts and issues are clustered toghtether based on simmilarity
+- Product Attribute Values are clustered toghtether based on simmilarity. Labels are generated for each cluster.
+- Quantification is done over the observed attribute values/ clusters. 
 - Problem Statements are identified and described for each of the clusters
 - Solutions for the Problem Statements are created and clustered. They are presented as solutions prepared by junior engineers.
 - Product Improvements are generated based on product understanding and previously presented solution clusters.
@@ -136,26 +137,70 @@ https://www.sbert.net/examples/applications/clustering/README.html
 FIRESTORE Data Structure:
 
 Investigations (collection)
-Documents (e.g., investigationId1, investigationId2, ...)
-Fields: asins, user_id, status, received_timestamp, and other product data fields.
-payments (collection)
+    Documents (e.g., investigationId1, investigationId2, ...)
+        Fields: asins, user_id, status, received_timestamp, and other product data fields.
 
-Documents (e.g., paymentId1)
-Fields: subscription_id, date, status, user_id, amount, payment_intent
-products (collection)
 
-Documents (e.g., B08X2324ZL, B091325ZMB, ...)
-Fields: details
-Sub-collection: reviews
-Documents (e.g., R1TPG96Z1XO0JA, ...)
-Fields: review, name, date, asin, id, review_data, rating, title, media, verified_purchase, and other fields.
-users (collection)
 
-Documents (e.g., userId1)
-Fields: remaining_investigations, email, current_package, name
-Sub-collection: subscriptions
-Documents (e.g., subscriptionId1, subscriptionId2, ...)
-Fields: end_date, package, payment_status, start_date, payment_intent
+Payments (collection)
+    Documents (e.g., paymentId1)
+        Fields: subscription_id, date, status, user_id, amount, payment_intent
+        
+        
+Products (collection)
+    Documents (e.g., B08X2324ZL, B091325ZMB, ...)
+        Fields: details
+    Sub-collection: reviews
+        Documents (e.g., R1TPG96Z1XO0JA, ...)
+            Fields: review, name, date, asin, id, review_data, rating, title, media, verified_purchase, and other fields.
+            
+
+Users (collection)
+    Documents (e.g., userId1)
+        Fields: remaining_investigations, email, current_package, name
+            Sub-collection: subscriptions
+                Documents (e.g., subscriptionId1, subscriptionId2, ...)
+                    Fields: end_date, package, payment_status, start_date, payment_intent
+
+
+
+Insights (collection)
+    Documents (e.g., investigationId1, investigationId2, ...)
+        Fields: 
+            Positives: 
+                List with these fields for each attribute:
+                    {
+                    Attribute: text, 
+                    Attribute Value: text,
+                    Percentage of Count on Attribute Value vs. Count on Attribute: percentage,
+                    Additional Details on Attribute Value ,
+                    }
+                    
+            Pain Points, Buyer Motivation, Customer Expectations: same as Positives
+        
+            Who: 
+                List with these fields for each attribute:
+                    { 
+                    Attribute: text, 
+                    Attribute Value: text,
+                    Count of Observations of Attribute Value,
+                    Count of Observations of Attribute ,
+                    }
+                    
+            
+            What, Where, When: same as Who
+            
+            
+           Feature Importance:
+                List with these fields for each attribute:
+                    {
+                    Attribute: text, 
+                    Attribute Value: text,
+                    Attribute Rating Average: Float,
+                    Attribute Value Percentage of Total Reviews: Float
+                    }     
+
+
 
 
 
@@ -207,4 +252,43 @@ get_completion_list: Fetches completions for a list of inputs.
 get_embedding: Retrieves an embedding for a given text string from the OpenAI API.
 process_dataframe_async_embedding: Processes a DataFrame to fetch embeddings for each row asynchronously.
 
+
+Review Processing Module
+
+This system processes product reviews, clusters them based on similarity, and quantifies the observations.
+
+Initialization:
+
+The ReviewProcessor class initializes with an investigation ID, OpenAI API key, and Firestore credentials.
+Firestore is set up to interact with the database.
+Review Retrieval and Cleaning:
+
+Reviews related to a specific investigation are fetched from Firestore.
+Each review is flattened and cleaned to extract relevant information.
+Review Processing with OpenAI's GPT:
+
+Each review is processed using OpenAI's GPT model to extract insights.
+The insights are then merged with the original reviews.
+Clustering:
+
+The reviews are transformed into a DataFrame format.
+Unnecessary columns are dropped, and missing values are handled.
+The DataFrame is then pivoted and filtered.
+Each review is embedded using a function from openai_utils.
+Agglomerative clustering is applied to group similar reviews.
+Cluster Labeling:
+
+Each cluster of reviews is labeled using OpenAI's GPT model.
+The labels are then merged with the clusters.
+Saving Results to Firestore:
+
+The processed reviews and their associated clusters are saved to Firestore.
+Quantifying Observations:
+
+Observations are quantified at both the investigation and ASIN levels.
+The quantified observations are saved to Firestore.
+Utility Functions:
+
+The firebase_utils.py file contains utility functions to interact with Firestore.
+Functions include updating investigation status, retrieving ASINs and reviews, writing reviews to Firestore, and saving clusters.
 

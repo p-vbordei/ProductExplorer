@@ -306,7 +306,9 @@ class ReviewProcessor:
         print('df_with_clusters')
         print(df_with_clusters.columns)
         print("--------------------")
+        
         merge_reviews_df = pd.DataFrame(self.clean_reviews_list)
+
         print('merge_reviews_df')
         print(merge_reviews_df.columns)
         print("--------------------")
@@ -315,12 +317,14 @@ class ReviewProcessor:
         print("Duplicate IDs in df_with_clusters:", df_with_clusters['id'].duplicated().sum())
         print("Duplicate IDs in merge_reviews_df:", merge_reviews_df['id'].duplicated().sum())
 
-
         merge_columns_proposed = ['review', 'name', 'date', 'asin', 'id', 'review_data', 'rating','title', 'media', 'verified_purchase', 'num_tokens','review_num_tokens',]
         merge_columns = list(set(merge_columns_proposed).intersection(set(merge_reviews_df.columns)))
+
         print('merge columns')
         print(merge_columns)
+
         reviews_with_clusters = df_with_clusters.merge(merge_reviews_df[merge_columns], on = ['id'], how = 'left')
+
         print("------------ reviews with clusters columns----------------------------")       
         print(reviews_with_clusters.columns)
         save_reviews_with_clusters_to_firestore(reviews_with_clusters)
@@ -412,7 +416,7 @@ class ReviewProcessor:
         
 
 
-
+ #############################################
 
 if __name__ == "__main__":
     load_dotenv()
