@@ -104,37 +104,33 @@ def write_reviews(clean_reviews_list):
     print(f"Successfully saved/updated all reviews. Time taken: {elapsed_time} seconds")
 
 
-def update_to_firestore_reviews_with_cluster_info(reviews_with_clusters):
+
+def save_cluster_info_to_firestore(attribute_clusters_with_percentage, attribute_clusters_with_percentage_by_asin, investigation_id):
     """
-    Save the reviews with clusters to Firestore.
+    Save the clusters to Firestore.
     
     Parameters:
-    - reviews_with_clusters (DataFrame): DataFrame containing reviews with cluster information.
+    - attribute_clusters_with_percentage (DataFrame): DataFrame containing attribute clusters with percentage information.
+    - attribute_clusters_with_percentage_by_asin (DataFrame): DataFrame containing attribute clusters with percentage information by ASIN.
+    - investigation_id (str): The ID of the investigation.
     """
-    # Group reviews by ASIN
-    grouped_reviews = reviews_with_clusters.groupby('asin_original')
-    data_for_upload = {asin_original: group.drop(columns='asin_original').to_dict(orient='records') for asin_original, group in grouped_reviews}
+ 
+    # Create a dictionary with the cluster information
+    clusters_dict = {
+        'attribute_clusters_with_percentage': attribute_clusters_with_percentage.to_dict(orient='records'),
+        'attribute_clusters_with_percentage_by_asin': attribute_clusters_with_percentage_by_asin.to_dict(orient='records'),
+    }
 
     start_time = time.time()
 
-    # Write reviews for each ASIN in a batch
-    for asin_original, reviews in data_for_upload.items():
-        if len(reviews) > 500:
-            print(f"Warning: More than 500 reviews for ASIN {asin_original}. Consider splitting the reviews or handling them differently.")
-            continue
-
-        batch = db.batch()
-        for review in reviews:
-            review_id = review['id']
-            review_ref = db.collection('products').document(asin_original).collection('reviews').document(review_id)
-            batch.set(review_ref, review, merge=True)
-        try:
-            batch.commit()
-            print(f"Successfully saved/updated reviews for ASIN {asin_original}")
-        except Exception as e:
-            print(f"Error saving/updating reviews for ASIN {asin_original}: {e}")
+    cluster_ref = db.collection(u'clusters').document(investigation_id)
+    cluster = cluster_ref.get()
+    if cluster.exists:
+        cluster_ref.update(clusters_dict)
+    else:
+        cluster_ref.set(clusters_dict)
 
     end_time = time.time()
     elapsed_time = end_time - start_time
 
-    print(f"Successfully saved/updated all reviews with clusters. Time taken: {elapsed_time} seconds")
+    print(f"Successfully saved/updated clusters to firestore. Time taken: {elapsed_time} seconds")
