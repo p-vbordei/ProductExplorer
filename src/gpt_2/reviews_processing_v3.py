@@ -14,7 +14,7 @@ from openai_utils import process_dataframe_async_embedding
 
 from dotenv import load_dotenv
 from data_processing_utils import initial_review_clean_data_list
-from firebase_utils import update_investigation_status, get_investigation_and_reviews, write_reviews, update_to_firestore_reviews_with_cluster_info
+from firebase_utils import update_investigation_status, get_investigation_and_reviews, write_reviews, save_cluster_info_to_firestore
 from openai_utils import get_completion_list
 
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
@@ -307,29 +307,15 @@ def label_clusters(cluster_df):
 
 ############################################ QUANTIFY OBSERVATIONS ############################################
 
-def quantify_observations(df_with_clusters, reviews_with_clusters, investigation_id):
+def quantify_observations(reviews_with_clusters, clean_reviews):
     """Quantify observations at both the investigation and ASIN levels."""
-    try:
-        print(df_with_clusters.columns)
-    except:
-        pass
-
-    try:
-        print(df_with_clusters['asin'])
-    except:
-        pass
-
-    # Check if 'asin' column exists in df_with_clusters
-    if 'asin' in df_with_clusters.columns:
-        df_with_clusters['asin'] = df_with_clusters['asin'].apply(lambda x: x['original'])
-    else:
-        print("'asin' column not found in df_with_clusters!")
-        return  # Exit the function
     
+    df_with_clusters = reviews_with_clusters.merge(pd.DataFrame(clean_reviews), left_on='id', right_on='id', how='left')
+
     agg_result = df_with_clusters.groupby(['Attribute', 'cluster_label']).agg({
         'rating': lambda x: list(x),
         'id': lambda x: list(x),
-        'asin': lambda x: list(x),
+        'asin_original': lambda x: list(x),
         }).reset_index()
 
     count_result = df_with_clusters.groupby(['Attribute', 'cluster_label']).size().reset_index(name='observation_count')
@@ -348,27 +334,23 @@ def quantify_observations(df_with_clusters, reviews_with_clusters, investigation
     attribute_clusters_with_percentage['percentage_of_observations_vs_total_number_of_reviews'] = attribute_clusters_with_percentage['observation_count'] / number_of_reviews * 100
 
     # Quantify observations at the ASIN level
-    agg_result_asin = df_with_clusters.groupby(['Attribute', 'cluster_label', 'asin']).agg({
+    agg_result_asin = df_with_clusters.groupby(['Attribute', 'cluster_label', 'asin_original']).agg({
         'rating': lambda x: list(x),
         'id': lambda x: list(x),
     }).reset_index()
 
-    count_result_asin = df_with_clusters.groupby(['Attribute', 'cluster_label', 'asin']).size().reset_index(name='observation_count')
-    attribute_clusters_with_percentage_by_asin = pd.merge(agg_result_asin, count_result_asin, on=['Attribute', 'cluster_label', 'asin'])
+    count_result_asin = df_with_clusters.groupby(['Attribute', 'cluster_label', 'asin_original']).size().reset_index(name='observation_count')
+    attribute_clusters_with_percentage_by_asin = pd.merge(agg_result_asin, count_result_asin, on=['Attribute', 'cluster_label', 'asin_original'])
 
     m_asin = [np.mean([int(r) for r in e]) for e in attribute_clusters_with_percentage_by_asin['rating']]
     k_asin = [int(round(e, 0)) for e in m_asin]
     attribute_clusters_with_percentage_by_asin['rating_avg'] = k_asin
 
-    df_with_clusters['total_observations_per_attribute_asin'] = df_with_clusters.groupby(['Attribute', 'asin'])['asin'].transform('count')
+    df_with_clusters['total_observations_per_attribute_asin'] = df_with_clusters.groupby(['Attribute', 'asin_original'])['asin_original'].transform('count')
     attribute_clusters_with_percentage_by_asin['percentage_of_observations_vs_total_number_per_attribute'] = attribute_clusters_with_percentage_by_asin['observation_count'] / df_with_clusters['total_observations_per_attribute_asin'] * 100
     attribute_clusters_with_percentage_by_asin['percentage_of_observations_vs_total_number_of_reviews'] = attribute_clusters_with_percentage_by_asin['observation_count'] / number_of_reviews * 100
 
-    print("------------ attributeclusters columns----------------------------")       
-    print(attribute_clusters_with_percentage_by_asin.columns)
-    save_clusters_to_firestore(investigation_id, attribute_clusters_with_percentage, attribute_clusters_with_percentage_by_asin)
-
-
+    return attribute_clusters_with_percentage, attribute_clusters_with_percentage_by_asin
 
 ############################################
 
@@ -426,12 +408,16 @@ cluster_df = cluster_reviews(clean_reviews)
 reviews_with_clusters = label_clusters(cluster_df)
 
 # %%
-# Update Firestore with Clusters
-# update_to_firestore_reviews_with_cluster_info(reviews_with_clusters)
-
+# Quantify Observations
+attribute_clusters_with_percentage, attribute_clusters_with_percentage_by_asin = quantify_observations(reviews_with_clusters, clean_reviews)
 
 # %%
-quantify_observations(df_with_clusters, reviews_with_clusters, investigation_id)
+# Save Results to Firestore
+save_cluster_info_to_firestore(attribute_clusters_with_percentage, attribute_clusters_with_percentage_by_asin, INVESTIGATION )
+
+# %%
+
+
 
 # Generate Insights
 positives = process_data_for_positives(df_with_clusters)
@@ -448,3 +434,68 @@ feature_importance = process_data_for_feature_importance(df_with_clusters)
 save_to_firestore(investigation_id, positives, who, feature_importance)
 
 
+###############
+
+# %%
+
+
+"""Quantify observations at both the investigation and ASIN levels."""
+
+
+df_with_clusters = reviews_with_clusters.merge(pd.DataFrame(clean_reviews), left_on='id', right_on='id', how='left')
+
+# %%
+
+
+agg_result = df_with_clusters.groupby(['Attribute', 'cluster_label']).agg({
+    'rating': lambda x: list(x),
+    'id': lambda x: list(x),
+    'asin_original': lambda x: list(x),
+    }).reset_index()
+
+
+# %%
+
+count_result = df_with_clusters.groupby(['Attribute', 'cluster_label']).size().reset_index(name='observation_count')
+attribute_clusters_with_percentage = pd.merge(agg_result, count_result, on=['Attribute', 'cluster_label'])
+
+m = [np.mean([int(r) for r in e]) for e in attribute_clusters_with_percentage['rating']]
+k = [int(round(e, 0)) for e in m]
+attribute_clusters_with_percentage['rating_avg'] = k
+
+total_observations_per_attribute = df_with_clusters.groupby('Attribute').size()
+attribute_clusters_with_percentage = attribute_clusters_with_percentage.set_index('Attribute')
+attribute_clusters_with_percentage['percentage_of_observations_vs_total_number_per_attribute'] = attribute_clusters_with_percentage['observation_count'] / total_observations_per_attribute * 100
+attribute_clusters_with_percentage = attribute_clusters_with_percentage.reset_index()
+
+number_of_reviews = reviews_with_clusters['id'].unique().shape[0]
+attribute_clusters_with_percentage['percentage_of_observations_vs_total_number_of_reviews'] = attribute_clusters_with_percentage['observation_count'] / number_of_reviews * 100
+
+
+# %%
+
+# Quantify observations at the ASIN level
+agg_result_asin = df_with_clusters.groupby(['Attribute', 'cluster_label', 'asin_original']).agg({
+    'rating': lambda x: list(x),
+    'id': lambda x: list(x),
+}).reset_index()
+
+count_result_asin = df_with_clusters.groupby(['Attribute', 'cluster_label', 'asin_original']).size().reset_index(name='observation_count')
+attribute_clusters_with_percentage_by_asin = pd.merge(agg_result_asin, count_result_asin, on=['Attribute', 'cluster_label', 'asin_original'])
+
+m_asin = [np.mean([int(r) for r in e]) for e in attribute_clusters_with_percentage_by_asin['rating']]
+k_asin = [int(round(e, 0)) for e in m_asin]
+attribute_clusters_with_percentage_by_asin['rating_avg'] = k_asin
+
+df_with_clusters['total_observations_per_attribute_asin'] = df_with_clusters.groupby(['Attribute', 'asin_original'])['asin_original'].transform('count')
+attribute_clusters_with_percentage_by_asin['percentage_of_observations_vs_total_number_per_attribute'] = attribute_clusters_with_percentage_by_asin['observation_count'] / df_with_clusters['total_observations_per_attribute_asin'] * 100
+attribute_clusters_with_percentage_by_asin['percentage_of_observations_vs_total_number_of_reviews'] = attribute_clusters_with_percentage_by_asin['observation_count'] / number_of_reviews * 100
+
+#%%
+
+from firebase_utils import save_cluster_info_to_firestore
+
+
+# %%
+
+# %%
