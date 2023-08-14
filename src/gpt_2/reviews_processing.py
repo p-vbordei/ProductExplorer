@@ -13,8 +13,8 @@ from openai_utils import process_dataframe_async_embedding
 
 
 from dotenv import load_dotenv
-from data_processing_utils import initial_review_clean_data_list
-from firebase_utils import update_investigation_status, get_investigation_and_reviews, write_reviews, save_cluster_info_to_firestore
+from data_processing_utils import initial_review_clean_data_list, process_datapoints
+from firebase_utils import update_investigation_status, get_investigation_and_reviews, write_reviews, save_cluster_info_to_firestore, write_insights_to_firestore
 from openai_utils import get_completion_list
 
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
@@ -352,150 +352,48 @@ def quantify_observations(reviews_with_clusters, clean_reviews):
 
     return attribute_clusters_with_percentage, attribute_clusters_with_percentage_by_asin
 
-############################################
 
 
-def run(investigation_id, openai_api_key, cred_path):
-    db = initialize_firestore(CRED_PATH)
+############################################ RUN ############################################
+
+
+def run_reviews_investigation(investigation_id, openai_api_key, cred_path):
+    # Initialize Firestore
+    db = initialize_firestore(cred_path)
+
+    # Get clean reviews
     reviews = get_clean_reviews(investigation_id, db)
-    clean_reviews = process_reviews_with_gpt(reviews, OPENAI_API_KEY)
-    cluster_df = clustering(clean_reviews)
-    reviews_with_clusters = cluster_labeling(cluster_df)
-    save_results_to_firestore(df_with_clusters, clean_reviews_list)
 
-    quantify_observations(df_with_clusters, reviews_with_clusters, investigation_id)
+    # Process reviews with GPT
+    clean_reviews = process_reviews_with_gpt(reviews, openai_api_key)
 
-    # Generate Insights
-    positives = process_data_for_positives(df_with_clusters)
-    who = process_data_for_who(df_with_clusters)
-    feature_importance = process_data_for_feature_importance(df_with_clusters)
+    # Cluster reviews
+    cluster_df = cluster_reviews(clean_reviews)
 
-    # Save Insights to Firestore
-    save_to_firestore(investigation_id, positives, who, feature_importance)
+    # Label clusters
+    reviews_with_clusters = label_clusters(cluster_df)
 
+    # Quantify observations
+    attribute_clusters_with_percentage, attribute_clusters_with_percentage_by_asin = quantify_observations(reviews_with_clusters, clean_reviews)
 
-# %%
+    # Save results to Firestore
+    save_cluster_info_to_firestore(attribute_clusters_with_percentage, attribute_clusters_with_percentage_by_asin, investigation_id)
 
-"""
+    # Process datapoints
+    datapoints = list(set(attribute_clusters_with_percentage['Attribute']))
+    datapoints_dict = {}
+    for att in datapoints:
+        df = attribute_clusters_with_percentage[attribute_clusters_with_percentage['Attribute'] == att]
+        datapoints_list = process_datapoints(df)
+        datapoints_dict[att] = datapoints_list
+
+    # Write insights to Firestore
+    write_insights_to_firestore(investigation_id, datapoints_dict)
+
 if __name__ == "__main__":
     load_dotenv()
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
     CRED_PATH =  '/Users/vladbordei/Documents/Development/ProductExplorer/notebooks/productexplorerdata-firebase-adminsdk-ulb3d-465f23dff3.json'
     INVESTIGATION = "investigationId2"
 
-    run(INVESTIGATION, OPENAI_API_KEY, CRED_PATH)
-"""
-
-# %%
-# ok
-db = initialize_firestore(CRED_PATH)
-
-# %%
-# ok
-reviews = get_clean_reviews(INVESTIGATION, db)
-
-# %%
-# process_reviews_with_gpt - ok
-clean_reviews = []
-clean_reviews = process_reviews_with_gpt(reviews, OPENAI_API_KEY)
-
-# %%
-# Cluster Reviews
-cluster_df = cluster_reviews(clean_reviews)
-
-# %%
-# Label Clusters
-reviews_with_clusters = label_clusters(cluster_df)
-
-# %%
-# Quantify Observations
-attribute_clusters_with_percentage, attribute_clusters_with_percentage_by_asin = quantify_observations(reviews_with_clusters, clean_reviews)
-
-# %%
-# Save Results to Firestore
-save_cluster_info_to_firestore(attribute_clusters_with_percentage, attribute_clusters_with_percentage_by_asin, INVESTIGATION )
-
-# %%
-
-
-
-# Generate Insights
-positives = process_data_for_positives(df_with_clusters)
-
-# %%
-
-who = process_data_for_who(df_with_clusters)
-
-# %%
-
-feature_importance = process_data_for_feature_importance(df_with_clusters)
-
-# Save Insights to Firestore
-save_to_firestore(investigation_id, positives, who, feature_importance)
-
-
-###############
-
-# %%
-
-
-"""Quantify observations at both the investigation and ASIN levels."""
-
-
-df_with_clusters = reviews_with_clusters.merge(pd.DataFrame(clean_reviews), left_on='id', right_on='id', how='left')
-
-# %%
-
-
-agg_result = df_with_clusters.groupby(['Attribute', 'cluster_label']).agg({
-    'rating': lambda x: list(x),
-    'id': lambda x: list(x),
-    'asin_original': lambda x: list(x),
-    }).reset_index()
-
-
-# %%
-
-count_result = df_with_clusters.groupby(['Attribute', 'cluster_label']).size().reset_index(name='observation_count')
-attribute_clusters_with_percentage = pd.merge(agg_result, count_result, on=['Attribute', 'cluster_label'])
-
-m = [np.mean([int(r) for r in e]) for e in attribute_clusters_with_percentage['rating']]
-k = [int(round(e, 0)) for e in m]
-attribute_clusters_with_percentage['rating_avg'] = k
-
-total_observations_per_attribute = df_with_clusters.groupby('Attribute').size()
-attribute_clusters_with_percentage = attribute_clusters_with_percentage.set_index('Attribute')
-attribute_clusters_with_percentage['percentage_of_observations_vs_total_number_per_attribute'] = attribute_clusters_with_percentage['observation_count'] / total_observations_per_attribute * 100
-attribute_clusters_with_percentage = attribute_clusters_with_percentage.reset_index()
-
-number_of_reviews = reviews_with_clusters['id'].unique().shape[0]
-attribute_clusters_with_percentage['percentage_of_observations_vs_total_number_of_reviews'] = attribute_clusters_with_percentage['observation_count'] / number_of_reviews * 100
-
-
-# %%
-
-# Quantify observations at the ASIN level
-agg_result_asin = df_with_clusters.groupby(['Attribute', 'cluster_label', 'asin_original']).agg({
-    'rating': lambda x: list(x),
-    'id': lambda x: list(x),
-}).reset_index()
-
-count_result_asin = df_with_clusters.groupby(['Attribute', 'cluster_label', 'asin_original']).size().reset_index(name='observation_count')
-attribute_clusters_with_percentage_by_asin = pd.merge(agg_result_asin, count_result_asin, on=['Attribute', 'cluster_label', 'asin_original'])
-
-m_asin = [np.mean([int(r) for r in e]) for e in attribute_clusters_with_percentage_by_asin['rating']]
-k_asin = [int(round(e, 0)) for e in m_asin]
-attribute_clusters_with_percentage_by_asin['rating_avg'] = k_asin
-
-df_with_clusters['total_observations_per_attribute_asin'] = df_with_clusters.groupby(['Attribute', 'asin_original'])['asin_original'].transform('count')
-attribute_clusters_with_percentage_by_asin['percentage_of_observations_vs_total_number_per_attribute'] = attribute_clusters_with_percentage_by_asin['observation_count'] / df_with_clusters['total_observations_per_attribute_asin'] * 100
-attribute_clusters_with_percentage_by_asin['percentage_of_observations_vs_total_number_of_reviews'] = attribute_clusters_with_percentage_by_asin['observation_count'] / number_of_reviews * 100
-
-#%%
-
-from firebase_utils import save_cluster_info_to_firestore
-
-
-# %%
-
-# %%
+    run_reviews_investigation(INVESTIGATION, OPENAI_API_KEY, CRED_PATH)

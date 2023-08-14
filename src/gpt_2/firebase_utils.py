@@ -134,3 +134,29 @@ def save_cluster_info_to_firestore(attribute_clusters_with_percentage, attribute
     elapsed_time = end_time - start_time
 
     print(f"Successfully saved/updated clusters to firestore. Time taken: {elapsed_time} seconds")
+
+
+def write_insights_to_firestore(investigation_id, datapoints_dict):
+    batch = db.batch()
+
+    start_time = time.time()
+    try:
+        for attribute, datapoints_list in datapoints_dict.items():
+            # Ensure all numbers are either int or float
+            for datapoint in datapoints_list:
+                datapoint['Count'] = int(datapoint['Count'])
+                datapoint['Total'] = int(datapoint['Total'])
+                datapoint['Percentage_of_observations_in_attribute'] = float(datapoint['Percentage_of_observations_in_attribute'])
+                datapoint['Percentage_of_reviews'] = float(datapoint['Percentage_of_reviews'])
+
+            doc_ref = db.collection(u'insights').document(investigation_id).collection(u'attribute_with_percentage').document(attribute)
+            batch.set(doc_ref, {
+                u'clusters': datapoints_list
+            })
+
+        batch.commit()
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        print(f"Data for {investigation_id} successfully written to Firestore. Time taken: {elapsed_time} seconds")
+    except Exception as e:
+        print(f"Error writing data for {investigation_id} to Firestore: {e}")

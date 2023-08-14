@@ -37,53 +37,19 @@ def initial_review_clean_data_list(reviews_list, limit=3000):
     return reviews_list
 
 
-"""
-def process_data_for_positives(df):
-    # Process data for Positives, Pain Points, Buyer Motivation, and Customer Expectations
-    positives_list = []
+def process_datapoints(df):
+    datapoints_list = []
+    total = round(df['observation_count'].sum(), 0)
+
     for index, row in df.iterrows():
         data = {
             "Attribute": row["Attribute"],
-            "Attribute Value": row["Value"],
-            "Percentage of Count on Attribute Value vs. Count on Attribute": # Calculate percentage,
-            "Additional Details on Attribute Value": # Extract or compute details
+            "Cluster": row["cluster_label"],
+            "Count": row['observation_count'],   # Count of Observations of Attribute Value
+            "Total": total,  # Count of Observations of Attribute
+            "Percentage_of_observations_in_attribute": round(row['percentage_of_observations_vs_total_number_per_attribute'], 2),
+            "Percentage_of_reviews": round(row['percentage_of_observations_vs_total_number_of_reviews'], 2)
         }
-        positives_list.append(data)
-    return positives_list
+        datapoints_list.append(data)
 
-def process_data_for_who(df):
-    # Process data for Who, What, Where, and When
-    who_list = []
-    for index, row in df.iterrows():
-        data = {
-            "Attribute": row["Attribute"],
-            "Attribute Value": row["Value"],
-            "Count of Observations of Attribute Value": # Count observations,
-            "Count of Observations of Attribute": # Count observations
-        }
-        who_list.append(data)
-    return who_list
-
-def process_data_for_feature_importance(df):
-    # Process data for Feature Importance
-    feature_importance_list = []
-    for index, row in df.iterrows():
-        data = {
-            "Attribute": row["Attribute"],
-            "Attribute Value": row["Value"],
-            "Attribute Rating Average": # Calculate average,
-            "Attribute Value Percentage of Total Reviews": # Calculate percentage
-        }
-        feature_importance_list.append(data)
-    return feature_importance_list
-
-def save_to_firestore(investigation_id, positives, who, feature_importance):
-    # Save processed data to Firestore
-    doc_ref = db.collection('Insights').document(investigation_id)
-    doc_ref.set({
-        "Positives": positives,
-        "Who": who,
-        "Feature Importance": feature_importance
-    })
-
-    """
+    return datapoints_list
