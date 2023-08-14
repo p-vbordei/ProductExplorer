@@ -5,7 +5,7 @@ from google.cloud import firestore
 import firebase_admin
 from firebase_admin import credentials, firestore
 import os
-
+import pandas as pd
 import time
 from collections import defaultdict
 
@@ -104,52 +104,37 @@ def write_reviews(clean_reviews_list):
     print(f"Successfully saved/updated all reviews. Time taken: {elapsed_time} seconds")
 
 
-def save_clusters_to_firestore(investigation_id, attribute_clusters, attribute_clusters_by_asin):
-    # Get the reference to the investigation document
-    investigation_ref = db.collection('Investigations').document(investigation_id)
+def update_to_firestore_reviews_with_cluster_info(reviews_with_clusters):
+    """
+    Save the reviews with clusters to Firestore.
     
-    # Save attribute_clusters to Firestore
-    clusters_ref = investigation_ref.collection('clusters').document('attribute_clusters')
-    clusters_ref.set({
-        'data': attribute_clusters.to_dict(orient='records')  # Convert DataFrame to list of dicts
-    })
-    
-    # Save attribute_clusters_by_asin to Firestore
-    clusters_by_asin_ref = investigation_ref.collection('clusters').document('attribute_clusters_by_asin')
-    clusters_by_asin_ref.set({
-        'data': attribute_clusters_by_asin.to_dict(orient='records')  # Convert DataFrame to list of dicts
-    })
+    Parameters:
+    - reviews_with_clusters (DataFrame): DataFrame containing reviews with cluster information.
+    """
+    # Group reviews by ASIN
+    grouped_reviews = reviews_with_clusters.groupby('asin_original')
+    data_for_upload = {asin_original: group.drop(columns='asin_original').to_dict(orient='records') for asin_original, group in grouped_reviews}
 
+    start_time = time.time()
 
+    # Write reviews for each ASIN in a batch
+    for asin_original, reviews in data_for_upload.items():
+        if len(reviews) > 500:
+            print(f"Warning: More than 500 reviews for ASIN {asin_original}. Consider splitting the reviews or handling them differently.")
+            continue
 
+        batch = db.batch()
+        for review in reviews:
+            review_id = review['id']
+            review_ref = db.collection('products').document(asin_original).collection('reviews').document(review_id)
+            batch.set(review_ref, review, merge=True)
+        try:
+            batch.commit()
+            print(f"Successfully saved/updated reviews for ASIN {asin_original}")
+        except Exception as e:
+            print(f"Error saving/updating reviews for ASIN {asin_original}: {e}")
 
-############################################ SAVE RESULTS TO FIRESTORE ############################################
+    end_time = time.time()
+    elapsed_time = end_time - start_time
 
-def save_results_to_firestore(df_with_clusters, clean_reviews_list):
-    """Save processed reviews and their clusters to Firestore."""
-    
-    print('df_with_clusters')
-    print(df_with_clusters.columns)
-    print("--------------------")
-    
-    merge_reviews_df = pd.DataFrame(clean_reviews_list)
-
-    print('merge_reviews_df')
-    print(merge_reviews_df.columns)
-    print("--------------------")
-    print("Columns in df_with_clusters:", df_with_clusters.columns)
-    print("Columns in merge_reviews_df:", merge_reviews_df.columns)
-    print("Duplicate IDs in df_with_clusters:", df_with_clusters['id'].duplicated().sum())
-    print("Duplicate IDs in merge_reviews_df:", merge_reviews_df['id'].duplicated().sum())
-
-    merge_columns_proposed = ['review', 'name', 'date', 'asin', 'id', 'review_data', 'rating','title', 'media', 'verified_purchase', 'num_tokens','review_num_tokens',]
-    merge_columns = list(set(merge_columns_proposed).intersection(set(merge_reviews_df.columns)))
-
-    print('merge columns')
-    print(merge_columns)
-
-    reviews_with_clusters = df_with_clusters.merge(merge_reviews_df[merge_columns], on = ['id'], how = 'left')
-
-    print("------------ reviews with clusters columns----------------------------")       
-    print(reviews_with_clusters.columns)
-    save_reviews_with_clusters_to_firestore(reviews_with_clusters)
+    print(f"Successfully saved/updated all reviews with clusters. Time taken: {elapsed_time} seconds")

@@ -36,6 +36,8 @@ def initial_review_clean_data_list(reviews_list, limit=3000):
         review_dict['review_num_tokens'] = num_tokens_from_string(review_dict['review'])
     return reviews_list
 
+
+"""
 def process_data_for_positives(df):
     # Process data for Positives, Pain Points, Buyer Motivation, and Customer Expectations
     positives_list = []
@@ -83,3 +85,5 @@ def save_to_firestore(investigation_id, positives, who, feature_importance):
         "Who": who,
         "Feature Importance": feature_importance
     })
+
+    """
