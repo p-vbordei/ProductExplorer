@@ -1,3 +1,4 @@
+# %%
 import os
 import asyncio
 import pandas as pd
@@ -13,16 +14,24 @@ from openai_utils import process_dataframe_async_embedding
 
 from dotenv import load_dotenv
 from data_processing_utils import initial_review_clean_data_list
-from firebase_utils import update_investigation_status, get_investigation_and_reviews, write_reviews, save_results_to_firestore
+from firebase_utils import update_investigation_status, get_investigation_and_reviews, write_reviews, update_to_firestore_reviews_with_cluster_info
 from openai_utils import get_completion_list
+
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+CRED_PATH =  '/Users/vladbordei/Documents/Development/ProductExplorer/notebooks/productexplorerdata-firebase-adminsdk-ulb3d-465f23dff3.json'
+INVESTIGATION = "investigationId2"
+
 
 def initialize_firestore(cred_path):
     """Initialize Firestore client."""
     cred = credentials.Certificate(cred_path)
     if not firebase_admin._apps:
         firebase_admin.initialize_app(cred)
+    
     db = firestore.client()
     return db
+
+
 
 def get_clean_reviews(investigation_id, db):
     """Retrieve and clean reviews."""
@@ -187,12 +196,21 @@ def cluster_reviews(clean_reviews_list):
     reviews_df = pd.DataFrame(clean_reviews_list)
 
     # Drop unnecessary columns
-    drop_columns = ['Verified', 'Helpful', 'Title', 'review', 'Videos', 'Variation', 'Style', 'num_tokens', 'review_num_tokens', 'review_data']
+    drop_columns = ['Verified', 'Helpful', 'Title', 'review', 'Videos', 'Variation', 'Style', 'num_tokens',
+                     'review_num_tokens', 'review_data', 'title', 'date', 'verified_purchase', 
+                     'name', 'media', 'rating', 'n_tokens']
     reviews_df = reviews_df.drop(columns=drop_columns, errors='ignore')
 
     # Fill missing values and replace undesired values
-    data_cols = ["Review Summary", "Buyer Motivation", "Customer Expectations", "How the product is used", "Where the product is used", "User Description", "Packaging", "Season", "When the product is used", "Appraisal", "Quality", "Durability", "Ease of Use", "Setup and Instructions", "Noise and Smell", "Size and Fit", "Danger Appraisal", "Design and Appearance", "Parts and Components", "Issues"]
-    replace_values = ['\n', 'not mentioned', np.nan, '', ' ', 'NA', 'N/A', 'missing', 'NaN', 'unknown', 'Not mentioned', 'not specified', 'Not specified']
+    data_cols = ["Review Summary", "Buyer Motivation", "Customer Expectations", 
+                 "How the product is used", "Where the product is used", "User Description",
+                 "Packaging", "Season", "When the product is used", "Appraisal", "Quality", "Durability", 
+                 "Ease of Use", "Setup and Instructions", "Noise and Smell", "Size and Fit", 
+                 "Danger Appraisal", "Design and Appearance", "Parts and Components", "Issues"]
+    
+    replace_values = ['\n', 'not mentioned', np.nan, '', ' ', 'NA', 'N/A', 'missing',
+                      'NaN', 'unknown', 'Not mentioned', 'not specified', 'Not specified']
+    
     for col in data_cols:
         reviews_df[col] = reviews_df[col].fillna('unknown').replace(replace_values, 'unknown')
 
@@ -201,7 +219,9 @@ def cluster_reviews(clean_reviews_list):
     reviews_data_df = reviews_df.melt(id_vars=[col for col in reviews_df.columns if col not in columns_to_pivot], value_vars=columns_to_pivot, var_name='Attribute', value_name='Value')
 
     # Filter out 'unknown' values
-    df = reviews_data_df[reviews_data_df['Value'] != 'unknown']
+
+    df = reviews_data_df.loc[reviews_data_df['Value'] != 'unknown']
+
 
     # Embedding
     df = asyncio.run(process_dataframe_async_embedding(df))
@@ -223,7 +243,14 @@ def cluster_reviews(clean_reviews_list):
             df.loc[df['Attribute'] == type, "cluster"] = 0
 
     df['cluster'] = df['cluster'].astype(int)
-    return df[['Attribute', 'cluster', 'Value', 'id']].drop_duplicates()
+    print(df.columns)
+
+    if 'asin' in df.columns:
+        df['asin_original'] = df['asin'].apply(lambda x: x['original'])
+    else:
+        print("'asin' column not found in df!")
+
+    return df[['Attribute', 'cluster', 'Value', 'id', 'asin_original']].drop_duplicates()
 
 
 ############################################ CLUSTER LABELING ############################################
@@ -356,8 +383,21 @@ def run(investigation_id, openai_api_key, cred_path):
     cluster_df = clustering(clean_reviews)
     reviews_with_clusters = cluster_labeling(cluster_df)
     save_results_to_firestore(df_with_clusters, clean_reviews_list)
-    quantify_observations(cluster_df, reviews_with_clusters, investigation_id)
 
+    quantify_observations(df_with_clusters, reviews_with_clusters, investigation_id)
+
+    # Generate Insights
+    positives = process_data_for_positives(df_with_clusters)
+    who = process_data_for_who(df_with_clusters)
+    feature_importance = process_data_for_feature_importance(df_with_clusters)
+
+    # Save Insights to Firestore
+    save_to_firestore(investigation_id, positives, who, feature_importance)
+
+
+# %%
+
+"""
 if __name__ == "__main__":
     load_dotenv()
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
@@ -365,3 +405,49 @@ if __name__ == "__main__":
     INVESTIGATION = "investigationId2"
 
     run(INVESTIGATION, OPENAI_API_KEY, CRED_PATH)
+"""
+
+# %%
+# ok
+db = initialize_firestore(CRED_PATH)
+
+# %%
+# ok
+reviews = get_clean_reviews(INVESTIGATION, db)
+
+# %%
+# process_reviews_with_gpt - ok
+clean_reviews = []
+clean_reviews = process_reviews_with_gpt(reviews, OPENAI_API_KEY)
+
+# %%
+# Cluster Reviews
+cluster_df = cluster_reviews(clean_reviews)
+
+# %%
+# Label Clusters
+reviews_with_clusters = label_clusters(cluster_df)
+
+# %%
+# Update Firestore with Clusters
+update_to_firestore_reviews_with_cluster_info(reviews_with_clusters)
+
+
+# %%
+quantify_observations(df_with_clusters, reviews_with_clusters, investigation_id)
+
+# Generate Insights
+positives = process_data_for_positives(df_with_clusters)
+
+# %%
+
+who = process_data_for_who(df_with_clusters)
+
+# %%
+
+feature_importance = process_data_for_feature_importance(df_with_clusters)
+
+# Save Insights to Firestore
+save_to_firestore(investigation_id, positives, who, feature_importance)
+
+
