@@ -190,7 +190,7 @@ def process_reviews_with_gpt(reviews_list, openai_api_key):
 
 
 ######################################### CLUSTERING #########################################
-
+# %%
 def cluster_reviews(clean_reviews_list):
     # Convert reviews list to DataFrame
     reviews_df = pd.DataFrame(clean_reviews_list)
@@ -252,7 +252,7 @@ def cluster_reviews(clean_reviews_list):
 
     return df[['Attribute', 'cluster', 'Value', 'id', 'asin_original']].drop_duplicates()
 
-
+# %%
 ############################################ CLUSTER LABELING ############################################
 
 def label_clusters(cluster_df):
@@ -302,11 +302,8 @@ def label_clusters(cluster_df):
     df_with_clusters = cluster_df.merge(cluster_response_df, on=['Attribute', 'cluster'], how='left')
     drop_columns = ['n_tokens', 'embedding', 'Date', 'Author', 'Images']
     df_with_clusters = df_with_clusters.drop(columns=drop_columns, errors='ignore')
-    
+
     return df_with_clusters
-
-
-
 
 ############################################ QUANTIFY OBSERVATIONS ############################################
 
@@ -430,7 +427,7 @@ reviews_with_clusters = label_clusters(cluster_df)
 
 # %%
 # Update Firestore with Clusters
-update_to_firestore_reviews_with_cluster_info(reviews_with_clusters)
+# update_to_firestore_reviews_with_cluster_info(reviews_with_clusters)
 
 
 # %%
