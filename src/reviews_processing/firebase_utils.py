@@ -19,6 +19,15 @@ if not firebase_admin._apps:
     firebase_admin.initialize_app(cred)
 db = firestore.client()
 
+def initialize_firestore(cred_path):
+    """Initialize Firestore client."""
+    cred = credentials.Certificate(cred_path)
+    if not firebase_admin._apps:
+        firebase_admin.initialize_app(cred)
+    
+    db = firestore.client()
+    return db
+
 
 def update_investigation_status(investigation_id, new_status):
     investigation_ref = db.collection(u'investigations').document(investigation_id)
@@ -72,6 +81,21 @@ def get_investigation_and_reviews(investigation_id):
             if asin_reviews is not None:
                 reviews_list.append(asin_reviews)
     return reviews_list
+
+
+def get_clean_reviews(investigation_id, db):
+    """Retrieve and clean reviews."""
+
+    update_investigation_status(investigation_id, "started_reviews")
+    reviews_download = get_investigation_and_reviews(investigation_id)
+    flattened_reviews = [item for sublist in reviews_download for item in sublist]
+    for review in flattened_reviews:
+        review['asin_data'] = review['asin']
+        review['asin'] = review['asin']['original']
+    return initial_review_clean_data_list(flattened_reviews)
+
+
+
 
 
 def write_reviews(clean_reviews_list):

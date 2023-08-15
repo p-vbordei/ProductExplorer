@@ -14,34 +14,13 @@ from openai_utils import process_dataframe_async_embedding
 
 from dotenv import load_dotenv
 from data_processing_utils import initial_review_clean_data_list, process_datapoints
-from firebase_utils import update_investigation_status, get_investigation_and_reviews, write_reviews, save_cluster_info_to_firestore, write_insights_to_firestore
+from firebase_utils import initialize_firestore, get_clean_reviews , write_reviews, save_cluster_info_to_firestore, write_insights_to_firestore
 from openai_utils import get_completion_list
 
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 CRED_PATH =  '/Users/vladbordei/Documents/Development/ProductExplorer/notebooks/productexplorerdata-firebase-adminsdk-ulb3d-465f23dff3.json'
 INVESTIGATION = "investigationId2"
 
-
-def initialize_firestore(cred_path):
-    """Initialize Firestore client."""
-    cred = credentials.Certificate(cred_path)
-    if not firebase_admin._apps:
-        firebase_admin.initialize_app(cred)
-    
-    db = firestore.client()
-    return db
-
-
-
-def get_clean_reviews(investigation_id, db):
-    """Retrieve and clean reviews."""
-    update_investigation_status(investigation_id, "started_reviews")
-    reviews_download = get_investigation_and_reviews(investigation_id)
-    flattened_reviews = [item for sublist in reviews_download for item in sublist]
-    for review in flattened_reviews:
-        review['asin_data'] = review['asin']
-        review['asin'] = review['asin']['original']
-    return initial_review_clean_data_list(flattened_reviews)
 
 
 ####################################### PROCESS REVIEWS WITH GPT #######################################
