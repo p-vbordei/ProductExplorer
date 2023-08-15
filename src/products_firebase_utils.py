@@ -4,9 +4,8 @@
 from google.cloud import firestore
 import firebase_admin
 from firebase_admin import credentials, firestore
-import pandas as pd
 import logging
-import requests
+from tqdm import tqdm
 
 # Firestore details
 CRED_PATH = '/Users/vladbordei/Documents/Development/ProductExplorer/notebooks/productexplorerdata-firebase-adminsdk-ulb3d-465f23dff3.json'
@@ -84,7 +83,7 @@ def update_firestore_individual_products(new_products_list, INVESTIGATION, db):
     for product in tqdm(new_products_list):
         doc_ref = db.collection('products').document(product['asin'])
         try:
-            doc_ref.set(asin_level_data, merge=True)  # Use set() with merge=True to update or create a new document
+            doc_ref.set(product, merge=True)  # Use set() with merge=True to update or create a new document
         except Exception as e:
             print(f"Error updating document {product['asin']}: {e}")
 

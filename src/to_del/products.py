@@ -277,7 +277,7 @@ for product in products:
 for product in tqdm(new_products_list):
     doc_ref = db.collection('products').document(product['asin'])
     try:
-        doc_ref.set(asin_level_data, merge=True)  # Use set() with merge=True to update or create a new document
+        doc_ref.set(product, merge=True)  # Use set() with merge=True to update or create a new document
     except Exception as e:
         print(f"Error updating document {product['asin']}: {e}")
 

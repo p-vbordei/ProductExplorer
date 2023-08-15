@@ -13,8 +13,8 @@ from openai_utils import process_dataframe_async_embedding
 
 
 from dotenv import load_dotenv
-from data_processing_utils import initial_review_clean_data_list, process_datapoints
-from firebase_utils import initialize_firestore, get_clean_reviews , write_reviews, save_cluster_info_to_firestore, write_insights_to_firestore
+from reviews_data_processing_utils import initial_review_clean_data_list, process_datapoints
+from reviews_firebase_utils import initialize_firestore, get_clean_reviews , write_reviews, save_cluster_info_to_firestore, write_insights_to_firestore
 from openai_utils import get_completion_list
 
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')

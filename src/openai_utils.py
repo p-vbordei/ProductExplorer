@@ -7,6 +7,7 @@ import numpy as np
 import random
 import pandas as pd
 from tenacity import retry, wait_random_exponential, stop_after_attempt
+import requests
 
 
 import tiktoken

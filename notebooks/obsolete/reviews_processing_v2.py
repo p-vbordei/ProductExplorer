@@ -10,8 +10,8 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 
 from dotenv import load_dotenv
-from data_processing_utils import initial_review_clean_data_list
-from firebase_utils import update_investigation_status, get_investigation_and_reviews, write_reviews, save_clusters_to_firestore, save_reviews_with_clusters_to_firestore
+from reviews_data_processing_utils import initial_review_clean_data_list
+from reviews_firebase_utils import update_investigation_status, get_investigation_and_reviews, write_reviews, save_clusters_to_firestore, save_reviews_with_clusters_to_firestore
 from openai_utils import get_completion_list
 
 

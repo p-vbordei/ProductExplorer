@@ -3,23 +3,12 @@
 
 #%%
 import os
-import pandas as pd
-import numpy as np
 from dotenv import load_dotenv
-from tqdm import tqdm
-import logging
-import requests
-
 from products_firebase_utils import get_investigation_and_product_details, update_investigation_status, update_firestore_individual_products, initialize_firestore, save_product_details_to_firestore
 from products_data_processing_utils import extract_brand_name, remove_brand, clean_description_data, calculate_median_price
 from openai_utils    import chat_completion_request
 
-
-load_dotenv()
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 GPT_MODEL = "gpt-3.5-turbo"
-INVESTIGATION = "investigationId3"
-CRED_PATH = '/Users/vladbordei/Documents/Development/ProductExplorer/notebooks/productexplorerdata-firebase-adminsdk-ulb3d-465f23dff3.json'
 
 ################################## PROCESS INDIVIDUAL PRODUCTS #########################################
 # %%
@@ -141,7 +130,7 @@ def process_products(investigation_id, GPT_MODEL):
     new_products_list = [] 
     for product in products:
         asin_level_data = {}
-        asin_level_data['details'] = product
+        asin_level_data = product
         new_products_list.append(asin_level_data)
         
     return new_products_list
@@ -648,33 +637,28 @@ def process_product_description(products, GPT_MODEL):
     final_product_data['short_product_data'] = short_product_data
     final_product_data['other_product_data'] = other_product_data
 
-
-
     return final_product_data
 
-
 ################################## RUN #########################################
-#%%
-db = initialize_firestore(CRED_PATH)
 
-#%%
-# Update investigation status
-update_investigation_status(INVESTIGATION, "started_products", db)
 
-# %%
-new_products_list = process_products(INVESTIGATION, GPT_MODEL)
 
-# %%
-update_firestore_individual_products(new_products_list, INVESTIGATION, db)
+def run_products_investigation(investigation_id, cred_path):
+    db = initialize_firestore(cred_path)
+    update_investigation_status(investigation_id, "started_products", db)
+    new_products_list = process_products(investigation_id, GPT_MODEL)
+    update_firestore_individual_products(new_products_list, investigation_id, db)
+    update_investigation_status(investigation_id, "finished_individual_products", db)
+    final_product_data = process_product_description(new_products_list, GPT_MODEL)
+    save_product_details_to_firestore(db, investigation_id, final_product_data)
+    update_investigation_status(investigation_id, 'finished_products', db)
 
-# %%
-update_investigation_status(INVESTIGATION, "finished_individual_products", db)
-# %%
-final_product_data = process_product_description(new_products_list, GPT_MODEL)
 
-# %%
-save_product_details_to_firestore(db, INVESTIGATION, final_product_data)
-# %%
-update_investigation_status(INVESTIGATION, 'finished_products', db)
 
-# %%
+if __name__ == "__main__":
+    load_dotenv()
+    OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+    CRED_PATH =  '/Users/vladbordei/Documents/Development/ProductExplorer/notebooks/productexplorerdata-firebase-adminsdk-ulb3d-465f23dff3.json'
+    INVESTIGATION = "investigationId2"
+
+    run_products_investigation(INVESTIGATION, CRED_PATH)
