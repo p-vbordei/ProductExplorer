@@ -8,20 +8,21 @@ import numpy as np
 from dotenv import load_dotenv
 from tqdm import tqdm
 import logging
+import requests
 
-from src.products_processing.products_firebase_utils import get_investigation_and_product_details, update_investigation_status, update_firestore_individual_products, initialize_firestore, save_product_details_to_firestore
-from src.products_processing.products_data_processing_utils import extract_brand_name, remove_brand, clean_description_data, calculate_median_price
-from src.reviews_processing.openai_utils    import chat_completion_request
+from products_firebase_utils import get_investigation_and_product_details, update_investigation_status, update_firestore_individual_products, initialize_firestore, save_product_details_to_firestore
+from products_data_processing_utils import extract_brand_name, remove_brand, clean_description_data, calculate_median_price
+from openai_utils    import chat_completion_request
 
 
 load_dotenv()
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 GPT_MODEL = "gpt-3.5-turbo"
-INVESTIGATION = "investigationId2"
+INVESTIGATION = "investigationId3"
 CRED_PATH = '/Users/vladbordei/Documents/Development/ProductExplorer/notebooks/productexplorerdata-firebase-adminsdk-ulb3d-465f23dff3.json'
 
 ################################## PROCESS INDIVIDUAL PRODUCTS #########################################
-
+# %%
 
 def process_products(investigation_id, GPT_MODEL):
     """
@@ -36,14 +37,11 @@ def process_products(investigation_id, GPT_MODEL):
     - list: A list of processed products.
     """
     
-    # Update investigation status
-    update_investigation_status(investigation_id, "started_products")
-
     # Fetch products
     try:
-        products = get_investigation_and_product_details(investigation_id)
+        products = get_investigation_and_product_details(investigation_id, db)
     except Exception as e:
-        logging.error(f"Error fetching product details for investigation {investigation_id}: {e}")
+        print(f"Error fetching product details for investigation {investigation_id}: {e}")
         return []
 
     functions = [
@@ -125,13 +123,13 @@ def process_products(investigation_id, GPT_MODEL):
             model=GPT_MODEL
         )
 
-        if response.status_code == 200:
+        try:
             response = response.json()
             print(response)
             product['product_description_data'] = response
-        else:
-            print("Unable to generate ChatCompletion response")
-            print(f"Response: {response}")
+        except Exception as e:
+            print(f"Error generating product description for product {asin}: {e}")
+            continue
 
 
     # Process Responses
@@ -149,14 +147,14 @@ def process_products(investigation_id, GPT_MODEL):
     return new_products_list
 
 
-
+# %%
 
 ################################ PROCESS PRODUCT DESCRIPTIONS #########################################
 
 
 
 def process_product_description(products, GPT_MODEL):
-# %%
+
 
     product_summary_dict = {}
     what_is_in_the_box_dict = {}
@@ -189,10 +187,8 @@ def process_product_description(products, GPT_MODEL):
     list_of_product_data_dictionaries = [product_summary_dict, what_is_in_the_box_dict, technical_facts_dict, features_dict, how_product_use_dict, where_product_use_dict, user_description_dict,season_description_dict,when_product_use_dict]
 
 
-    # %% [markdown]
     # ### Product Summary
 
-    # %%
     functions = [
         {
             "name": "product_summary_function",
@@ -215,7 +211,6 @@ def process_product_description(products, GPT_MODEL):
         }
     ]
 
-    # %%
     messages = [
         {"role": "user", "content": f"```PRODUCT SUMMARIES:``` {product_summary_dict}"}
     ]
@@ -233,13 +228,10 @@ def process_product_description(products, GPT_MODEL):
 
     main_product_summary_response = response.json()["choices"]
 
-    # %%
     main_product_summary_response
 
-    # %% [markdown]
     # ### What is in the box
 
-    # %%
     functions = [
         {
             "name": "what_is_in_the_box",
@@ -261,7 +253,6 @@ def process_product_description(products, GPT_MODEL):
         }
     ]
 
-    # %%
     messages = [
         {"role": "user", "content": f"{what_is_in_the_box_dict}"}
     ]
@@ -280,10 +271,8 @@ def process_product_description(products, GPT_MODEL):
 
 
 
-    # %% [markdown]
     # ### Technical Facts
 
-    # %%
     functions = [
         {
             "name": "technical_facts_function",
@@ -306,7 +295,6 @@ def process_product_description(products, GPT_MODEL):
         }
     ]
 
-    # %%
     messages = [
         {"role": "user", "content": f"{technical_facts_dict}"}
     ]
@@ -323,12 +311,8 @@ def process_product_description(products, GPT_MODEL):
     # Process the response and store in the dictionary
     main_product_technical_facts_response = response.json()["choices"]
 
-
-
-    # %% [markdown]
     # ### Features
 
-    # %%
     functions = [
         {
             "name": "features_function",
@@ -359,7 +343,6 @@ def process_product_description(products, GPT_MODEL):
         }
     ]
 
-    # %%
     messages = [
         {"role": "user", "content": f"{features_dict}"}
     ]
@@ -376,12 +359,8 @@ def process_product_description(products, GPT_MODEL):
     # Process the response and store in the dictionary
     main_product_features_response = response.json()["choices"]
 
-
-
-    # %% [markdown]
     # ### How to use the product
 
-    # %%
     functions = [
         {
             "name": "how_product_use_function",
@@ -408,7 +387,6 @@ def process_product_description(products, GPT_MODEL):
         }
     ]
 
-    # %%
     messages = [
         {"role": "user", "content": f"{how_product_use_dict}"}
     ]
@@ -425,12 +403,8 @@ def process_product_description(products, GPT_MODEL):
     # Process the response and store in the dictionary
     main_product_how_to_use_response = response.json()["choices"]
 
-
-
-    # %% [markdown]
     # ### Where the product is used
 
-    # %%
     functions = [
         {
             "name": "where_product_use_function",
@@ -455,7 +429,6 @@ def process_product_description(products, GPT_MODEL):
         }
     ]
 
-    # %%
     messages = [
         {"role": "user", "content": f"{where_product_use_dict}"}
     ]
@@ -472,12 +445,8 @@ def process_product_description(products, GPT_MODEL):
     # Process the response and store in the dictionary
     main_product_where_to_use_response = response.json()["choices"]
 
-
-
-    # %% [markdown]
     # ### User Description
 
-    # %%
     functions = [
         {
             "name": "user_description_function",
@@ -503,7 +472,6 @@ def process_product_description(products, GPT_MODEL):
         }
     ]
 
-    # %%
     messages = [
         {"role": "user", "content": f"{user_description_dict}"}
     ]
@@ -520,10 +488,8 @@ def process_product_description(products, GPT_MODEL):
     # Process the response and store in the dictionary
     main_product_user_description_response = response.json()["choices"]
 
-    # %% [markdown]
     # ### Packaging Description
 
-    # %%
     functions = [
         {
             "name": "product_packaging_function",
@@ -545,7 +511,6 @@ def process_product_description(products, GPT_MODEL):
         }
     ]
 
-    # %%
     messages = [
         {"role": "user", "content": f"{packaging_description_dict}"}
     ]
@@ -562,10 +527,8 @@ def process_product_description(products, GPT_MODEL):
     # Process the response and store in the dictionary
     main_product_packaging_description_response = response.json()["choices"]
 
-    # %% [markdown]
     # ### Season Description
 
-    # %%
     functions = [
         {
             "name": "product_seasonal_use_function",
@@ -587,7 +550,6 @@ def process_product_description(products, GPT_MODEL):
         }
     ]
 
-    # %%
     messages = [
         {"role": "user", "content": f"{season_description_dict}"}
     ]
@@ -604,12 +566,8 @@ def process_product_description(products, GPT_MODEL):
     # Process the response and store in the dictionary
     main_product_season_to_use_response = response.json()["choices"]
 
-
-
-    # %% [markdown]
     # ### When the product is used Description
 
-    # %%
     functions = [
         {
             "name": "when_product_use_function",
@@ -631,7 +589,6 @@ def process_product_description(products, GPT_MODEL):
         }
     ]
 
-    # %%
     messages = [
         {"role": "user", "content": f"{when_product_use_dict}"}
     ]
@@ -648,9 +605,6 @@ def process_product_description(products, GPT_MODEL):
     # Process the response and store in the dictionary
     main_product_when_to_use_response = response.json()["choices"]
 
-
-
-    # %%
     initial_responses = {}
     initial_responses['product_summary'] = main_product_summary_response
     initial_responses['what_is_in_the_box'] = main_product_what_is_in_the_box_response
@@ -669,13 +623,11 @@ def process_product_description(products, GPT_MODEL):
     for key in initial_responses.keys():
         product_data_interim[key] = eval(initial_responses[key][0]['message']['function_call']['arguments'])
 
-    #%%
     product_data = {}
     for main_key in product_data_interim.keys():
         for secondary_key in product_data_interim[main_key].keys():
             product_data[secondary_key] = product_data_interim[main_key][secondary_key]
 
-    # %%
     product_data['median_product_price'] = calculate_median_price(products)
 
     general_product_keys_to_keep = ['Product Summary', 'product_summary','In_the_Box', 'in_the_box', 'technical_facts', 'features', 'how_the_product_is_used',  'where_the_product_is_used', 'user_description','median_product_price']
@@ -701,18 +653,28 @@ def process_product_description(products, GPT_MODEL):
     return final_product_data
 
 
-################################## PROCESS INDIVIDUAL PRODUCTS #########################################
+################################## RUN #########################################
 #%%
 db = initialize_firestore(CRED_PATH)
-new_products_list = process_products(INVESTIGATION, GPT_MODEL)
-update_firestore_individual_products(new_products_list, INVESTIGATION, db)
-update_investigation_status(INVESTIGATION, "finished_individual_products", db)
 
+#%%
+# Update investigation status
+update_investigation_status(INVESTIGATION, "started_products", db)
+
+# %%
+new_products_list = process_products(INVESTIGATION, GPT_MODEL)
+
+# %%
+update_firestore_individual_products(new_products_list, INVESTIGATION, db)
+
+# %%
+update_investigation_status(INVESTIGATION, "finished_individual_products", db)
+# %%
 final_product_data = process_product_description(new_products_list, GPT_MODEL)
 
 # %%
 save_product_details_to_firestore(db, INVESTIGATION, final_product_data)
 # %%
-update_investigation_status(INVESTIGATION, 'finished_products')
+update_investigation_status(INVESTIGATION, 'finished_products', db)
 
 # %%

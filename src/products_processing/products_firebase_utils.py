@@ -6,6 +6,7 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 import pandas as pd
 import logging
+import requests
 
 # Firestore details
 CRED_PATH = '/Users/vladbordei/Documents/Development/ProductExplorer/notebooks/productexplorerdata-firebase-adminsdk-ulb3d-465f23dff3.json'
@@ -21,7 +22,7 @@ db = firestore.client()
 
 def initialize_firestore(CRED_PATH):
     """Initialize Firestore client."""
-    cred = credentials.Certificate(cred_path)
+    cred = credentials.Certificate(CRED_PATH)
     if not firebase_admin._apps:
         firebase_admin.initialize_app(cred)
     

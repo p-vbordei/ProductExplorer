@@ -1,6 +1,7 @@
 # products_data_processing_utils.py
 
 from typing import List
+import requests
 
 def extract_brand_name(string: str) -> str:
     if isinstance(string, str) and ("Brand: " in string or "Visit the " in string):
