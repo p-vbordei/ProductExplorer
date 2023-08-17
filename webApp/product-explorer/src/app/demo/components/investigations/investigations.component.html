@@ -1,0 +1,46 @@
+<div class="grid p-fluid">
+    <div class="col-12 md:col-6">
+        <div class="card">
+            <h5>Paste ASIN Codes Here, Separated by Comma or Space</h5>
+			<textarea rows="5" cols="30" placeholder="Your Message" pInputTextarea></textarea>
+            <div class="flex flex-wrap gap-2 mt-4">
+				<button pButton pRipple label="Submit"></button>
+			</div>
+        </div>
+    </div>
+
+
+    <div class="col-12 md:col-6">
+        <div class="card">
+            <!-- <div class="flex justify-content-between align-items-center align-content-center flex-column sm:flex-row"> 
+                <h5 class="mb-4">Possitive Feedback</h5>
+                <button class="p-button-outlined mb-4" label="Download" type="button" pButton pRipple icon="pi pi-file-excel" (click)="exportExcel(positiveFeedbackData)"  pTooltip="XLS" tooltipPosition="bottom"></button>
+            </div>
+            <ng-template pTemplate="caption">
+                <div class="flex">
+                    <p-tag class="text-lg" severity="success" value="Positive Feedback"></p-tag>
+                    
+                </div>
+            </ng-template>
+            <p-table #dt [columns]="cols" [value]="positiveFeedbackData" [exportHeader]="'customExportHeader'" [tableStyle]="{ 'min-width': '50rem' }">
+                <ng-template pTemplate="header" let-columns>
+                    <tr>
+                        <th *ngFor="let col of columns">
+                            {{ col.header }}
+                        </th>
+                    </tr>
+                </ng-template>
+                <ng-template pTemplate="body" let-rowData let-columns="columns">
+                    <tr [pSelectableRow]="rowData">
+                        <td>{{rowData.label}}</td>
+                        <td><p-progressBar [value]="rowData.value"></p-progressBar></td>
+                        <td>{{rowData.description}}</td>
+                    </tr>
+                </ng-template>
+            </p-table>
+        </div> -->
+    </div>
+
+
+</div>
+
