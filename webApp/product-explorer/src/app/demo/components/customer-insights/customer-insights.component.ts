@@ -12,11 +12,6 @@ interface Column {
     customExportHeader?: string;
 }
 
-interface ExportColumn {
-    title: string;
-    dataKey: string;
-}
-
 @Component({
     selector: 'app-customer-insights',
     templateUrl: './customer-insights.component.html',

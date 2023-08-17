@@ -12,7 +12,7 @@ import { TagModule } from 'primeng/tag';
 import { InputTextareaModule } from "primeng/inputtextarea";
 import { InvestigationsComponent } from './investigations.component';
 import { InvestigationsRoutingModule } from './investigations-routing.module';
-
+import { InputTextModule } from "primeng/inputtext";
 
 @NgModule({
   imports: [
@@ -27,7 +27,8 @@ import { InvestigationsRoutingModule } from './investigations-routing.module';
     ProgressBarModule,
     TagModule,
     InvestigationsRoutingModule,
-    InputTextareaModule
+    InputTextareaModule,
+    InputTextModule
 ],
 declarations: [InvestigationsComponent]
 })

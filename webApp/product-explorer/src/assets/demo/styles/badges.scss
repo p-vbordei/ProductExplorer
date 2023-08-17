@@ -27,12 +27,12 @@
 }
 
 .customer-badge {
-    &.status-qualified {
+    &.status-completed {
         background: #C8E6C9;
         color: #256029;
     }
 
-    &.status-unqualified {
+    &.status-failed {
         background: #FFCDD2;
         color: #C63737;
     }
@@ -47,7 +47,7 @@
         color: #23547B;
     }
 
-    &.status-renewal {
+    &.status-pending {
         background: #ECCFFF;
         color: #694382;
     }
