@@ -1,19 +1,18 @@
 #####################
 # main.py
-from flask import Flask, jsonify, request
-import connexion
+from flask import jsonify, request
 import os
-from app.products_processing import run_products_investigation
+import sys
+sys.path.append('.')
+from . import app, connex_app
+from products_processing import run_products_investigation
 
-# Create a Flask app instance
-app = Flask(__name__)
-
-# Create a Connexion app instance
-connex_app = connexion.App(__name__, specification_dir='./')
-connex_app.add_api('swagger.yaml')
 
 @app.route('/run_products_investigation', methods=['POST'])
 def api_run_products_investigation():
+    """
+    Initiates a product investigation based on the provided investigation ID and credential path.
+    """
     data = request.json
     investigation_id = data.get('investigation_id')
     cred_path = data.get('cred_path')
@@ -29,6 +28,7 @@ def api_run_products_investigation():
 
 if __name__ == "__main__":
     load_dotenv()
+    INVESTIGATION = "investigationId2"
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
     connex_app.run(port=8080)
 #####################

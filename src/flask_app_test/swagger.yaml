@@ -1,31 +1,60 @@
 ###############
 # Swagger API swagger.yaml#
+openapi: '3.0.0'
+info:
+  title: ProductExplorer
+  version: '1.0'
+  description: A sample API for product investigation.
+
 paths:
-  /hello:
-    get:
-      responses:
-        200:
-          description: Returns a greeting
-          schema:
-            type: string
   /run_products_investigation:
     post:
-      parameters:
-        - in: body
-          name: body
-          required: true
-          schema:
-            type: object
-            properties:
-              investigation_id:
-                type: string
-              cred_path:
-                type: string
+      operationId: app.main.api_run_products_investigation
+      summary: Initiates a product investigation.
+      description: |
+        This endpoint initiates a product investigation based on the provided investigation ID and credential path.
+      tags:
+        - Investigation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                investigation_id:
+                  type: string
+                  description: The ID of the investigation.
+                cred_path:
+                  type: string
+                  description: The path to the credentials file.
       responses:
-        200:
-          description: Investigation completed successfully
-        400:
-          description: Bad request
-        500:
-          description: Internal server error
+        '200':
+          description: Investigation completed successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          description: Bad request. Missing or invalid parameters.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        '500':
+          description: Internal server error or processing error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+
 ###############

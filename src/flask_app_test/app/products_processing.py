@@ -4,9 +4,9 @@
 #%%
 import os
 from dotenv import load_dotenv
-from app.products_firebase_utils import get_investigation_and_product_details, update_investigation_status, update_firestore_individual_products, initialize_firestore, save_product_details_to_firestore
-from app.products_data_processing_utils import extract_brand_name, remove_brand, clean_description_data, calculate_median_price
-from app.openai_utils    import chat_completion_request
+from products_firebase_utils import get_investigation_and_product_details, update_investigation_status, update_firestore_individual_products, initialize_firestore, save_product_details_to_firestore
+from products_data_processing_utils import extract_brand_name, remove_brand, clean_description_data, calculate_median_price
+from openai_utils    import chat_completion_request
 
 GPT_MODEL = "gpt-3.5-turbo"
 
