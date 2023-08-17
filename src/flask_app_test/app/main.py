@@ -5,7 +5,8 @@ import os
 import sys
 sys.path.append('.')
 from . import app, connex_app
-from products_processing import run_products_investigation
+
+from .products_processing import run_products_investigation
 
 
 @app.route('/run_products_investigation', methods=['POST'])
