@@ -19,9 +19,11 @@ lib64/
 parts/
 sdist/
 var/
+src/flask_app_test/.env
 *.egg-info/
 .installed.cfg
 *.egg
+
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

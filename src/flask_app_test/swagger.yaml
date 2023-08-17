@@ -1,0 +1,31 @@
+###############
+# Swagger API swagger.yaml#
+paths:
+  /hello:
+    get:
+      responses:
+        200:
+          description: Returns a greeting
+          schema:
+            type: string
+  /run_products_investigation:
+    post:
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            type: object
+            properties:
+              investigation_id:
+                type: string
+              cred_path:
+                type: string
+      responses:
+        200:
+          description: Investigation completed successfully
+        400:
+          description: Bad request
+        500:
+          description: Internal server error
+###############

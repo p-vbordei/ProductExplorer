@@ -1,0 +1,15 @@
+/your_project_directory
+├── main.py
+└── templates
+    └── index.html
+
+
+# In the Working Dir
+docker build -t flask-gae-app .
+docker run -p 8080:8080 flask-gae-app
+
+# Then, access the app in a browser at http://localhost:8080/.
+
+
+
+# pip install aiohttp numpy pandas tenacity requests tiktoken nest_asyncio requests google-cloud-firestore firebase_admin tqdm python-dotenv
