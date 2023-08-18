@@ -552,6 +552,11 @@ components:
           type: string
           description: A message indicating the status of the data acquisition.
           example: "Data acquisition completed successfully."
-
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: A descriptive error message.
 
 #====================
