@@ -5,11 +5,11 @@
 #%%
 import os
 #from src import app
-#from src.products_firebase_utils import get_investigation_and_product_details, update_investigation_status, update_firestore_individual_products, initialize_firestore, save_product_details_to_firestore
+#from src.firebase_utils import get_investigation_and_product_details, update_investigation_status, update_firestore_individual_products, initialize_firestore, save_product_details_to_firestore
 #from src.products_data_processing_utils import extract_brand_name, remove_brand, clean_description_data, calculate_median_price
 #from src.openai_utils    import chat_completion_request
 
-from products_firebase_utils import get_investigation_and_product_details, update_investigation_status, update_firestore_individual_products, initialize_firestore, save_product_details_to_firestore
+from firebase_utils import get_investigation_and_product_details, update_investigation_status, update_firestore_individual_products, initialize_firestore, save_product_details_to_firestore
 from products_data_processing_utils import extract_brand_name, remove_brand, clean_description_data, calculate_median_price
 from openai_utils    import chat_completion_request
 GPT_MODEL = "gpt-3.5-turbo"
@@ -161,8 +161,6 @@ def process_product_description(products, GPT_MODEL):
     seasonDescriptionDict = {}
     whenProductUseDict = {}
 
-
-
     for product_item in products:
         asin = product_item['asin']
         data = product_item['product_description_data']
@@ -177,8 +175,6 @@ def process_product_description(products, GPT_MODEL):
         packagingDescriptionDict[asin] = data.get('Packaging?')
         seasonDescriptionDict[asin] = data.get('Season?')
         whenProductUseDict[asin] = data.get('When the product is used?')
-
-    list_of_product_data_dictionaries = [productSummaryDict, whatIsInTheBoxDict, technicalFactsDict, featuresDict, howProductUseDict, whereProductUseDict, userDescriptionDict, packagingDescriptionDict, seasonDescriptionDict, whenProductUseDict]
 
 
     # ### Product Summary
@@ -220,9 +216,9 @@ def process_product_description(products, GPT_MODEL):
 
     # Process the response and store in the dictionary
 
-    main_product_summary_response = response.json()["choices"]
+    mainProductSummaryResponse = response.json()["choices"]
 
-    main_product_summary_response
+    mainProductSummaryResponse
 
     # ### What is in the box
 
@@ -261,7 +257,7 @@ def process_product_description(products, GPT_MODEL):
     )
 
     # Process the response and store in the dictionary
-    main_product_what_is_in_the_box_response = response.json()["choices"]
+    mainProductWhatIsInTheBoxResponse = response.json()["choices"]
 
 
 
@@ -303,7 +299,7 @@ def process_product_description(products, GPT_MODEL):
     )
 
     # Process the response and store in the dictionary
-    main_product_technical_facts_response = response.json()["choices"]
+    mainProductTechnicalFactsResponse = response.json()["choices"]
 
     # ### Features
 
@@ -351,7 +347,7 @@ def process_product_description(products, GPT_MODEL):
     )
 
     # Process the response and store in the dictionary
-    main_product_features_response = response.json()["choices"]
+    mainProductFeaturesResponse = response.json()["choices"]
 
     # ### How to use the product
 
@@ -395,7 +391,7 @@ def process_product_description(products, GPT_MODEL):
     )
 
     # Process the response and store in the dictionary
-    main_product_how_to_use_response = response.json()["choices"]
+    mainProductHowToUseResponse = response.json()["choices"]
 
     # ### Where the product is used
 
@@ -437,7 +433,7 @@ def process_product_description(products, GPT_MODEL):
     )
 
     # Process the response and store in the dictionary
-    main_product_where_to_use_response = response.json()["choices"]
+    mainProductWhereToUseResponse = response.json()["choices"]
 
     # ### User Description
 
@@ -480,7 +476,7 @@ def process_product_description(products, GPT_MODEL):
     )
 
     # Process the response and store in the dictionary
-    main_product_user_description_response = response.json()["choices"]
+    mainProductUserDescriptionResponse = response.json()["choices"]
 
     # ### Packaging Description
 
@@ -519,7 +515,7 @@ def process_product_description(products, GPT_MODEL):
     )
 
     # Process the response and store in the dictionary
-    main_product_packaging_description_response = response.json()["choices"]
+    mainProductPackagingDescriptionResponse = response.json()["choices"]
 
     # ### Season Description
 
@@ -558,7 +554,7 @@ def process_product_description(products, GPT_MODEL):
     )
 
     # Process the response and store in the dictionary
-    main_product_season_to_use_response = response.json()["choices"]
+    mainProductSeasonToUseResponse = response.json()["choices"]
 
     # ### When the product is used Description
 
@@ -597,19 +593,19 @@ def process_product_description(products, GPT_MODEL):
     )
 
     # Process the response and store in the dictionary
-    main_product_when_to_use_response = response.json()["choices"]
+    mainProductWhenToUseResponse = response.json()["choices"]
 
     initialResponses = {}
-    initialResponses['productSummary'] = main_product_summary_response
-    initialResponses['whatIsInTheBox'] = main_product_what_is_in_the_box_response
-    initialResponses['technicalFacts'] = main_product_technical_facts_response
-    initialResponses['features'] = main_product_features_response
-    initialResponses['howProductUse'] = main_product_how_to_use_response
-    initialResponses['whereProductUse'] = main_product_where_to_use_response
-    initialResponses['userDescription'] = main_product_user_description_response
-    initialResponses['packagingDescription'] = main_product_packaging_description_response
-    initialResponses['seasonDescription'] = main_product_season_to_use_response
-    initialResponses['whenProductUse'] = main_product_when_to_use_response
+    initialResponses['productSummary'] = mainProductSummaryResponse
+    initialResponses['whatIsInTheBox'] = mainProductWhatIsInTheBoxResponse
+    initialResponses['technicalFacts'] = mainProductTechnicalFactsResponse 
+    initialResponses['features'] = mainProductFeaturesResponse 
+    initialResponses['howProductUse'] = mainProductHowToUseResponse
+    initialResponses['whereProductUse'] = mainProductWhereToUseResponse
+    initialResponses['userDescription'] = mainProductUserDescriptionResponse
+    initialResponses['packagingDescription'] = mainProductPackagingDescriptionResponse
+    initialResponses['seasonDescription'] = mainProductSeasonToUseResponse
+    initialResponses['whenProductUse'] = mainProductWhenToUseResponse
 
 
 
@@ -636,7 +632,7 @@ def process_product_description(products, GPT_MODEL):
 
 
     otherProductData = {}
-    for key in otherProductData:
+    for key in otherProductDataKeys:
         if key in productData.keys():
             otherProductData[key] = productData[key]
             
@@ -654,13 +650,13 @@ def process_product_description(products, GPT_MODEL):
 def run_products_investigation(investigationId):
     
     db = initialize_firestore()
-    update_investigation_status(investigationId, "started_products", db)
+    update_investigation_status(investigationId, "startedProducts", db)
     newProductsList = process_products(investigationId, GPT_MODEL, db)
-    update_firestore_individual_products(newProductsList, investigationId, db)
-    update_investigation_status(investigationId, "finished_individual_products", db)
+    update_firestore_individual_products(newProductsList, db)
+    update_investigation_status(investigationId, "finishedIndividualProducts", db)
     finalProductsData = process_product_description(newProductsList, GPT_MODEL)
     save_product_details_to_firestore(db, investigationId, finalProductsData)
-    update_investigation_status(investigationId, 'finished_products', db)
+    update_investigation_status(investigationId, 'finishedProducts', db)
 
 
 
@@ -671,3 +667,5 @@ if __name__ == "__main__":
 
 # =============================================================================
 
+
+# %%
