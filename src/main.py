@@ -12,7 +12,9 @@ from src.reviews_processing import run_reviews_investigation
 from src.run_investigation import run_end_to_end_investigation
 from src.users import (create_user, get_user, subscribe_user, log_payment, 
                        subscribe_user_to_package)
+from src.firebase_utils import initialize_firestore
 
+db = initialize_firestore()
 
 def api_start_investigation():
     """
@@ -109,7 +111,7 @@ def api_run_end_to_end_investigation():
         return jsonify({"error": str(e)}), 500
     
 
-def api_create_user():
+def api_create_user(db = db):
     data = request.json
     try:
         userId = create_user(data, db)
@@ -117,7 +119,7 @@ def api_create_user():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-def api_get_user():
+def api_get_user(db = db):
     userId = request.args.get('userId')
     if not userId:
         return jsonify({"error": "userId is required"}), 400
@@ -128,7 +130,7 @@ def api_get_user():
         return jsonify({"error": "User not found"}), 404
 
 
-def api_subscribe_user():
+def api_subscribe_user(db = db):
     data = request.json
     userId = data.get('userId')
     package = data.get('package')
@@ -140,7 +142,7 @@ def api_subscribe_user():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-def api_log_payment():
+def api_log_payment(db = db):
     data = request.json
     try:
         payment_id = log_payment(data, db)
@@ -148,7 +150,7 @@ def api_log_payment():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-def api_subscribe_user_to_package():
+def api_subscribe_user_to_package(db = db):
     data = request.json
     userId = data.get('userId')
     package = data.get('package')

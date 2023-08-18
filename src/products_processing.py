@@ -660,13 +660,6 @@ def run_products_investigation(investigationId):
     save_product_details_to_firestore(db, investigationId, finalProductsData)
     update_investigation_status(investigationId, 'finishedProducts', db)
 
-
-
-if __name__ == "__main__":
-    INVESTIGATION = "investigationId2"
-    run_products_investigation(INVESTIGATION)
-
-
 # =============================================================================
 
 
