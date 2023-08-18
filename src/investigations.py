@@ -56,4 +56,30 @@ def complete_investigation(investigation_id, results, db):
     except Exception as e:
         print(f"Error completing investigation {investigation_id}: {e}")
         return False
+
+def update_investigation_status(investigationId, newStatus,db):
+    investigation_ref = db.collection(u'investigations').document(investigationId)
+    investigation = investigation_ref.get()
+    if investigation.exists:
+        investigation_ref.update({
+            'status': newStatus,
+            f'{newStatus}_timestamp': firestore.SERVER_TIMESTAMP,
+        })
+        return True  # update was successful
+    else:
+        return False  # investigation does not exist
+
+def get_asins_from_investigation(investigationId, db):
+    # Retrieve the investigation from Firestore
+    investigation_ref = db.collection(u'investigations').document(investigationId)
+    investigation = investigation_ref.get()
+
+    if investigation.exists:
+        # Retrieve the asins from the investigation
+        asins = investigation.get('asins')
+        return asins
+    else:
+        print('Investigation does not exist')
+        return None
+
 # ===========================
