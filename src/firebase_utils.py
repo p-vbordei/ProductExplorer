@@ -26,6 +26,7 @@ def initialize_firestore():
     db = firestore.client()
     return db
 
+########### PRODUCTS #############
 
 def get_product_details_from_asin(asin, db):
     # Retrieve the product details from Firestore
@@ -74,7 +75,7 @@ def save_product_details_to_firestore(db, investigationId, productData):
     - bool: True if successful, False otherwise.
     """
     
-    doc_ref = db.collection('insights').document(investigationId)
+    doc_ref = db.collection('productInsights').document(investigationId)
     try:
         doc_ref.set(productData, merge=True)  # Use set() with merge=True to update or create a new document
         logging.info(f"Successfully saved/updated investigation results with id {investigationId}")
@@ -107,7 +108,7 @@ def get_investigation_and_reviews(investigationId, db):
 
     if asins is not None:
         for asin in asins:
-            asinReviews = get_reviews_from_asin(asin)
+            asinReviews = get_reviews_from_asin(asin, db)
             if asinReviews is not None:
                 reviewsList.append(asinReviews)
     return reviewsList
@@ -116,7 +117,7 @@ def get_investigation_and_reviews(investigationId, db):
 def get_clean_reviews(investigationId, db):
     """Retrieve and clean reviews."""
 
-    update_investigation_status(investigationId, "started_reviews")
+    update_investigation_status(investigationId, "startedReviews", db)
     reviews_download = get_investigation_and_reviews(investigationId, db)
     flattened_reviews = [item for sublist in reviews_download for item in sublist]
     for review in flattened_reviews:
@@ -155,20 +156,20 @@ def write_reviews_to_firestore(cleanReviewsList, db):
 
 
 
-def save_cluster_info_to_firestore(attribute_clusters_with_percentage, attribute_clusters_with_percentage_by_asin, investigationId, db):
+def save_cluster_info_to_firestore(attributeClustersWithPercentage, attributeClustersWithPercentageByAsin, investigationId, db):
     """
     Save the clusters to Firestore.
     
     Parameters:
-    - attribute_clusters_with_percentage (DataFrame): DataFrame containing attribute clusters with percentage information.
-    - attribute_clusters_with_percentage_by_asin (DataFrame): DataFrame containing attribute clusters with percentage information by ASIN.
+    - attributeClustersWithPercentage (DataFrame): DataFrame containing attribute clusters with percentage information.
+    - attributeClustersWithPercentageByAsin (DataFrame): DataFrame containing attribute clusters with percentage information by ASIN.
     - investigationId (str): The ID of the investigation.
     """
  
     # Create a dictionary with the cluster information
     clusters_dict = {
-        'attribute_clusters_with_percentage': attribute_clusters_with_percentage.to_dict(orient='records'),
-        'attribute_clusters_with_percentage_by_asin': attribute_clusters_with_percentage_by_asin.to_dict(orient='records'),
+        'attributeClustersWithPercentage': attributeClustersWithPercentage.to_dict(orient='records'),
+        'attributeClustersWithPercentageByAsin': attributeClustersWithPercentageByAsin.to_dict(orient='records'),
     }
 
     startTime = time.time()
@@ -194,12 +195,12 @@ def write_insights_to_firestore(investigationId, datapointsDict, db):
         for attribute, datapoints_list in datapointsDict.items():
             # Ensure all numbers are either int or float
             for datapoint in datapoints_list:
-                datapoint['Count'] = int(datapoint['Count'])
-                datapoint['Total'] = int(datapoint['Total'])
-                datapoint['Percentage_of_observations_in_attribute'] = float(datapoint['Percentage_of_observations_in_attribute'])
-                datapoint['Percentage_of_reviews'] = float(datapoint['Percentage_of_reviews'])
+                datapoint['observationCount'] = int(datapoint['observationCount'])
+                datapoint['totalNumberOfObservations'] = int(datapoint['totalNumberOfObservations'])
+                datapoint['percentageOfObservationsVsTotalNumberPerAttribute'] = float(datapoint['percentageOfObservationsVsTotalNumberPerAttribute'])
+                datapoint['percentageOfObservationsVsTotalNumberOfReviews'] = float(datapoint['percentageOfObservationsVsTotalNumberOfReviews'])
 
-            doc_ref = db.collection(u'insights').document(investigationId).collection(u'attribute_with_percentage').document(attribute)
+            doc_ref = db.collection(u'reviewsInsights').document(investigationId).collection(u'attributeWithPercentage').document(attribute)
             batch.set(doc_ref, {
                 u'clusters': datapoints_list
             })

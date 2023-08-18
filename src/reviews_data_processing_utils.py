@@ -39,16 +39,16 @@ def initial_review_clean_data_list(reviews_list, limit=3000):
 
 def process_datapoints(df):
     datapoints_list = []
-    total = round(df['observation_count'].sum(), 0)
+    total = round(df['observationCount'].sum(), 0)
 
     for index, row in df.iterrows():
         data = {
-            "Attribute": row["Attribute"],
-            "Cluster": row["cluster_label"],
-            "Count": row['observation_count'],   # Count of Observations of Attribute Value
-            "Total": total,  # Count of Observations of Attribute
-            "Percentage_of_observations_in_attribute": round(row['percentage_of_observations_vs_total_number_per_attribute'], 2),
-            "Percentage_of_reviews": round(row['percentage_of_observations_vs_total_number_of_reviews'], 2)
+            "attribute": row["attribute"],
+            "clusterLabel": row["clusterLabel"],
+            "observationCount": row['observationCount'],   # Count of Observations of Attribute Value
+            "totalNumberOfObservations": total,  # Count of Observations of Attribute
+            "percentageOfObservationsVsTotalNumberPerAttribute": round(row['percentageOfObservationsVsTotalNumberPerAttribute'], 2),
+            "percentageOfObservationsVsTotalNumberOfReviews": round(row['percentageOfObservationsVsTotalNumberOfReviews'], 2)
         }
         datapoints_list.append(data)
 
