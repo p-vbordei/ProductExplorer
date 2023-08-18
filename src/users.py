@@ -101,22 +101,22 @@ def add_investigation(userId, asins, db):
     else:
         return False
 
-def update_investigation_status(investigation_id, new_status, db):
+def update_investigation_status(investigationId, newStatus, db):
     """Update the status of an investigation."""
-    investigation_ref = db.collection('investigations').document(investigation_id)
+    investigation_ref = db.collection('investigations').document(investigationId)
     investigation = investigation_ref.get()
     if investigation.exists:
         investigation_ref.update({
-            'status': new_status,
-            f'{new_status}_timestamp': firestore.SERVER_TIMESTAMP,
+            'status': newStatus,
+            f'{newStatus}Timestamp': firestore.SERVER_TIMESTAMP,
         })
         return True
     else:
         return False
 
-def log_investigation_review(investigation_id, db):
+def log_investigation_review(investigationId, db):
     """Log a review timestamp for a finished investigation."""
-    investigation_ref = db.collection('investigations').document(investigation_id)
+    investigation_ref = db.collection('investigations').document(investigationId)
     investigation = investigation_ref.get()
     if investigation.exists and investigation.get('status') == 'finished':
         investigation_ref.update({
@@ -131,3 +131,6 @@ def has_investigations_available(userId, db):
     user_ref = get_user_ref(userId, db).get()
     remaining = user_ref.get('remainingInvestigations')
     return remaining > 0
+
+
+# =====================

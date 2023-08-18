@@ -10,6 +10,10 @@ from src.data_acquisition import execute_data_acquisition
 from src.products_processing import run_products_investigation
 from src.reviews_processing import run_reviews_investigation
 from src.run_investigation import run_end_to_end_investigation
+from src.users import (create_user, get_user, subscribe_user, log_payment, 
+                       subscribe_user_to_package, use_investigation, add_investigation, 
+                       update_investigation_status, log_investigation_review, 
+                       has_investigations_available)
 
 
 def api_start_investigation():
@@ -17,11 +21,11 @@ def api_start_investigation():
     Initiates a new investigation based on the provided user ID and list of ASINs.
     """
     data = request.json
-    user_id = data.get('user_id')
+    userId = data.get('userId')
     asins = data.get('asins')
     
-    if not user_id or not asins:
-        return jsonify({"error": "user_id and asins are required"}), 400
+    if not userId or not asins:
+        return jsonify({"error": "userIDs and asins are required"}), 400
 
     try:
         result = start_investigation(data, db)
@@ -57,13 +61,13 @@ def api_run_products_investigation():
     Initiates a product investigation based on the provided investigation ID and credential path.
     """
     data = request.json
-    investigation_id = data.get('investigation_id')
+    investigationId = data.get('investigationId')
     
-    if not investigation_id:
-        return jsonify({"error": "investigation_id is required"}), 400
+    if not investigationId:
+        return jsonify({"error": "investigationId is required"}), 400
 
     try:
-        run_products_investigation(investigation_id)
+        run_products_investigation(investigationId)
         return jsonify({"message": "Investigation completed successfully"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -74,13 +78,13 @@ def api_run_reviews_investigation():
     Initiates a reviews investigation based on the provided investigation ID and credential path.
     """
     data = request.json
-    investigation_id = data.get('investigation_id')
+    investigationId = data.get('investigationId')
     
-    if not investigation_id:
-        return jsonify({"error": "investigation_id is required"}), 400
+    if not investigationId:
+        return jsonify({"error": "investigationId is required"}), 400
 
     try:
-        run_reviews_investigation(investigation_id)
+        run_reviews_investigation(investigationId)
         return jsonify({"message": "Reviews investigation completed successfully"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -91,11 +95,11 @@ def api_run_end_to_end_investigation():
     Initiates an end-to-end investigation based on the provided user ID and list of ASINs.
     """
     data = request.json
-    user_id = data.get('user_id')
+    userId = data.get('userId')
     asins = data.get('asins')
     
-    if not user_id or not asins:
-        return jsonify({"error": "user_id and asins are required"}), 400
+    if not userId or not asins:
+        return jsonify({"error": "userId and asins are required"}), 400
 
     try:
         result = run_end_to_end_investigation(data)
@@ -105,8 +109,60 @@ def api_run_end_to_end_investigation():
             return jsonify({"error": "End-to-end investigation failed"}), 500
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+
+def api_create_user():
+    data = request.json
+    try:
+        userId = create_user(data, db)
+        return jsonify({"userId": userId}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+def api_get_user():
+    userId = request.args.get('userId')
+    if not userId:
+        return jsonify({"error": "userId is required"}), 400
+    user_data = get_user(userId, db)
+    if user_data:
+        return jsonify(user_data), 200
+    else:
+        return jsonify({"error": "User not found"}), 404
 
 
+def api_subscribe_user():
+    data = request.json
+    userId = data.get('userId')
+    package = data.get('package')
+    if not userId or not package:
+        return jsonify({"error": "userId and package are required"}), 400
+    try:
+        subscription_data = subscribe_user(userId, package, db)
+        return jsonify(subscription_data), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+def api_log_payment():
+    data = request.json
+    try:
+        payment_id = log_payment(data, db)
+        return jsonify({"paymentId": payment_id}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+def api_subscribe_user_to_package():
+    data = request.json
+    userId = data.get('userId')
+    package = data.get('package')
+    start_date = data.get('startDate')
+    payment_intent_id = data.get('paymentIntentId')
+    if not all([userId, package, start_date, payment_intent_id]):
+        return jsonify({"error": "All fields are required"}), 400
+    try:
+        subscribe_user_to_package(userId, package, start_date, payment_intent_id, db)
+        return jsonify({"message": "Subscription successful"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     load_dotenv()

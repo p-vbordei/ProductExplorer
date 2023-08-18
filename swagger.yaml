@@ -264,6 +264,205 @@ paths:
                 properties:
                   error:
                     type: string
+  /create_user:
+    post:
+      operationId: src.main.api_create_user
+      summary: Create a new user.
+      tags:
+        - User
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: The name of the user.
+                email:
+                  type: string
+                  description: The email of the user.
+      responses:
+        '201':
+          description: User created successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId:
+                    type: string
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
 
+  /get_user:
+    get:
+      operationId: src.main.api_get_user
+      summary: Retrieve user data.
+      tags:
+        - User
+      parameters:
+        - name: userId
+          in: query
+          description: The ID of the user to retrieve.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User data retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  email:
+                    type: string
+        '404':
+          description: User not found.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /subscribe_user:
+    post:
+      operationId: src.main.api_subscribe_user
+      summary: Subscribe a user to a package.
+      tags:
+        - User
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                  description: The ID of the user.
+                package:
+                  type: string
+                  description: The package to subscribe to.
+      responses:
+        '201':
+          description: Subscription successful.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  userId:
+                    type: string
+                  package:
+                    type: string
+                  startDate:
+                    type: string
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
 
+  /log_payment:
+    post:
+      operationId: src.main.api_log_payment
+      summary: Log a payment.
+      tags:
+        - Payment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                amount:
+                  type: number
+                timestamp:
+                  type: string
+      responses:
+        '201':
+          description: Payment logged successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  paymentId:
+                    type: string
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+
+  /subscribe_user_to_package:
+    post:
+      operationId: src.main.api_subscribe_user_to_package
+      summary: Subscribe a user to a package and update their investigation count.
+      tags:
+        - User
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                package:
+                  type: string
+                startDate:
+                  type: string
+                paymentIntentId:
+                  type: string
+      responses:
+        '200':
+          description: Subscription successful.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+
+                    
 #====================
