@@ -10,7 +10,7 @@ info:
 paths:
   /start_investigation:
     post:
-      operationId: app.main.api_start_investigation
+      operationId: src.main.api_start_investigation
       summary: Initiates a new investigation.
       description: |
         This endpoint initiates a new investigation based on the provided user ID and list of ASINs.
@@ -71,7 +71,7 @@ paths:
                     type: string
   /run_products_investigation:
     post:
-      operationId: app.main.api_run_products_investigation
+      operationId: src.main.api_run_products_investigation
       summary: Initiates a product investigation.
       description: |
         This endpoint initiates a product investigation based on the provided investigation ID and credential path.
@@ -118,7 +118,7 @@ paths:
                     type: string
   /run_reviews_investigation:
     post:
-      operationId: app.main.api_run_reviews_investigation
+      operationId: src.main.api_run_reviews_investigation
       summary: Initiates a reviews investigation.
       description: |
         This endpoint initiates a reviews investigation based on the provided investigation ID and credential path.
