@@ -8,8 +8,10 @@ import logging
 from tqdm import tqdm
 import time
 from collections import defaultdict
-# from src.investigations import get_asins_from_investigation, update_investigation_status
-from investigations import get_asins_from_investigation, update_investigation_status
+try:
+    from src.investigations import get_asins_from_investigation, update_investigation_status
+except ImportError:
+    from investigations import get_asins_from_investigation, update_investigation_status
 
 def initialize_firestore():
     """Initialize Firestore client."""
@@ -122,7 +124,7 @@ def get_clean_reviews(investigationId, db):
         review['asin'] = review['asin']['original']
     return flattened_reviews
 
-def write_reviews(cleanReviewsList, db):
+def write_reviews_to_firestore(cleanReviewsList, db):
     # Group reviews by ASIN
     reviewsByAsin = defaultdict(list)
     for review in cleanReviewsList:

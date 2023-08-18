@@ -4,14 +4,16 @@
 
 #%%
 import os
-#from src import app
-#from src.firebase_utils import get_investigation_and_product_details, update_investigation_status, update_firestore_individual_products, initialize_firestore, save_product_details_to_firestore
-#from src.products_data_processing_utils import extract_brand_name, remove_brand, clean_description_data, calculate_median_price
-#from src.openai_utils    import chat_completion_request
-
-from firebase_utils import get_investigation_and_product_details, update_investigation_status, update_firestore_individual_products, initialize_firestore, save_product_details_to_firestore
-from products_data_processing_utils import extract_brand_name, remove_brand, clean_description_data, calculate_median_price
-from openai_utils    import chat_completion_request
+try:
+    from src import app
+    from src.firebase_utils import get_investigation_and_product_details, update_investigation_status, update_firestore_individual_products, initialize_firestore, save_product_details_to_firestore
+    from src.products_data_processing_utils import extract_brand_name, remove_brand, clean_description_data, calculate_median_price
+    from src.openai_utils    import chat_completion_request
+except ImportError:
+    from firebase_utils import get_investigation_and_product_details, update_investigation_status, update_firestore_individual_products, initialize_firestore, save_product_details_to_firestore
+    from products_data_processing_utils import extract_brand_name, remove_brand, clean_description_data, calculate_median_price
+    from openai_utils    import chat_completion_request
+    
 GPT_MODEL = "gpt-3.5-turbo"
 
 ################################## PROCESS INDIVIDUAL PRODUCTS #########################################

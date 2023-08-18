@@ -10,16 +10,21 @@ import numpy as np
 from sklearn.cluster import AgglomerativeClustering
 
 from dotenv import load_dotenv
-from src import app
-from src.reviews_data_processing_utils import process_datapoints
-from src.reviews_firebase_utils import initialize_firestore, get_clean_reviews , write_reviews, save_cluster_info_to_firestore, write_insights_to_firestore
-from src.openai_utils import get_completion_list, process_dataframe_async_embedding
+try:
+    from src import app
+    from src.reviews_data_processing_utils import process_datapoints
+    from src.firebase_utils import initialize_firestore, get_clean_reviews , write_reviews_to_firestore, save_cluster_info_to_firestore, write_insights_to_firestore
+    from src.openai_utils import get_completion_list, process_dataframe_async_embedding
+except ImportError:
+    from reviews_data_processing_utils import process_datapoints
+    from firebase_utils import initialize_firestore, get_clean_reviews , write_reviews_to_firestore, save_cluster_info_to_firestore, write_insights_to_firestore
+    from openai_utils import get_completion_list, process_dataframe_async_embedding
 
 
 ####################################### PROCESS REVIEWS WITH GPT #######################################
 
-def process_reviews_with_gpt(reviews_list, openai_api_key):
-    review_functions = [
+def process_reviews_with_gpt(reviewsList, OPENAI_API_KEY):
+    reviewFunctions = [
         {
             "name": "review_data_function",
             "description": "product description",
@@ -112,53 +117,47 @@ def process_reviews_with_gpt(reviews_list, openai_api_key):
         }
     ]
 
+    functions = reviewFunctions
+    functionCall = {"name": "reviewDataFunction"}
 
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {openai_api_key}"
-    }
-
-    functions = review_functions
-    function_call = {"name": "review_data_function"}
-
-    content_list = []
-    for review_dict in reviews_list:
-        review = review_dict['review']
+    contentList = []
+    for reviewDict in reviewsList:
+        review = reviewDict['review']
         messages = [
             {"role": "user", "content": f"REVIEW: ```{review}```"},
         ]
-        content_list.append(messages)
+        contentList.append(messages)
 
     async def main():
-        responses = await get_completion_list(content_list, functions, function_call)
+        responses = await get_completion_list(contentList, functions, functionCall)
         return responses
 
     responses = asyncio.run(main())
 
-    eval_responses = []
+    evalResponses = []
     for i, item in enumerate(responses):
-        data = item['function_call']['arguments']
+        data = item['functionCall']['arguments']
         data = data.replace('null', 'None')
-        eval_data = eval(data)
+        evalData = eval(data)
 
-        eval_responses.append(eval_data)
-        reviews_list[i]['insights'] = eval_data
+        evalResponses.append(evalData)
+        reviewsList[i]['insights'] = evalData
 
-    new_cols = list(reviews_list[1]['insights'].keys())
+    newCols = list(reviewsList[1]['insights'].keys())
 
-    for review_dict in reviews_list:
-        for col in new_cols:
+    for reviewDict in reviewsList:
+        for col in newCols:
             try:
-                review_dict[col] = review_dict['insights'][col]
+                reviewDict[col] = reviewDict['insights'][col]
             except:
-                review_dict[col] = None
-        review_dict.pop('insights')
+                reviewDict[col] = None
+        reviewDict.pop('insights')
 
-    for review_dict in reviews_list:
-        review_dict['asin'] = review_dict.pop('asin_data')
+    for reviewDict in reviewsList:
+        reviewDict['asin'] = reviewDict.pop('asinData')
 
-    write_reviews(reviews_list)
-    return reviews_list
+    write_reviews_to_firestore(reviewsList)
+    return reviewsList
 
 
 ######################################### CLUSTERING #########################################
@@ -218,11 +217,11 @@ def cluster_reviews(clean_reviews_list):
     print(df.columns)
 
     if 'asin' in df.columns:
-        df['asin_original'] = df['asin'].apply(lambda x: x['original'])
+        df['asinOriginal'] = df['asin'].apply(lambda x: x['original'])
     else:
         print("'asin' column not found in df!")
 
-    return df[['Attribute', 'cluster', 'Value', 'id', 'asin_original']].drop_duplicates()
+    return df[['Attribute', 'cluster', 'Value', 'id', 'asinOriginal']].drop_duplicates()
 
 # %%
 ############################################ CLUSTER LABELING ############################################
@@ -231,17 +230,17 @@ def label_clusters(cluster_df):
     # Define labeling function
     labeling_function = [
         {
-            "name": "cluster_label",
+            "name": "clusterLabel",
             "description": "Provide a single label for the topic represented in the list of values.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "cluster_label": {
+                    "clusterLabel": {
                         "type": "string",
                         "description": "Provide a single label for the topic represented in the list of values. [7 words]. Example: 'Low perceived quality versus competitors', 'the assembly kit breaks easily and often', 'the speaker has a low sound quality','the taste was better than expected'',' "
                     },
                 },
-                "required": ["cluster_label"]
+                "required": ["clusterLabel"]
             },
         }
     ]
@@ -255,20 +254,20 @@ def label_clusters(cluster_df):
             content_list.append(messages)
 
     # Get responses
-    responses = asyncio.run(get_completion_list(content_list, labeling_function, {"name": "cluster_label"}))
+    responses = asyncio.run(get_completion_list(content_list, labeling_function, {"name": "clusterLabel"}))
 
     # Interpret the responses
     eval_responses = []
     for item in responses:
         data = item['function_call']['arguments']
         eval_data = eval(data)
-        eval_responses.append(eval_data['cluster_label'])
+        eval_responses.append(eval_data['clusterLabel'])
 
     # Create a DataFrame to hold unique combinations of 'Attribute' and 'cluster'
     cluster_response_df = cluster_df[['Attribute', 'cluster']]
     cluster_response_df.drop_duplicates(inplace=True)
     cluster_response_df.reset_index(inplace=True, drop=True)
-    cluster_response_df['cluster_label'] = eval_responses
+    cluster_response_df['clusterLabel'] = eval_responses
 
     # Merge the cluster labels back to the main cluster_df
     df_with_clusters = cluster_df.merge(cluster_response_df, on=['Attribute', 'cluster'], how='left')
@@ -279,19 +278,19 @@ def label_clusters(cluster_df):
 
 ############################################ QUANTIFY OBSERVATIONS ############################################
 
-def quantify_observations(reviews_with_clusters, clean_reviews):
+def quantify_observations(reviewsWithClusters, cleanReviews):
     """Quantify observations at both the investigation and ASIN levels."""
     
-    df_with_clusters = reviews_with_clusters.merge(pd.DataFrame(clean_reviews), left_on='id', right_on='id', how='left')
+    df_with_clusters = reviewsWithClusters.merge(pd.DataFrame(cleanReviews), left_on='id', right_on='id', how='left')
 
-    agg_result = df_with_clusters.groupby(['Attribute', 'cluster_label']).agg({
+    agg_result = df_with_clusters.groupby(['Attribute', 'clusterLabel']).agg({
         'rating': lambda x: list(x),
         'id': lambda x: list(x),
-        'asin_original': lambda x: list(x),
+        'asinOriginal': lambda x: list(x),
         }).reset_index()
 
-    count_result = df_with_clusters.groupby(['Attribute', 'cluster_label']).size().reset_index(name='observation_count')
-    attribute_clusters_with_percentage = pd.merge(agg_result, count_result, on=['Attribute', 'cluster_label'])
+    count_result = df_with_clusters.groupby(['Attribute', 'clusterLabel']).size().reset_index(name='observationCount')
+    attribute_clusters_with_percentage = pd.merge(agg_result, count_result, on=['Attribute', 'clusterLabel'])
 
     m = [np.mean([int(r) for r in e]) for e in attribute_clusters_with_percentage['rating']]
     k = [int(round(e, 0)) for e in m]
@@ -299,28 +298,28 @@ def quantify_observations(reviews_with_clusters, clean_reviews):
 
     total_observations_per_attribute = df_with_clusters.groupby('Attribute').size()
     attribute_clusters_with_percentage = attribute_clusters_with_percentage.set_index('Attribute')
-    attribute_clusters_with_percentage['percentage_of_observations_vs_total_number_per_attribute'] = attribute_clusters_with_percentage['observation_count'] / total_observations_per_attribute * 100
+    attribute_clusters_with_percentage['percentageOfObservationsVsTotalNumberPerAttribute'] = attribute_clusters_with_percentage['observationCount'] / total_observations_per_attribute * 100
     attribute_clusters_with_percentage = attribute_clusters_with_percentage.reset_index()
 
-    number_of_reviews = reviews_with_clusters['id'].unique().shape[0]
-    attribute_clusters_with_percentage['percentage_of_observations_vs_total_number_of_reviews'] = attribute_clusters_with_percentage['observation_count'] / number_of_reviews * 100
+    number_of_reviews = reviewsWithClusters['id'].unique().shape[0]
+    attribute_clusters_with_percentage['percentageOfObservationsVsTotalNumberOfReviews'] = attribute_clusters_with_percentage['observationCount'] / number_of_reviews * 100
 
     # Quantify observations at the ASIN level
-    agg_result_asin = df_with_clusters.groupby(['Attribute', 'cluster_label', 'asin_original']).agg({
+    agg_result_asin = df_with_clusters.groupby(['Attribute', 'clusterLabel', 'asinOriginal']).agg({
         'rating': lambda x: list(x),
         'id': lambda x: list(x),
     }).reset_index()
 
-    count_result_asin = df_with_clusters.groupby(['Attribute', 'cluster_label', 'asin_original']).size().reset_index(name='observation_count')
-    attribute_clusters_with_percentage_by_asin = pd.merge(agg_result_asin, count_result_asin, on=['Attribute', 'cluster_label', 'asin_original'])
+    count_result_asin = df_with_clusters.groupby(['Attribute', 'clusterLabel', 'asinOriginal']).size().reset_index(name='observationCount')
+    attribute_clusters_with_percentage_by_asin = pd.merge(agg_result_asin, count_result_asin, on=['Attribute', 'clusterLabel', 'asinOriginal'])
 
     m_asin = [np.mean([int(r) for r in e]) for e in attribute_clusters_with_percentage_by_asin['rating']]
     k_asin = [int(round(e, 0)) for e in m_asin]
     attribute_clusters_with_percentage_by_asin['rating_avg'] = k_asin
 
-    df_with_clusters['total_observations_per_attribute_asin'] = df_with_clusters.groupby(['Attribute', 'asin_original'])['asin_original'].transform('count')
-    attribute_clusters_with_percentage_by_asin['percentage_of_observations_vs_total_number_per_attribute'] = attribute_clusters_with_percentage_by_asin['observation_count'] / df_with_clusters['total_observations_per_attribute_asin'] * 100
-    attribute_clusters_with_percentage_by_asin['percentage_of_observations_vs_total_number_of_reviews'] = attribute_clusters_with_percentage_by_asin['observation_count'] / number_of_reviews * 100
+    df_with_clusters['total_observations_per_attribute_asin'] = df_with_clusters.groupby(['Attribute', 'asinOriginal'])['asinOriginal'].transform('count')
+    attribute_clusters_with_percentage_by_asin['percentageOfObservationsVsTotalNumberPerAttribute'] = attribute_clusters_with_percentage_by_asin['observationCount'] / df_with_clusters['total_observations_per_attribute_asin'] * 100
+    attribute_clusters_with_percentage_by_asin['percentageOfObservationsVsTotalNumberOfReviews'] = attribute_clusters_with_percentage_by_asin['observationCount'] / number_of_reviews * 100
 
     return attribute_clusters_with_percentage, attribute_clusters_with_percentage_by_asin
 
@@ -329,44 +328,43 @@ def quantify_observations(reviews_with_clusters, clean_reviews):
 ############################################ RUN ############################################
 
 
-def run_reviews_investigation(investigation_id):
+def run_reviews_investigation(investigationId):
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
     CRED_PATH =  '/Users/vladbordei/Documents/Development/ProductExplorer/notebooks/productexplorerdata-firebase-adminsdk-ulb3d-465f23dff3.json'
     
-    openai_api_key = OPENAI_API_KEY
     cred_path = CRED_PATH
 
     # Initialize Firestore
     db = initialize_firestore(cred_path)
 
     # Get clean reviews
-    reviews = get_clean_reviews(investigation_id, db)
+    reviews = get_clean_reviews(investigationId, db)
 
     # Process reviews with GPT
-    clean_reviews = process_reviews_with_gpt(reviews, openai_api_key)
+    cleanReviews = process_reviews_with_gpt(reviews, OPENAI_API_KEY)
 
     # Cluster reviews
-    cluster_df = cluster_reviews(clean_reviews)
+    cluster_df = cluster_reviews(cleanReviews)
 
     # Label clusters
-    reviews_with_clusters = label_clusters(cluster_df)
+    reviewsWithClusters = label_clusters(cluster_df)
 
     # Quantify observations
-    attribute_clusters_with_percentage, attribute_clusters_with_percentage_by_asin = quantify_observations(reviews_with_clusters, clean_reviews)
+    attribute_clusters_with_percentage, attribute_clusters_with_percentage_by_asin = quantify_observations(reviewsWithClusters, cleanReviews)
 
     # Save results to Firestore
-    save_cluster_info_to_firestore(attribute_clusters_with_percentage, attribute_clusters_with_percentage_by_asin, investigation_id)
+    save_cluster_info_to_firestore(attribute_clusters_with_percentage, attribute_clusters_with_percentage_by_asin, investigationId)
 
     # Process datapoints
     datapoints = list(set(attribute_clusters_with_percentage['Attribute']))
-    datapoints_dict = {}
+    datapointsDict = {}
     for att in datapoints:
         df = attribute_clusters_with_percentage[attribute_clusters_with_percentage['Attribute'] == att]
         datapoints_list = process_datapoints(df)
-        datapoints_dict[att] = datapoints_list
+        datapointsDict[att] = datapoints_list
 
     # Write insights to Firestore
-    write_insights_to_firestore(investigation_id, datapoints_dict)
+    write_insights_to_firestore(investigationId, datapointsDict)
 
 if __name__ == "__main__":
     load_dotenv()
