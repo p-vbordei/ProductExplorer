@@ -1,3 +1,4 @@
+#####################
 # users.py
 import firebase_admin
 from firebase_admin import firestore
@@ -138,3 +139,5 @@ def has_investigations_available(user_id, db):
 #    add_investigation(user_id, asins, db)
 #else:
 #    print('User has no remaining investigations')
+
+# ===========================

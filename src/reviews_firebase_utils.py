@@ -4,8 +4,6 @@
 from google.cloud import firestore
 import firebase_admin
 from firebase_admin import credentials, firestore
-import os
-import pandas as pd
 import time
 from collections import defaultdict
 

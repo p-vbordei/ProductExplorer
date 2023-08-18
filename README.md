@@ -138,7 +138,7 @@ FIRESTORE Data Structure:
 
 Investigations (collection)
     Documents (e.g., investigationId1, investigationId2, ...)
-        Fields: asins, user_id, status, received_timestamp, and other product data fields.
+        Fields: asins, user_id, status, received_timestamp
 
 
 

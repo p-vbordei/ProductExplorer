@@ -1,0 +1,167 @@
+###############
+# Swagger API swagger.yaml#
+# https://editor.swagger.io/
+openapi: '3.0.0'
+info:
+  title: ProductExplorer
+  version: '1.0'
+  description: A sample API for product investigation.
+
+paths:
+  /start_investigation:
+    post:
+      operationId: app.main.api_start_investigation
+      summary: Initiates a new investigation.
+      description: |
+        This endpoint initiates a new investigation based on the provided user ID and list of ASINs.
+      tags:
+        - Investigation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: string
+                  description: The ID of the user.
+                asins:
+                  type: array
+                  items:
+                    type: string
+                  description: List of ASINs for the investigation.
+      responses:
+        '200':
+          description: Investigation started successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  user_id:
+                    type: string
+                  asins:
+                    type: array
+                    items:
+                      type: string
+                  status:
+                    type: string
+                  start_timestamp:
+                    type: string
+        '400':
+          description: Bad request. Missing or invalid parameters.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        '500':
+          description: Internal server error or processing error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /run_products_investigation:
+    post:
+      operationId: app.main.api_run_products_investigation
+      summary: Initiates a product investigation.
+      description: |
+        This endpoint initiates a product investigation based on the provided investigation ID and credential path.
+      tags:
+        - Investigation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                investigation_id:
+                  type: string
+                  description: The ID of the investigation.
+
+      responses:
+        '200':
+          description: Investigation completed successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          description: Bad request. Missing or invalid parameters.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        '500':
+          description: Internal server error or processing error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /run_reviews_investigation:
+    post:
+      operationId: app.main.api_run_reviews_investigation
+      summary: Initiates a reviews investigation.
+      description: |
+        This endpoint initiates a reviews investigation based on the provided investigation ID and credential path.
+      tags:
+        - Investigation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                investigation_id:
+                  type: string
+                  description: The ID of the investigation.
+      responses:
+        '200':
+          description: Reviews investigation completed successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          description: Bad request. Missing or invalid parameters.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        '500':
+          description: Internal server error or processing error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+
+
+#====================

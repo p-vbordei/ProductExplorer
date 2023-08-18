@@ -8,9 +8,10 @@ import random
 import pandas as pd
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 import requests
-
-
 import tiktoken
+import nest_asyncio
+nest_asyncio.apply()
+
 
 embedding_model = "text-embedding-ada-002"
 embedding_encoding = "cl100k_base"
@@ -112,8 +113,6 @@ async def get_embedding(text: str, model="text-embedding-ada-002") -> list[float
         print("Failed to get embedding after 6 attempts, returning None.")
         return None
 
-import nest_asyncio
-nest_asyncio.apply()
 
 
 max_tokens = 8048  # Define max tokens or get it from somewhere

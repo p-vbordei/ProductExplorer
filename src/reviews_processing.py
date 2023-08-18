@@ -1,26 +1,19 @@
+# ##################
+# reviews_processing.py
 # %%
+
 import os
 import asyncio
 import pandas as pd
 import numpy as np
 
-from google.cloud import firestore
-import firebase_admin
-from firebase_admin import credentials, firestore
-
 from sklearn.cluster import AgglomerativeClustering
-from openai_utils import process_dataframe_async_embedding
-
 
 from dotenv import load_dotenv
-from reviews_data_processing_utils import initial_review_clean_data_list, process_datapoints
-from reviews_firebase_utils import initialize_firestore, get_clean_reviews , write_reviews, save_cluster_info_to_firestore, write_insights_to_firestore
-from openai_utils import get_completion_list
-
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-CRED_PATH =  '/Users/vladbordei/Documents/Development/ProductExplorer/notebooks/productexplorerdata-firebase-adminsdk-ulb3d-465f23dff3.json'
-INVESTIGATION = "investigationId2"
-
+from src import app
+from src.reviews_data_processing_utils import process_datapoints
+from src.reviews_firebase_utils import initialize_firestore, get_clean_reviews , write_reviews, save_cluster_info_to_firestore, write_insights_to_firestore
+from src.openai_utils import get_completion_list, process_dataframe_async_embedding
 
 
 ####################################### PROCESS REVIEWS WITH GPT #######################################
@@ -336,7 +329,13 @@ def quantify_observations(reviews_with_clusters, clean_reviews):
 ############################################ RUN ############################################
 
 
-def run_reviews_investigation(investigation_id, openai_api_key, cred_path):
+def run_reviews_investigation(investigation_id):
+    OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+    CRED_PATH =  '/Users/vladbordei/Documents/Development/ProductExplorer/notebooks/productexplorerdata-firebase-adminsdk-ulb3d-465f23dff3.json'
+    
+    openai_api_key = OPENAI_API_KEY
+    cred_path = CRED_PATH
+
     # Initialize Firestore
     db = initialize_firestore(cred_path)
 
@@ -371,8 +370,5 @@ def run_reviews_investigation(investigation_id, openai_api_key, cred_path):
 
 if __name__ == "__main__":
     load_dotenv()
-    OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-    CRED_PATH =  '/Users/vladbordei/Documents/Development/ProductExplorer/notebooks/productexplorerdata-firebase-adminsdk-ulb3d-465f23dff3.json'
     INVESTIGATION = "investigationId2"
-
-    run_reviews_investigation(INVESTIGATION, OPENAI_API_KEY, CRED_PATH)
+    run_reviews_investigation(INVESTIGATION)

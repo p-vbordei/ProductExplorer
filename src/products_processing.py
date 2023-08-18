@@ -1,12 +1,14 @@
+# ############################
 # Description: This script is used to generate product descriptions for a list of products
 # products_processing.py
 
 #%%
 import os
 from dotenv import load_dotenv
-from products_firebase_utils import get_investigation_and_product_details, update_investigation_status, update_firestore_individual_products, initialize_firestore, save_product_details_to_firestore
-from products_data_processing_utils import extract_brand_name, remove_brand, clean_description_data, calculate_median_price
-from openai_utils    import chat_completion_request
+from src import app
+from src.products_firebase_utils import get_investigation_and_product_details, update_investigation_status, update_firestore_individual_products, initialize_firestore, save_product_details_to_firestore
+from src.products_data_processing_utils import extract_brand_name, remove_brand, clean_description_data, calculate_median_price
+from src.openai_utils    import chat_completion_request
 
 GPT_MODEL = "gpt-3.5-turbo"
 
@@ -643,7 +645,7 @@ def process_product_description(products, GPT_MODEL):
 
 
 
-def run_products_investigation(investigation_id, cred_path):
+def run_products_investigation(investigation_id):
     db = initialize_firestore(cred_path)
     update_investigation_status(investigation_id, "started_products", db)
     new_products_list = process_products(investigation_id, GPT_MODEL)
@@ -661,4 +663,7 @@ if __name__ == "__main__":
     CRED_PATH =  '/Users/vladbordei/Documents/Development/ProductExplorer/notebooks/productexplorerdata-firebase-adminsdk-ulb3d-465f23dff3.json'
     INVESTIGATION = "investigationId2"
 
-    run_products_investigation(INVESTIGATION, CRED_PATH)
+    run_products_investigation(INVESTIGATION)
+
+
+# =============================================================================

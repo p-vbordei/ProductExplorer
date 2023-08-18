@@ -1,4 +1,4 @@
-
+#####################
 # investigations.py
 
 import firebase_admin
@@ -56,3 +56,4 @@ def complete_investigation(investigation_id, results, db):
     except Exception as e:
         print(f"Error completing investigation {investigation_id}: {e}")
         return False
+# ===========================
