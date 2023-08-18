@@ -11,9 +11,7 @@ from src.products_processing import run_products_investigation
 from src.reviews_processing import run_reviews_investigation
 from src.run_investigation import run_end_to_end_investigation
 from src.users import (create_user, get_user, subscribe_user, log_payment, 
-                       subscribe_user_to_package, use_investigation, add_investigation, 
-                       update_investigation_status, log_investigation_review, 
-                       has_investigations_available)
+                       subscribe_user_to_package)
 
 
 def api_start_investigation():
