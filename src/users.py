@@ -33,35 +33,35 @@ def subscribe_user(userId, package, db):
     user_ref = get_user_ref(userId, db)
     subscription_ref = user_ref.collection('subscriptions').document()
     subscriptionId = subscription_ref.id
-    subscription_data = {
+    subscriptionData = {
         'id': subscriptionId,
         'userId': userId,
         'package': package,
         'startDate': firestore.SERVER_TIMESTAMP,
     }
-    subscription_ref.set(subscription_data)
-    return subscription_data
+    subscription_ref.set(subscriptionData)
+    return subscriptionData
 
-def log_payment(payment_data, db):
+def log_payment(paymentData, db):
     """Log a payment in the database."""
     payment_ref = db.collection('payments').document() 
-    payment_id = payment_ref.id
-    payment_data['id'] = payment_id
-    payment_ref.set(payment_data)
-    return payment_id
+    paymentId = payment_ref.id
+    paymentData['id'] = paymentId
+    payment_ref.set(paymentData)
+    return paymentId
 
-def subscribe_user_to_package(userId, package, start_date, payment_intent_id, db):
+def subscribe_user_to_package(userId, package, startDate, paymentIntentId, db):
     """Subscribe a user to a package and update their investigation count."""
     user_ref = get_user_ref(userId, db)
     subs = user_ref.collection('subscriptions').document()
     subs.set({
         'package': package,
-        'startDate': start_date,
+        'startDate': startDate,
         'paymentStatus': 'pending',
-        'paymentIntent': payment_intent_id,
+        'paymentIntent': paymentIntentId,
     })
     user_ref.update({
-        'current_package': package,
+        'currentPackage': package,
         'remainingInvestigations': 50 if package == 'basic' else 100,
     })
 

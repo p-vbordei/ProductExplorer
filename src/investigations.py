@@ -18,7 +18,7 @@ def start_investigation(data, db):
             'userId': userId,
             'asins': asins,
             'status': 'started',
-            'start_timestamp': firestore.SERVER_TIMESTAMP,
+            'startTimestamp': firestore.SERVER_TIMESTAMP,
         }
         
         investigation_ref.set(investigation_data)
@@ -50,7 +50,7 @@ def complete_investigation(investigationId, results, db):
         investigation_ref.update({
             'status': 'completed',
             'results': results,
-            'end_timestamp': firestore.SERVER_TIMESTAMP
+            'endTimestamp': firestore.SERVER_TIMESTAMP
         })
         return True
     except Exception as e:
@@ -63,7 +63,7 @@ def update_investigation_status(investigationId, newStatus,db):
     if investigation.exists:
         investigation_ref.update({
             'status': newStatus,
-            f'{newStatus}_timestamp': firestore.SERVER_TIMESTAMP,
+            f'{newStatus}Timestamp': firestore.SERVER_TIMESTAMP,
         })
         return True  # update was successful
     else:

@@ -19,18 +19,10 @@ Project Organization
     │   ├── processed      <- The final, canonical data sets for modeling.
     │   └── raw            <- The original, immutable data dump.
     │
-    ├── docs               <- A default Sphinx project; see sphinx-doc.org for details
-    │
-    ├── models             <- Trained and serialized models, model predictions, or model summaries
-    │
     ├── notebooks          <- Jupyter notebooks. Naming convention is a number (for ordering),
     │                         the creator's initials, and a short `-` delimited description, e.g.
     │                         `1.0-jqp-initial-data-exploration`.
     │
-    ├── references         <- Data dictionaries, manuals, and all other explanatory materials.
-    │
-    ├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
-    │   └── figures        <- Generated graphics and figures to be used in reporting
     │
     ├── requirements.txt   <- The requirements file for reproducing the analysis environment, e.g.
     │                         generated with `pip freeze > requirements.txt`
@@ -39,19 +31,7 @@ Project Organization
     ├── src                <- Source code for use in this project.
     │   ├── __init__.py    <- Makes src a Python module
     │   │
-    │   ├── data           <- Scripts to download or generate data
-    │   │   └── make_dataset.py
-    │   │
-    │   ├── features       <- Scripts to turn raw data into features for modeling
-    │   │   └── build_features.py
-    │   │
-    │   ├── models         <- Scripts to train models and then use trained models to make
-    │   │   │                 predictions
-    │   │   ├── predict_model.py
-    │   │   └── train_model.py
-    │   │
-    │   └── visualization  <- Scripts to create exploratory and results oriented visualizations
-    │       └── visualize.py
+
     │
     └── tox.ini            <- tox file with settings for running tox; see tox.readthedocs.io
 
@@ -136,72 +116,132 @@ https://www.sbert.net/examples/applications/clustering/README.html
 
 FIRESTORE Data Structure:
 
-Investigations (collection)
-    Documents (e.g., investigationId1, investigationId2, ...)
-        Fields: asins, user_id, status, received_timestamp
+Firestore Root
+|
+|-- users (Collection)
+|   |
+|   |-- userId (Document)
+|       |
+|       |-- subscriptions (Subcollection)
+|       |   |
+|       |   |-- subscriptionId (Document)
+|       |
+|       |-- ... (Other fields in the user document)
+|
+|-- payments (Collection)
+|   |
+|   |-- paymentId (Document)
+|
+|-- investigations (Collection)
+|   |
+|   |-- investigationId (Document)
+|
+|-- products (Collection)
+|   |
+|   |-- asin (Document)
+|       |
+|       |-- details (Field)
+|       |
+|       |-- reviews (Subcollection)
+|           |
+|           |-- reviewId (Document)
+|
+|-- productInsights (Collection)
+|   |
+|   |-- investigationId (Document)
+|
+|-- clusters (Collection)
+|   |
+|   |-- investigationId (Document)
+|       |
+|       |-- attributeClustersWithPercentage (Field)
+|       |
+|       |-- attributeClustersWithPercentageByAsin (Field)
+|
+|-- reviewsInsights (Collection)
+|   |
+|   |-- investigationId (Document)
+|       |
+|       |-- attributeWithPercentage (Subcollection)
+|           |
+|           |-- attribute (Document)
+|               |
+|               |-- clusters (Field)
 
 
 
-Payments (collection)
-    Documents (e.g., paymentId1)
-        Fields: subscription_id, date, status, user_id, amount, payment_intent
-        
-        
-Products (collection)
-    Documents (e.g., B08X2324ZL, B091325ZMB, ...)
-        Fields: details
-    Sub-collection: reviews
-        Documents (e.g., R1TPG96Z1XO0JA, ...)
-            Fields: review, name, date, asin, id, review_data, rating, title, media, verified_purchase, and other fields.
-            
+FIRESTORE Data Structure:
 
 Users (collection)
-    Documents (e.g., userId1)
-        Fields: remaining_investigations, email, current_package, name
-            Sub-collection: subscriptions
-                Documents (e.g., subscriptionId1, subscriptionId2, ...)
-                    Fields: end_date, package, payment_status, start_date, payment_intent
+    Documents (e.g., userId1, userId2, ...)
+        Fields: 
+            - id: Auto-generated ID (string)
+            - name: User's name (string)
+            - email: User's email (string)
+            - currentPackage: Current subscribed package (string, optional)
+            - remainingInvestigations: Remaining investigations count (number, optional)
+        
+        Sub-collection: Subscriptions
+            Documents (e.g., subscriptionId1, subscriptionId2, ...)
+                Fields:
+                    - id: Auto-generated ID (string)
+                    - userId: Reference to the user's ID (string)
+                    - package: Subscribed package (string)
+                    - startDate: Subscription start date (timestamp)
+                    - paymentStatus: Payment status (string, optional)
+                    - paymentIntent: Payment intent ID (string, optional)
 
-
-
-Insights (collection)
+Investigations (collection)
     Documents (e.g., investigationId1, investigationId2, ...)
         Fields: 
-            Positives: 
-                List with these fields for each attribute:
-                    {
-                    Attribute: text, 
-                    Attribute Value: text,
-                    Percentage of Count on Attribute Value vs. Count on Attribute: percentage,
-                    Additional Details on Attribute Value ,
-                    }
-                    
-            Pain Points, Buyer Motivation, Customer Expectations: same as Positives
+            - asins: List of ASINs (array of strings)
+            - userId: User's ID (string)
+            - status: Status of the investigation (string)
+            - receivedTimestamp: Timestamp when the investigation was received (timestamp)
+            - startedTimestamp: Timestamp when the investigation was started (timestamp, optional)
+            - finishedTimestamp: Timestamp when the investigation was finished (timestamp, optional)
+            - reviewedTimestamps: List of timestamps when the investigation was reviewed (array of timestamps)
+
+Payments (collection)
+    Documents (e.g., paymentId1, paymentId2, ...)
+        Fields: 
+            - id: Auto-generated ID (string)
+            - subscriptionId: Subscription ID (string)
+            - date: Date of the payment (timestamp)
+            - status: Status of the payment (string)
+            - userId: User's ID (string)
+            - amount: Amount paid (number)
+            - paymentIntent: Payment intent ID (string)
+
+
+Products (collection)
+    Documents (e.g., ASIN1234, ASIN5678, ...)
+        Fields: 
+            - details: Product details (object or map)
         
-            Who: 
-                List with these fields for each attribute:
-                    { 
-                    Attribute: text, 
-                    Attribute Value: text,
-                    Count of Observations of Attribute Value,
-                    Count of Observations of Attribute ,
-                    }
-                    
-            
-            What, Where, When: same as Who
-            
-            
-           Feature Importance:
-                List with these fields for each attribute:
-                    {
-                    Attribute: text, 
-                    Attribute Value: text,
-                    Attribute Rating Average: Float,
-                    Attribute Value Percentage of Total Reviews: Float
-                    }     
+        Sub-collection: Reviews
+            Documents (e.g., reviewId1, reviewId2, ...)
+                Fields:
+                    - ... (Fields specific to each review, not detailed in the provided code)
 
+ProductInsights (collection)
+    Documents (e.g., investigationId1, investigationId2, ...)
+        Fields: 
+            - shortProductData: Summarized product data (object or map)
+            - otherProductData: Additional product data not included in the summary (object or map)
 
+Clusters (collection)
+    Documents (e.g., investigationId1, investigationId2, ...)
+        Fields: 
+            - attributeClustersWithPercentage: Clusters with percentage information (array of objects)
+            - attributeClustersWithPercentageByAsin: Clusters with percentage information by ASIN (array of objects)
 
+ReviewsInsights (collection)
+    Documents (e.g., investigationId1, investigationId2, ...)
+        Sub-collection: AttributeWithPercentage
+            Documents (e.g., attribute1, attribute2, ...)
+                Fields:
+                    - clusters: Data points list for the attribute (array of objects)
 
 
 
