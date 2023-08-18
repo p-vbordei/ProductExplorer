@@ -4,23 +4,25 @@
 
 #%%
 import os
-from dotenv import load_dotenv
-from src import app
-from src.products_firebase_utils import get_investigation_and_product_details, update_investigation_status, update_firestore_individual_products, initialize_firestore, save_product_details_to_firestore
-from src.products_data_processing_utils import extract_brand_name, remove_brand, clean_description_data, calculate_median_price
-from src.openai_utils    import chat_completion_request
+#from src import app
+#from src.products_firebase_utils import get_investigation_and_product_details, update_investigation_status, update_firestore_individual_products, initialize_firestore, save_product_details_to_firestore
+#from src.products_data_processing_utils import extract_brand_name, remove_brand, clean_description_data, calculate_median_price
+#from src.openai_utils    import chat_completion_request
 
+from products_firebase_utils import get_investigation_and_product_details, update_investigation_status, update_firestore_individual_products, initialize_firestore, save_product_details_to_firestore
+from products_data_processing_utils import extract_brand_name, remove_brand, clean_description_data, calculate_median_price
+from openai_utils    import chat_completion_request
 GPT_MODEL = "gpt-3.5-turbo"
 
 ################################## PROCESS INDIVIDUAL PRODUCTS #########################################
 # %%
 
-def process_products(investigation_id, GPT_MODEL):
+def process_products(investigationId, GPT_MODEL, db):
     """
-    Processes products based on the given investigation_id.
+    Processes products based on the given investigationId.
     
     Parameters:
-    - investigation_id (str): The ID of the investigation.
+    - investigationId (str): The ID of the investigation.
     - GPT_MODEL (str): The model name to be used for OpenAI.
     - OPENAI_API_KEY (str): The API key for OpenAI.
     
@@ -30,9 +32,9 @@ def process_products(investigation_id, GPT_MODEL):
     
     # Fetch products
     try:
-        products = get_investigation_and_product_details(investigation_id, db)
+        products = get_investigation_and_product_details(investigationId, db)
     except Exception as e:
-        print(f"Error fetching product details for investigation {investigation_id}: {e}")
+        print(f"Error fetching product details for investigation {investigationId}: {e}")
         return []
 
     functions = [
@@ -90,11 +92,11 @@ def process_products(investigation_id, GPT_MODEL):
 
 
     for product in products:
-        clean_brand = extract_brand_name(product['product_information']['brand'])
-        product['clean_brand'] = clean_brand
+        cleanBrand = extract_brand_name(product['product_information']['brand'])
+        product['cleanBrand'] = cleanBrand
         title = product.get('title')
-        clean_title = remove_brand(title, clean_brand)
-        title = clean_title
+        cleanTitle = remove_brand(title, cleanBrand)
+        title = cleanTitle
         asin = product['asin']
         bullets = product['feature_bullets']
 
@@ -125,17 +127,18 @@ def process_products(investigation_id, GPT_MODEL):
 
     # Process Responses
     for product in products:
-        product['clean_product_description_data'] = clean_description_data(product['product_description_data'])
-        data = eval(product['clean_product_description_data']['choices'][0]['message']['function_call']['arguments'])
-        product['clean_product_description_data'] = data
+        product['cleanProductDescriptionData'] = clean_description_data(product['product_description_data'])  # Changed to CamelCase
+        data = eval(product['cleanProductDescriptionData']['choices'][0]['message']['function_call']['arguments'])  # Updated to use CamelCase key
+        product['cleanProductDescriptionData'] = data  # Updated to use CamelCase key
 
-    new_products_list = [] 
+
+    newProductsList = [] 
     for product in products:
-        asin_level_data = {}
-        asin_level_data = product
-        new_products_list.append(asin_level_data)
+        asinLevelData = {}
+        asinLevelData = product
+        newProductsList.append(asinLevelData)
         
-    return new_products_list
+    return newProductsList
 
 
 # %%
@@ -147,16 +150,16 @@ def process_products(investigation_id, GPT_MODEL):
 def process_product_description(products, GPT_MODEL):
 
 
-    product_summary_dict = {}
-    what_is_in_the_box_dict = {}
-    technical_facts_dict = {}
-    features_dict = {}
-    how_product_use_dict = {}
-    where_product_use_dict = {}
-    user_description_dict = {}
-    packaging_description_dict = {}
-    season_description_dict = {}
-    when_product_use_dict = {}
+    productSummaryDict = {}
+    whatIsInTheBoxDict = {}
+    technicalFactsDict = {}
+    featuresDict = {} 
+    howProductUseDict = {}
+    whereProductUseDict = {}
+    userDescriptionDict = {}
+    packagingDescriptionDict = {}
+    seasonDescriptionDict = {}
+    whenProductUseDict = {}
 
 
 
@@ -164,18 +167,18 @@ def process_product_description(products, GPT_MODEL):
         asin = product_item['asin']
         data = product_item['product_description_data']
 
-        product_summary_dict[asin] = data.get('Product Summary')
-        what_is_in_the_box_dict[asin] = data.get('What is in the box?')
-        technical_facts_dict[asin] = data.get('Technical Facts?')
-        features_dict[asin] = data.get('Features')
-        how_product_use_dict[asin] = data.get('How the product is used?')
-        where_product_use_dict[asin] = data.get('Where the product is used?')
-        user_description_dict[asin] = data.get('User Description?')
-        packaging_description_dict[asin] = data.get('Packaging?')
-        season_description_dict[asin] = data.get('Season?')
-        when_product_use_dict[asin] = data.get('When the product is used?')
+        productSummaryDict[asin] = data.get('Product Summary')
+        whatIsInTheBoxDict[asin] = data.get('What is in the box?')
+        technicalFactsDict[asin] = data.get('Technical Facts?')
+        featuresDict[asin] = data.get('Features')
+        howProductUseDict[asin] = data.get('How the product is used?')
+        whereProductUseDict[asin] = data.get('Where the product is used?')
+        userDescriptionDict[asin] = data.get('User Description?')
+        packagingDescriptionDict[asin] = data.get('Packaging?')
+        seasonDescriptionDict[asin] = data.get('Season?')
+        whenProductUseDict[asin] = data.get('When the product is used?')
 
-    list_of_product_data_dictionaries = [product_summary_dict, what_is_in_the_box_dict, technical_facts_dict, features_dict, how_product_use_dict, where_product_use_dict, user_description_dict,season_description_dict,when_product_use_dict]
+    list_of_product_data_dictionaries = [productSummaryDict, whatIsInTheBoxDict, technicalFactsDict, featuresDict, howProductUseDict, whereProductUseDict, userDescriptionDict, packagingDescriptionDict, seasonDescriptionDict, whenProductUseDict]
 
 
     # ### Product Summary
@@ -203,7 +206,7 @@ def process_product_description(products, GPT_MODEL):
     ]
 
     messages = [
-        {"role": "user", "content": f"```PRODUCT SUMMARIES:``` {product_summary_dict}"}
+        {"role": "user", "content": f"```PRODUCT SUMMARIES:``` {productSummaryDict}"}
     ]
 
     # Send the request to the LLM and get the response
@@ -245,7 +248,7 @@ def process_product_description(products, GPT_MODEL):
     ]
 
     messages = [
-        {"role": "user", "content": f"{what_is_in_the_box_dict}"}
+        {"role": "user", "content": f"{whatIsInTheBoxDict}"}
     ]
 
     # Send the request to the LLM and get the response
@@ -287,7 +290,7 @@ def process_product_description(products, GPT_MODEL):
     ]
 
     messages = [
-        {"role": "user", "content": f"{technical_facts_dict}"}
+        {"role": "user", "content": f"{technicalFactsDict}"}
     ]
 
     # Send the request to the LLM and get the response
@@ -335,7 +338,7 @@ def process_product_description(products, GPT_MODEL):
     ]
 
     messages = [
-        {"role": "user", "content": f"{features_dict}"}
+        {"role": "user", "content": f"{featuresDict}"}
     ]
 
     # Send the request to the LLM and get the response
@@ -379,7 +382,7 @@ def process_product_description(products, GPT_MODEL):
     ]
 
     messages = [
-        {"role": "user", "content": f"{how_product_use_dict}"}
+        {"role": "user", "content": f"{howProductUseDict}"}
     ]
 
     # Send the request to the LLM and get the response
@@ -421,7 +424,7 @@ def process_product_description(products, GPT_MODEL):
     ]
 
     messages = [
-        {"role": "user", "content": f"{where_product_use_dict}"}
+        {"role": "user", "content": f"{whereProductUseDict}"}
     ]
 
     # Send the request to the LLM and get the response
@@ -464,7 +467,7 @@ def process_product_description(products, GPT_MODEL):
     ]
 
     messages = [
-        {"role": "user", "content": f"{user_description_dict}"}
+        {"role": "user", "content": f"{userDescriptionDict}"}
     ]
 
     # Send the request to the LLM and get the response
@@ -503,7 +506,7 @@ def process_product_description(products, GPT_MODEL):
     ]
 
     messages = [
-        {"role": "user", "content": f"{packaging_description_dict}"}
+        {"role": "user", "content": f"{packagingDescriptionDict}"}
     ]
 
     # Send the request to the LLM and get the response
@@ -542,7 +545,7 @@ def process_product_description(products, GPT_MODEL):
     ]
 
     messages = [
-        {"role": "user", "content": f"{season_description_dict}"}
+        {"role": "user", "content": f"{seasonDescriptionDict}"}
     ]
 
     # Send the request to the LLM and get the response
@@ -581,7 +584,7 @@ def process_product_description(products, GPT_MODEL):
     ]
 
     messages = [
-        {"role": "user", "content": f"{when_product_use_dict}"}
+        {"role": "user", "content": f"{whenProductUseDict}"}
     ]
 
     # Send the request to the LLM and get the response
@@ -596,74 +599,75 @@ def process_product_description(products, GPT_MODEL):
     # Process the response and store in the dictionary
     main_product_when_to_use_response = response.json()["choices"]
 
-    initial_responses = {}
-    initial_responses['product_summary'] = main_product_summary_response
-    initial_responses['what_is_in_the_box'] = main_product_what_is_in_the_box_response
-    initial_responses['technical_facts'] = main_product_technical_facts_response
-    initial_responses['features'] = main_product_features_response
-    initial_responses['how_product_use'] = main_product_how_to_use_response
-    initial_responses['where_product_use'] = main_product_where_to_use_response
-    initial_responses['user_description'] = main_product_user_description_response
-    initial_responses['packaging_description'] = main_product_packaging_description_response
-    initial_responses['season_description'] = main_product_season_to_use_response
-    initial_responses['when_product_use'] = main_product_when_to_use_response
+    initialResponses = {}
+    initialResponses['productSummary'] = main_product_summary_response
+    initialResponses['whatIsInTheBox'] = main_product_what_is_in_the_box_response
+    initialResponses['technicalFacts'] = main_product_technical_facts_response
+    initialResponses['features'] = main_product_features_response
+    initialResponses['howProductUse'] = main_product_how_to_use_response
+    initialResponses['whereProductUse'] = main_product_where_to_use_response
+    initialResponses['userDescription'] = main_product_user_description_response
+    initialResponses['packagingDescription'] = main_product_packaging_description_response
+    initialResponses['seasonDescription'] = main_product_season_to_use_response
+    initialResponses['whenProductUse'] = main_product_when_to_use_response
 
 
 
-    product_data_interim ={}
-    for key in initial_responses.keys():
-        product_data_interim[key] = eval(initial_responses[key][0]['message']['function_call']['arguments'])
 
-    product_data = {}
-    for main_key in product_data_interim.keys():
-        for secondary_key in product_data_interim[main_key].keys():
-            product_data[secondary_key] = product_data_interim[main_key][secondary_key]
+    productDataInterim ={}
+    for key in initialResponses.keys():
+        productDataInterim[key] = eval(initialResponses[key][0]['message']['function_call']['arguments'])
 
-    product_data['median_product_price'] = calculate_median_price(products)
+    productData = {}
+    for main_key in productDataInterim.keys():
+        for secondary_key in productDataInterim[main_key].keys():
+            productData[secondary_key] = productDataInterim[main_key][secondary_key]
 
-    general_product_keys_to_keep = ['Product Summary', 'product_summary','In_the_Box', 'in_the_box', 'technical_facts', 'features', 'how_the_product_is_used',  'where_the_product_is_used', 'user_description','median_product_price']
+    productData['medianProductPrice'] = calculate_median_price(products)
 
-    short_product_data = {}
+    general_product_keys_to_keep = ['productSummary','whatIsInTheBox', 'technicalFacts', 'features', 'howProductUse',  'whereProductUse', 'userDescription','medianProductPrice']
+
+    shortProductData = {} 
     for key in general_product_keys_to_keep:
-        if key in product_data.keys():
-            short_product_data[key] = product_data[key]
+        if key in productData.keys():
+            shortProductData[key] = productData[key]
 
-    other_product_data_keys = set(product_data.keys()) - set(short_product_data.keys())  # corrected here
+    otherProductDataKeys = set(productData.keys()) - set(shortProductData.keys())
 
-    other_product_data = {}
-    for key in other_product_data_keys:
-        if key in product_data.keys():
-            other_product_data[key] = product_data[key]
+
+    otherProductData = {}
+    for key in otherProductData:
+        if key in productData.keys():
+            otherProductData[key] = productData[key]
             
-    final_product_data = {}
-    final_product_data['short_product_data'] = short_product_data
-    final_product_data['other_product_data'] = other_product_data
+    finalProductData = {}
+    finalProductData['shortProductData'] = shortProductData
+    finalProductData['otherProductData'] = otherProductData
 
-    return final_product_data
+
+    return finalProductData
 
 ################################## RUN #########################################
 
 
-
-def run_products_investigation(investigation_id):
-    db = initialize_firestore(cred_path)
-    update_investigation_status(investigation_id, "started_products", db)
-    new_products_list = process_products(investigation_id, GPT_MODEL)
-    update_firestore_individual_products(new_products_list, investigation_id, db)
-    update_investigation_status(investigation_id, "finished_individual_products", db)
-    final_product_data = process_product_description(new_products_list, GPT_MODEL)
-    save_product_details_to_firestore(db, investigation_id, final_product_data)
-    update_investigation_status(investigation_id, 'finished_products', db)
+# %%
+def run_products_investigation(investigationId):
+    
+    db = initialize_firestore()
+    update_investigation_status(investigationId, "started_products", db)
+    newProductsList = process_products(investigationId, GPT_MODEL, db)
+    update_firestore_individual_products(newProductsList, investigationId, db)
+    update_investigation_status(investigationId, "finished_individual_products", db)
+    finalProductsData = process_product_description(newProductsList, GPT_MODEL)
+    save_product_details_to_firestore(db, investigationId, finalProductsData)
+    update_investigation_status(investigationId, 'finished_products', db)
 
 
 
 if __name__ == "__main__":
-    load_dotenv()
-    OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-    CRED_PATH =  '/Users/vladbordei/Documents/Development/ProductExplorer/notebooks/productexplorerdata-firebase-adminsdk-ulb3d-465f23dff3.json'
     INVESTIGATION = "investigationId2"
-
     run_products_investigation(INVESTIGATION)
 
 
 # =============================================================================
+
