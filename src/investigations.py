@@ -7,15 +7,15 @@ from firebase_admin import firestore
 def start_investigation(data, db):
     """Start a new investigation with given data."""
     try:
-        user_id = data['user_id']
+        userId = data['userId']
         asins = data['asins']
         
         investigation_ref = db.collection('investigations').document()
-        investigation_id = investigation_ref.id
+        investigationId = investigation_ref.id
         
         investigation_data = {
-            'id': investigation_id,
-            'user_id': user_id,
+            'id': investigationId,
+            'userId': userId,
             'asins': asins,
             'status': 'started',
             'start_timestamp': firestore.SERVER_TIMESTAMP,
@@ -31,22 +31,22 @@ def start_investigation(data, db):
         print(f"Error starting investigation: {e}")
         return None
 
-def get_investigation(investigation_id, db):
+def get_investigation(investigationId, db):
     """Retrieve investigation data by its ID."""
     try:
-        investigation_ref = db.collection('investigations').document(investigation_id).get()
+        investigation_ref = db.collection('investigations').document(investigationId).get()
         if investigation_ref.exists:
             return investigation_ref.to_dict()
         else:
             return None
     except Exception as e:
-        print(f"Error fetching investigation {investigation_id}: {e}")
+        print(f"Error fetching investigation {investigationId}: {e}")
         return None
 
-def complete_investigation(investigation_id, results, db):
+def complete_investigation(investigationId, results, db):
     """Mark an investigation as completed and store its results."""
     try:
-        investigation_ref = db.collection('investigations').document(investigation_id)
+        investigation_ref = db.collection('investigations').document(investigationId)
         investigation_ref.update({
             'status': 'completed',
             'results': results,
@@ -54,7 +54,7 @@ def complete_investigation(investigation_id, results, db):
         })
         return True
     except Exception as e:
-        print(f"Error completing investigation {investigation_id}: {e}")
+        print(f"Error completing investigation {investigationId}: {e}")
         return False
 
 def update_investigation_status(investigationId, newStatus,db):

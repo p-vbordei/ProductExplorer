@@ -15,7 +15,7 @@ paths:
       description: |
         This endpoint initiates a new investigation based on the provided user ID and list of ASINs.
       tags:
-        - Investigation
+        - Start Investigation
       requestBody:
         required: true
         content:
@@ -69,6 +69,57 @@ paths:
                 properties:
                   error:
                     type: string
+                    
+  /run_data_acquisition:
+    post:
+      operationId: src.main.api_run_data_acquisition
+      summary: Initiates data acquisition.
+      description: |
+        This endpoint initiates data acquisition based on the provided list of ASINs.
+      tags:
+        - Data Acquisition
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                asins:
+                  type: array
+                  items:
+                    type: string
+                  description: List of ASINs for data acquisition.
+      responses:
+        '200':
+          description: Data acquisition completed successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          description: Bad request. Missing or invalid parameters.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        '500':
+          description: Internal server error or processing error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+
+
   /run_products_investigation:
     post:
       operationId: src.main.api_run_products_investigation
@@ -137,6 +188,57 @@ paths:
       responses:
         '200':
           description: Reviews investigation completed successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          description: Bad request. Missing or invalid parameters.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        '500':
+          description: Internal server error or processing error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /run_end_to_end_investigation:
+    post:
+      operationId: src.main.api_run_end_to_end_investigation
+      summary: Initiates an end-to-end investigation.
+      description: |
+        This endpoint initiates an end-to-end investigation based on the provided user ID and list of ASINs.
+      tags:
+        - Investigation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: string
+                  description: The ID of the user.
+                asins:
+                  type: array
+                  items:
+                    type: string
+                  description: List of ASINs for the investigation.
+      responses:
+        '200':
+          description: End-to-end investigation completed successfully.
           content:
             application/json:
               schema:
