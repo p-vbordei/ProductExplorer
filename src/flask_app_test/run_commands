@@ -17,7 +17,7 @@ docker run -p 8080:8080 flask-gae-app
 # pip install firebase_admin google-cloud-firestore nest_asyncio tiktoken "connexion[swagger-ui]"
 # conda install aiohttp numpy pandas tenacity requests requests tqdm python-dotenv flask gunicorn
 
-export FLASK_APP=main.py
+export FLASK_APP=app.main.py
 export FLASK_ENV=development
 flask run
 
@@ -46,9 +46,7 @@ flask_app_test/
 └── swagger.yaml
 Here's a breakdown:
 
-app/: This is the main application directory where all your Python code resides.
 
-__init__.py: This is an empty file that makes the app directory a Python package, allowing you to import modules from it.
 main.py: This is your main Flask application file.
 products_processing.py: This is the file you mentioned that contains the run_products_investigation function.
 other_module1.py, other_module2.py, etc.: Any other Python modules you might have.
@@ -63,3 +61,7 @@ requirements.txt: This file contains all the Python package dependencies for you
 app.yaml: This is the configuration file for deploying to Google App Engine.
 
 swagger.yaml: This is the Swagger API definition file.
+
+#################
+in  flask_app_test
+python -m app.main

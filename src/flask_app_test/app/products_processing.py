@@ -643,7 +643,7 @@ def process_product_description(products, GPT_MODEL):
 
 
 
-def run_products_investigation(investigation_id, cred_path):
+def run_products_investigation(investigation_id):
     db = initialize_firestore(cred_path)
     update_investigation_status(investigation_id, "started_products", db)
     new_products_list = process_products(investigation_id, GPT_MODEL)
@@ -661,4 +661,4 @@ if __name__ == "__main__":
     CRED_PATH =  '/Users/vladbordei/Documents/Development/ProductExplorer/notebooks/productexplorerdata-firebase-adminsdk-ulb3d-465f23dff3.json'
     INVESTIGATION = "investigationId2"
 
-    run_products_investigation(INVESTIGATION, CRED_PATH)
+    run_products_investigation(INVESTIGATION)

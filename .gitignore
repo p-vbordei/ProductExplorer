@@ -20,6 +20,7 @@ parts/
 sdist/
 var/
 src/flask_app_test/.env
+src/flask_app_test/app/.env
 *.egg-info/
 .installed.cfg
 *.egg
