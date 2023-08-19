@@ -332,3 +332,14 @@ Utility Functions:
 The firebase_utils.py file contains utility functions to interact with Firestore.
 Functions include updating investigation status, retrieving ASINs and reviews, writing reviews to Firestore, and saving clusters.
 
+
+
+#################
+###### RUN #####
+in  ProductExplorer (project folder)
+python -m src.main
+http://192.168.31.31:8080/ui/
+
+# In the Working Dir
+docker build -t flask-gae-app .
+docker run -p 8080:8080 flask-gae-app

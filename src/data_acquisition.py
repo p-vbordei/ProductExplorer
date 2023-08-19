@@ -10,7 +10,10 @@ import aiohttp
 try:
     from src.firebase_utils import initialize_firestore
 except ImportError:
-    from firebase_utils import initialize_firestore
+    try:
+        from firebase_utils import initialize_firestore
+    except ImportError:
+        from .firebase_utils import initialize_firestore
 
 # Your ASINs
 asin_list = ['B08X2324ZL', 'B09MQ689XL']

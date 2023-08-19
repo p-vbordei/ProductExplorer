@@ -7,6 +7,7 @@ from firebase_admin import credentials, firestore
 import logging
 from tqdm import tqdm
 import time
+import os
 from collections import defaultdict
 try:
     from src.investigations import get_asins_from_investigation, update_investigation_status
