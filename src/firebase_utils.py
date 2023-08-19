@@ -21,57 +21,60 @@ except ImportError:
     from investigations import get_asins_from_investigation, update_investigation_status
 
 
-
 def get_secret(secret_name):
     client = secretmanager.SecretManagerServiceClient()
-    project_id = "productexplorer"  # Replace with your GCP project ID
+    project_id = "productexplorer"
     secret_version_name = f"projects/{project_id}/secrets/{secret_name}/versions/latest"
     response = client.access_secret_version(request={"name": secret_version_name})
     return response.payload.data.decode('UTF-8')
 
-
-
 def initialize_firestore():
     """Initialize Firestore client."""
 
-    # Try to get the key content from environment variable
-    FIREBASE_KEY = os.getenv("FIREBASE_KEY")
-
-    # If not found, try to get from secret management
-    if not FIREBASE_KEY:
-        try:
-            FIREBASE_KEY = get_secret("FIREBASE_KEY")
-        except Exception as e:
-            logging.error(f"Error fetching FIREBASE_KEY from secret manager: {e}")
-
-    # If still not found, load from .env (mostly for local development)
-    if not FIREBASE_KEY:
-        from dotenv import load_dotenv
-        load_dotenv()
+    # Check if running on App Engine
+    if os.environ.get('GAE_ENV', '').startswith('standard'):
+        # Running on App Engine, use default credentials
+        if not firebase_admin._apps:
+            firebase_admin.initialize_app()
+    else:
+        # Try to get the key content from environment variable
         FIREBASE_KEY = os.getenv("FIREBASE_KEY")
 
-    if not FIREBASE_KEY:
-        raise ValueError("FIREBASE_KEY not found in environment or secrets")
+        # If not found, try to get from secret management
+        if not FIREBASE_KEY:
+            try:
+                FIREBASE_KEY = get_secret("FIREBASE_KEY")
+            except Exception as e:
+                logging.error(f"Error fetching FIREBASE_KEY from secret manager: {e}")
 
-    # Check if FIREBASE_KEY is a path to a file
-    if os.path.exists(FIREBASE_KEY):
-        with open(FIREBASE_KEY, 'r') as file:
-            cred_data = json.load(file)
-    else:
-        # Try to parse the key content as JSON
-        try:
-            cred_data = json.loads(FIREBASE_KEY)
-        except json.JSONDecodeError:
-            logging.error(f"Failed to parse FIREBASE_KEY content: {FIREBASE_KEY}")
-            raise ValueError("Failed to parse FIREBASE_KEY as JSON")
+        # If still not found, load from .env (for local development)
+        if not FIREBASE_KEY:
+            from dotenv import load_dotenv
+            load_dotenv()
+            FIREBASE_KEY = os.getenv("FIREBASE_KEY")
 
-    cred = credentials.Certificate(cred_data)
+        if not FIREBASE_KEY:
+            raise ValueError("FIREBASE_KEY not found in environment or secrets")
 
-    if not firebase_admin._apps:
-        firebase_admin.initialize_app(cred)
-    
+        # Check if FIREBASE_KEY is a path to a file
+        if os.path.exists(FIREBASE_KEY):
+            with open(FIREBASE_KEY, 'r') as file:
+                cred_data = json.load(file)
+        else:
+            # Try to parse the key content as JSON
+            try:
+                cred_data = json.loads(FIREBASE_KEY)
+            except json.JSONDecodeError:
+                logging.error("Failed to parse FIREBASE_KEY content")
+                raise ValueError("Failed to parse FIREBASE_KEY as JSON")
+
+        if not firebase_admin._apps:
+            cred = credentials.Certificate(cred_data)
+            firebase_admin.initialize_app(cred)
+
     db = firestore.client()
     return db
+
 
 
 
