@@ -30,7 +30,7 @@ def initialize_firestore():
     except:
         from dotenv import load_dotenv
         load_dotenv()
-        FIREBASE_KEY = get_secret("FIREBASE_KEY")
+        FIREBASE_KEY = os.getenv("FIREBASE_KEY")
 
     cred = credentials.Certificate(FIREBASE_KEY)
     if not firebase_admin._apps:
