@@ -1,5 +1,6 @@
+#######################
 # Description: Utility functions for interacting with Firestore
-# products_firebase_utils.py
+# firebase_utils.py
 
 
 import json
@@ -27,10 +28,12 @@ def get_secret(secret_name):
     response = client.access_secret_version(request={"name": secret_version_name})
     return response.payload.data.decode('UTF-8')
 
+import json
+
 def initialize_firestore():
     """Initialize Firestore client."""
 
-    # Try to get the path from environment variable
+    # Try to get the key content from environment variable
     FIREBASE_KEY = os.getenv("FIREBASE_KEY")
 
     # If not found, try to get from secret management
@@ -49,18 +52,19 @@ def initialize_firestore():
     if not FIREBASE_KEY:
         raise ValueError("FIREBASE_KEY not found in environment or secrets")
 
-    # If the FIREBASE_KEY is a JSON string, parse it
+    # Try to parse the key content as JSON
     try:
         cred_data = json.loads(FIREBASE_KEY)
         cred = credentials.Certificate(cred_data)
     except json.JSONDecodeError:
-        cred = credentials.Certificate(FIREBASE_KEY)
+        raise ValueError("Failed to parse FIREBASE_KEY as JSON")
 
     if not firebase_admin._apps:
         firebase_admin.initialize_app(cred)
     
     db = firestore.client()
     return db
+
 
 ########### PRODUCTS #############
 
@@ -248,3 +252,4 @@ def write_insights_to_firestore(investigationId, datapointsDict, db):
     except Exception as e:
         print(f"Error writing data for {investigationId} to Firestore: {e}")
 
+# ===================
