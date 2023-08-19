@@ -26,7 +26,6 @@ def process_products(investigationId, GPT_MODEL, db):
     Parameters:
     - investigationId (str): The ID of the investigation.
     - GPT_MODEL (str): The model name to be used for OpenAI.
-    - OPENAI_API_KEY (str): The API key for OpenAI.
     
     Returns:
     - list: A list of processed products.

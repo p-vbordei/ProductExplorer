@@ -1,8 +1,8 @@
 #####################
 # main.py
+# %%
 from flask import jsonify, request
 import os
-from dotenv import load_dotenv
 
 from src import app, connex_app
 from src.investigations import start_investigation
@@ -13,7 +13,9 @@ from src.run_investigation import run_end_to_end_investigation
 from src.users import (create_user, get_user, subscribe_user, log_payment, 
                        subscribe_user_to_package)
 from src.firebase_utils import initialize_firestore
+# %%
 
+# %%
 db = initialize_firestore()
 
 def api_start_investigation():
@@ -165,8 +167,5 @@ def api_subscribe_user_to_package(db = db):
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    load_dotenv()
-    INVESTIGATION = "investigationId2"
-    OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
     connex_app.run(port=8080)
 # ====================================

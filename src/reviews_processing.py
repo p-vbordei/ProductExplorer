@@ -6,10 +6,8 @@ import os
 import asyncio
 import pandas as pd
 import numpy as np
-
 from sklearn.cluster import AgglomerativeClustering
 
-from dotenv import load_dotenv
 try:
     from src import app
     from src.reviews_data_processing_utils import process_datapoints
@@ -332,10 +330,6 @@ def quantify_observations(reviewsWithClusters, cleanReviews):
 
 # %%
 def run_reviews_investigation(investigationId):
-    OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-    CRED_PATH =  '/Users/vladbordei/Documents/Development/ProductExplorer/notebooks/productexplorerdata-firebase-adminsdk-ulb3d-465f23dff3.json'
-    
-    cred_path = CRED_PATH
 
     # Initialize Firestore
     db = initialize_firestore()
@@ -369,9 +363,5 @@ def run_reviews_investigation(investigationId):
     # Write insights to Firestore
     write_insights_to_firestore(investigationId, datapointsDict, db)
 
-if __name__ == "__main__":
-    load_dotenv()
-    INVESTIGATION = "investigationId2"
-    run_reviews_investigation(INVESTIGATION)
 
 # %%

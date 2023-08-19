@@ -3,10 +3,7 @@
 import os
 import re
 from tiktoken import get_encoding
-from dotenv import load_dotenv
 
-load_dotenv()
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
 def num_tokens_from_string(string: str, encoding_name="cl100k_base") -> int:
     """Returns the number of tokens in a text string."""

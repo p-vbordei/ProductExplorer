@@ -13,13 +13,26 @@ try:
 except ImportError:
     from investigations import get_asins_from_investigation, update_investigation_status
 
+from google.cloud import secretmanager
+
+def get_secret(secret_name):
+    client = secretmanager.SecretManagerServiceClient()
+    secret_version_name = f"projects/{productexplorer}/secrets/{secret_name}/versions/latest"
+    response = client.access_secret_version(request={"name": secret_version_name})
+    return response.payload.data.decode('UTF-8')
+
+
 def initialize_firestore():
     """Initialize Firestore client."""
 
-    # Firestore details
-    CRED_PATH = '/Users/vladbordei/Documents/Development/ProductExplorer/notebooks/productexplorerdata-firebase-adminsdk-ulb3d-465f23dff3.json'
+    try:
+        FIREBASE_KEY = get_secret("FIREBASE_KEY")
+    except:
+        from dotenv import load_dotenv
+        load_dotenv()
+        FIREBASE_KEY = get_secret("FIREBASE_KEY")
 
-    cred = credentials.Certificate(CRED_PATH)
+    cred = credentials.Certificate(FIREBASE_KEY)
     if not firebase_admin._apps:
         firebase_admin.initialize_app(cred)
     

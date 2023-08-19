@@ -20,7 +20,16 @@ encoding = tiktoken.get_encoding(embedding_encoding)
 
 GPT_MODEL = "gpt-3.5-turbo"
 
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+try:
+    from src.firebase_utils import get_secret
+    OPENAI_API_KEY = get_secret("OPENAI_API_KEY")
+except:
+    from dotenv import load_dotenv
+    load_dotenv()
+    OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+
+
+
 HEADERS = {
     "Content-Type": "application/json",
     "Authorization": f"Bearer {OPENAI_API_KEY}"
