@@ -2,18 +2,19 @@
 # Description: Utility functions for interacting with Firestore
 # firebase_utils.py
 
-
+import os
 import json
+from collections import defaultdict
 import logging
+
 from google.cloud import firestore, secretmanager
 import firebase_admin
 from firebase_admin import credentials, firestore
 
-import logging
 from tqdm import tqdm
 import time
-import os
-from collections import defaultdict
+
+
 try:
     from src.investigations import get_asins_from_investigation, update_investigation_status
 except ImportError:
@@ -28,7 +29,7 @@ def get_secret(secret_name):
     response = client.access_secret_version(request={"name": secret_version_name})
     return response.payload.data.decode('UTF-8')
 
-import json
+
 
 def initialize_firestore():
     """Initialize Firestore client."""
@@ -41,7 +42,7 @@ def initialize_firestore():
         try:
             FIREBASE_KEY = get_secret("FIREBASE_KEY")
         except Exception as e:
-            logging.error(f"Error fetching FIREBASE_KEY: {e}")
+            logging.error(f"Error fetching FIREBASE_KEY from secret manager: {e}")
 
     # If still not found, load from .env (mostly for local development)
     if not FIREBASE_KEY:
@@ -52,18 +53,26 @@ def initialize_firestore():
     if not FIREBASE_KEY:
         raise ValueError("FIREBASE_KEY not found in environment or secrets")
 
-    # Try to parse the key content as JSON
-    try:
-        cred_data = json.loads(FIREBASE_KEY)
-        cred = credentials.Certificate(cred_data)
-    except json.JSONDecodeError:
-        raise ValueError("Failed to parse FIREBASE_KEY as JSON")
+    # Check if FIREBASE_KEY is a path to a file
+    if os.path.exists(FIREBASE_KEY):
+        with open(FIREBASE_KEY, 'r') as file:
+            cred_data = json.load(file)
+    else:
+        # Try to parse the key content as JSON
+        try:
+            cred_data = json.loads(FIREBASE_KEY)
+        except json.JSONDecodeError:
+            logging.error(f"Failed to parse FIREBASE_KEY content: {FIREBASE_KEY}")
+            raise ValueError("Failed to parse FIREBASE_KEY as JSON")
+
+    cred = credentials.Certificate(cred_data)
 
     if not firebase_admin._apps:
         firebase_admin.initialize_app(cred)
     
     db = firestore.client()
     return db
+
 
 
 ########### PRODUCTS #############
