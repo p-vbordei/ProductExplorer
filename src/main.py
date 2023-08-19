@@ -167,5 +167,5 @@ def api_subscribe_user_to_package(db = db):
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    connex_app.run(port=8080)
+    app.run(port=8080)
 # ====================================

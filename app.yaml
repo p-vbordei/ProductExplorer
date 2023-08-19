@@ -1,10 +1,11 @@
 ##################
 # app.yaml
 runtime: python310
-instance_class: F2
-entrypoint: gunicorn -b :$PORT main:connex_app
+instance_class: F1
+entrypoint: gunicorn -b :$PORT 'src.__init__:app'
 automatic_scaling:
-  target_cpu_utilization: 65
+  target_cpu_utilization: 0.85
   min_instances: 0
-  max_instances: 10
+  max_instances: 0
 ##======================
+

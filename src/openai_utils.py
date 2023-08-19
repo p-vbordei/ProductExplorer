@@ -20,14 +20,34 @@ encoding = tiktoken.get_encoding(embedding_encoding)
 
 GPT_MODEL = "gpt-3.5-turbo"
 
-try:
-    from src.firebase_utils import get_secret
-    OPENAI_API_KEY = get_secret("OPENAI_API_KEY")
-except:
-    from dotenv import load_dotenv
-    load_dotenv()
-    OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+import os
 
+def get_openai_key():
+    """Retrieve OpenAI API key."""
+
+    # Try to get the key from environment variable
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+    # If not found, try to get from secret management
+    if not OPENAI_API_KEY:
+        try:
+            from src.firebase_utils import get_secret
+            OPENAI_API_KEY = get_secret("OPENAI_API_KEY")
+        except:
+            pass
+
+    # If still not found, load from .env (mostly for local development)
+    if not OPENAI_API_KEY:
+        from dotenv import load_dotenv
+        load_dotenv()
+        OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+
+    if not OPENAI_API_KEY:
+        raise ValueError("OPENAI_API_KEY not found in environment or secrets")
+
+    return OPENAI_API_KEY
+
+OPENAI_API_KEY = get_openai_key()
 
 
 HEADERS = {

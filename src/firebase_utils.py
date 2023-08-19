@@ -1,9 +1,13 @@
 # Description: Utility functions for interacting with Firestore
 # products_firebase_utils.py
 
-from google.cloud import firestore
+
+import json
+import logging
+from google.cloud import firestore, secretmanager
 import firebase_admin
 from firebase_admin import credentials, firestore
+
 import logging
 from tqdm import tqdm
 import time
@@ -14,26 +18,44 @@ try:
 except ImportError:
     from investigations import get_asins_from_investigation, update_investigation_status
 
-from google.cloud import secretmanager
+
 
 def get_secret(secret_name):
     client = secretmanager.SecretManagerServiceClient()
-    secret_version_name = f"projects/{productexplorer}/secrets/{secret_name}/versions/latest"
+    project_id = "productexplorer"  # Replace with your GCP project ID
+    secret_version_name = f"projects/{project_id}/secrets/{secret_name}/versions/latest"
     response = client.access_secret_version(request={"name": secret_version_name})
     return response.payload.data.decode('UTF-8')
-
 
 def initialize_firestore():
     """Initialize Firestore client."""
 
-    try:
-        FIREBASE_KEY = get_secret("FIREBASE_KEY")
-    except:
+    # Try to get the path from environment variable
+    FIREBASE_KEY = os.getenv("FIREBASE_KEY")
+
+    # If not found, try to get from secret management
+    if not FIREBASE_KEY:
+        try:
+            FIREBASE_KEY = get_secret("FIREBASE_KEY")
+        except Exception as e:
+            logging.error(f"Error fetching FIREBASE_KEY: {e}")
+
+    # If still not found, load from .env (mostly for local development)
+    if not FIREBASE_KEY:
         from dotenv import load_dotenv
         load_dotenv()
         FIREBASE_KEY = os.getenv("FIREBASE_KEY")
 
-    cred = credentials.Certificate(FIREBASE_KEY)
+    if not FIREBASE_KEY:
+        raise ValueError("FIREBASE_KEY not found in environment or secrets")
+
+    # If the FIREBASE_KEY is a JSON string, parse it
+    try:
+        cred_data = json.loads(FIREBASE_KEY)
+        cred = credentials.Certificate(cred_data)
+    except json.JSONDecodeError:
+        cred = credentials.Certificate(FIREBASE_KEY)
+
     if not firebase_admin._apps:
         firebase_admin.initialize_app(cred)
     

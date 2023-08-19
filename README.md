@@ -10,69 +10,17 @@ python ./src/visualization/DASH_Traits_Graph_Cytoscape.py
 Project Organization
 ------------
 
-    ├── LICENSE
-    ├── Makefile           <- Makefile with commands like `make data` or `make train`
-    ├── README.md          <- The top-level README for developers using this project.
-    ├── data
-    │   ├── external       <- Data from third party sources.
-    │   ├── interim        <- Intermediate data that has been transformed.
-    │   ├── processed      <- The final, canonical data sets for modeling.
-    │   └── raw            <- The original, immutable data dump.
-    │
-    ├── notebooks          <- Jupyter notebooks. Naming convention is a number (for ordering),
-    │                         the creator's initials, and a short `-` delimited description, e.g.
-    │                         `1.0-jqp-initial-data-exploration`.
-    │
-    │
-    ├── requirements.txt   <- The requirements file for reproducing the analysis environment, e.g.
-    │                         generated with `pip freeze > requirements.txt`
-    │
-    ├── setup.py           <- makes project pip installable (pip install -e .) so src can be imported
-    ├── src                <- Source code for use in this project.
-    │   ├── __init__.py    <- Makes src a Python module
-    │   │
+├── src                
+│   ├── __init__.py    
+│   ├── main.py
+│   ├── other code
+│
+├── swagger.yaml
 
-    │
-    └── tox.ini            <- tox file with settings for running tox; see tox.readthedocs.io
 
 
 --------
 
-
-
-#### Copy code
-
-!docker run --name my_postgres -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 -d postgres
-
-!pip install psycopg2-binary
-
-!docker pull dpage/pgadmin4
-
-!docker run --name my_pgadmin -p 80:80 -e "PGADMIN_DEFAULT_EMAIL=binarybear@gmail.com" -e 
-"PGADMIN_DEFAULT_PASSWORD=admin" --link my_postgres -d dpage/pgadmin4
-
-
-
-#### Run all
-
-Open your browser and navigate to [http://localhost](http://localhost) (or [http://127.0.0.1](http://127.0.0.1)) to access the pgAdmin web interface.
-
-Log in to pgAdmin using the email and password you set in the `my_pgadmin` container.
-
-Add the PostgreSQL server to pgAdmin:
-
-1. Right-click on "Servers" in the left-side pane and select "Create > Server".
-2. In the "General" tab, provide a name for the connection (e.g., "My PostgreSQL Server").
-3. In the "Connection" tab, set the following fields:
-   - Hostname/address: `my_postgres`
-   - Port: `5432`
-   - Maintenance database: `postgres`
-   - Username: `postgres`
-   - Password: `mysecretpassword` (the one you set in the `my_postgres` container)
-4. Click "Save" to add the server.
-
-
-<p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
 
 
 ######## Project Description
@@ -340,6 +288,19 @@ in  ProductExplorer (project folder)
 python -m src.main
 http://192.168.31.31:8080/ui/
 
+
 # In the Working Dir
 docker build -t flask-gae-app .
-docker run -p 8080:8080 flask-gae-app
+
+docker run -p 8080:8080 \
+-e OPENAI_API_KEY="xxx" \
+-e FIREBASE_KEY=/app/firebase-key.json \
+-v /Users/vladbordei/Documents/Development/ProductExplorer/src/firebase-key.json:/app/firebase-key.json \
+flask-gae-app
+
+http://localhost:8080/ui/
+
+
+# Gunicorn Test
+gunicorn -b :8080 'src.__init__:app'
+

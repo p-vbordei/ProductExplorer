@@ -4,10 +4,10 @@
 FROM python:3.10-slim
 
 # Set the working directory in the container
-WORKDIR /app
+WORKDIR /src
 
 # Copy the current directory contents into the container at /app
-COPY . /app
+COPY . /src
 
 # Install the required packages
 RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
@@ -19,5 +19,5 @@ EXPOSE 8080
 ENV FLASK_ENV=production
 
 # Run the command to start the Flask app using Gunicorn
-CMD ["gunicorn", "-b", "0.0.0.0:8080", "-w", "4", "main:app"]
+CMD ["gunicorn", "-b", "0.0.0.0:8080", "-w", "4", "src.main:connex_app"]
 #=====================
