@@ -288,7 +288,7 @@ in  ProductExplorer (project folder)
 python -m src.main
 http://192.168.31.31:8080/ui/
 
-
+# Running on Docker
 # In the Working Dir
 docker build -t flask-gae-app .
 
@@ -304,3 +304,12 @@ http://localhost:8080/ui/
 # Gunicorn Test
 gunicorn -b :8080 'src.__init__:app'
 
+
+
+# GAE Run
+# In the Working Dir
+gcloud auth login
+gcloud config set project productexplorerdata
+gcloud app deploy
+
+https://productexplorerdata.uc.r.appspot.com/ui
