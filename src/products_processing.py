@@ -93,13 +93,9 @@ def process_products(investigationId, GPT_MODEL, db):
 
 
     for product in products:
-        cleanBrand = extract_brand_name(product['product_information']['brand'])
-        product['cleanBrand'] = cleanBrand
         title = product.get('title')
-        cleanTitle = remove_brand(title, cleanBrand)
-        title = cleanTitle
         asin = product['asin']
-        bullets = product['feature_bullets']
+        bullets = product['features']
 
         print(asin)
         print(bullets)

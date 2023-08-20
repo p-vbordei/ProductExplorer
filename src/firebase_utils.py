@@ -99,6 +99,7 @@ def get_investigation_and_product_details(investigationId, db):
     if asins is not None:
         for asin in asins:
             productDetails = get_product_details_from_asin(asin, db)
+            productDetails['asin'] = asin
             if productDetails is not None:
                 products.append(productDetails)
     return products
