@@ -1,4 +1,4 @@
-######################
+###################### DATA ACQUISITION ######################
 # data_acquisition.py
 # %%
 
@@ -16,49 +16,62 @@ except ImportError:
         from .firebase_utils import initialize_firestore
 
 # Your ASINs
-asin_list = ['B08X2324ZL', 'B09MQ689XL']
+asin_list = ['B09XM29XGF', 'B09WR4BW2Y']
+
 
 # Amazon Scraper details
-base_url = "https://asin-data.p.rapidapi.com/request"
-api_key = "70201ee0c8ed29661bc6ae00a84341fb"
+product_url = "https://amazonlive.p.rapidapi.com/product"
+reviews_url = "https://amazonlive.p.rapidapi.com/reviews"
 headers = {
-	"X-RapidAPI-Key": "4da31a08e5mshaca05d98a3d9d6ep1fffb1jsn019717508cc8",
-	"X-RapidAPI-Host": "asin-data.p.rapidapi.com"
+    "X-RapidAPI-Key": "4da31a08e5mshaca05d98a3d9d6ep1fffb1jsn019717508cc8",
+    "X-RapidAPI-Host": "amazonlive.p.rapidapi.com"
 }
 
-
-async def get_product_details(asin):
+async def get_product_details(asin, retries=3):
     start = time.time()
     async with aiohttp.ClientSession() as session:
-        url = f"{base_url}{asin}"
-        async with session.get(url, headers=headers, params={"api_key": api_key}) as response:
-            if response.status != 200:
-                print(f"Failed to fetch product details for {asin}. HTTP status: {response.status}")
-                return None
-            print(f"Fetching product details for {asin} took {time.time() - start} seconds.")
-            return await response.json()
+        params = {"asin": asin, "location": "us"}
+        for _ in range(retries):
+            async with session.get(product_url, headers=headers, params=params) as response:
+                if response.status == 429:  # Rate limit hit
+                    await asyncio.sleep(2)  # Wait for 2 seconds
+                    continue
+                elif response.status != 200:
+                    print(f"Failed to fetch product details for {asin}. HTTP status: {response.status}")
+                    return None
+                print(f"Fetching product details for {asin} took {time.time() - start} seconds.")
+                return await response.json()
+        print(f"Failed to fetch product details for {asin} after {retries} retries.")
+        return None
 
-async def fetch(session, page_var, asin):
+async def fetch_reviews(session, page_var, asin, retries=3):
     params = {
-        "type":"reviews",
-        "asin":asin,
-        "amazon_domain":"amazon.com",
-        "reviewer_type":"verified_purchase",
-        "sort_by":"most_recent",
-        "global_reviews":"false",
-        "page":page_var
+        "asin": asin,
+        "location": "us",
+        "page": page_var,
+        "amount": "20",
+        "sort_by_recent": "false",
+        "only_verified": "true"
     }
-    async with session.get(url=base_url, headers=headers, params=params) as response:
-        if response.status != 200:
-            print(f"Failed to fetch reviews for {asin} page {page_var}. HTTP status: {response.status}")
-            return None
-        return await response.json()
+    for _ in range(retries):
+        async with session.get(reviews_url, headers=headers, params=params) as response:
+            if response.status == 429:  # Rate limit hit
+                await asyncio.sleep(2)  # Wait for 2 seconds
+                continue
+            elif response.status != 200:
+                print(f"Failed to fetch reviews for {asin} page {page_var}. HTTP status: {response.status}")
+                return None
+            return await response.json()
+    print(f"Failed to fetch reviews for {asin} page {page_var} after {retries} retries.")
+    return None
+
 
 async def get_product_reviews(asin):
     start = time.time()
     async with aiohttp.ClientSession() as session:
-        pages = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
-        tasks = [fetch(session, page_var, asin) for page_var in pages]
+        # pages = ["1", "2", "3", "4", "5"]
+        pages = ["1"]
+        tasks = [fetch_reviews(session, page_var, asin) for page_var in pages]
         results = await asyncio.gather(*tasks)
         print(f"Fetching product reviews for {asin} took {time.time() - start} seconds.")
         return results
@@ -79,7 +92,7 @@ def update_firestore(asin, details, reviews, db):
     batch = db.batch()
     for review_page in reviews:
         if review_page is not None:
-            for review in review_page['reviews']:
+            for review in review_page:  # Directly iterate over review_page
                 review_id = review['id']
                 review_ref = doc_ref.collection('reviews').document(review_id)
                 batch.set(review_ref, review)
@@ -100,7 +113,6 @@ async def process_asin(asin, db):
         return
     update_firestore(asin, details, reviews, db)
 
-
 async def run_data_acquisition(asin_list):
     try:
         db = initialize_firestore()
@@ -114,5 +126,62 @@ async def run_data_acquisition(asin_list):
 def execute_data_acquisition(asin_list):
     nest_asyncio.apply()
     return asyncio.run(run_data_acquisition(asin_list))
+# %%
+# ######## TESTING FUNCTIONS #########
+
+
+# Test function to get product details for the first ASIN
+def test_get_product_details_for_first_asin():
+    nest_asyncio.apply()
+    asin = asin_list[0]
+    details = asyncio.run(get_product_details(asin))
+    print(f"Product details for ASIN {asin}:")
+    print(details)
+    return details
+
+# Test function to get reviews for the first ASIN
+def test_get_product_reviews_for_first_asin():
+    nest_asyncio.apply()
+    asin = asin_list[0]
+    reviews = asyncio.run(get_product_reviews(asin))
+    print(f"Reviews for ASIN {asin}:")
+    for review_page in reviews:
+        if review_page:
+            for review in review_page:  # Directly iterate over review_page
+                print(review)
+    return reviews
+
+
+# Test function to write product details and reviews for the first ASIN to Firebase
+def test_write_to_firestore_for_first_asin():
+    nest_asyncio.apply()
+    asin = asin_list[0]
+    db = initialize_firestore()
+    
+    # Fetch product details and reviews
+    details = asyncio.run(get_product_details(asin))
+    reviews = asyncio.run(get_product_reviews(asin))
+    
+    # Write to Firestore
+    update_firestore(asin, details, reviews, db)
+# %%
+###### TESTS #########
+
+# %%
+
+# Product Details
+print("\nFetching product details for the first ASIN...")
+test_get_product_details_for_first_asin()
+
+# %%
+# Reviews
+print("\nFetching reviews for the first ASIN...")
+test_get_product_reviews_for_first_asin()
+# %%
+# Firestore
+print("\nWriting product details and reviews for the first ASIN to Firebase...")
+test_write_to_firestore_for_first_asin()
+
+
 # %%
 # ====================
