@@ -7,27 +7,34 @@ from firebase_admin import firestore
 def start_investigation(data, db):
     """Start a new investigation with given data."""
     try:
-        userId = data['userId']
-        asins = data['asins']
-        
+        userId = data.get('userId')
+        asins = data.get('asins')
+
+        if not userId or not asins:
+            raise ValueError("userId and asins are required fields.")
+
         investigation_ref = db.collection('investigations').document()
         investigationId = investigation_ref.id
-        
+
         investigation_data = {
             'id': investigationId,
             'userId': userId,
             'asins': asins,
             'status': 'started',
-            'startTimestamp': firestore.SERVER_TIMESTAMP,
+            'startTimestamp': 'Pending Firestore Timestamp',
         }
-        
-        investigation_ref.set(investigation_data)
+
+        investigation_ref.set({
+            'id': investigationId,
+            'userId': userId,
+            'asins': asins,
+            'status': 'started',
+            'startTimestamp': firestore.SERVER_TIMESTAMP,
+        })
         return investigation_data
     except KeyError:
-        # Handle missing keys in data
         raise ValueError("The data dictionary is missing required keys.")
     except Exception as e:
-        # Handle other exceptions
         print(f"Error starting investigation: {e}")
         return None
 
@@ -36,15 +43,21 @@ def get_investigation(investigationId, db):
     try:
         investigation_ref = db.collection('investigations').document(investigationId).get()
         if investigation_ref.exists:
-            return investigation_ref.to_dict()
+            data = investigation_ref.to_dict()
+            if 'startTimestamp' in data and data['startTimestamp'] == firestore.SERVER_TIMESTAMP:
+                data['startTimestamp'] = 'Pending Firestore Timestamp'
+            return data
         else:
-            return None
+            raise ValueError(f"Investigation with ID {investigationId} does not exist.")
     except Exception as e:
         print(f"Error fetching investigation {investigationId}: {e}")
         return None
 
 def complete_investigation(investigationId, results, db):
     """Mark an investigation as completed and store its results."""
+    if not results:
+        raise ValueError("Results are required to complete the investigation.")
+
     try:
         investigation_ref = db.collection('investigations').document(investigationId)
         investigation_ref.update({
@@ -57,29 +70,33 @@ def complete_investigation(investigationId, results, db):
         print(f"Error completing investigation {investigationId}: {e}")
         return False
 
-def update_investigation_status(investigationId, newStatus,db):
-    investigation_ref = db.collection(u'investigations').document(investigationId)
+def update_investigation_status(investigationId, newStatus, db):
+    if not newStatus:
+        raise ValueError("New status is required to update the investigation.")
+
+    investigation_ref = db.collection('investigations').document(investigationId)
     investigation = investigation_ref.get()
     if investigation.exists:
         investigation_ref.update({
             'status': newStatus,
             f'{newStatus}Timestamp': firestore.SERVER_TIMESTAMP,
         })
-        return True  # update was successful
+        return True
     else:
-        return False  # investigation does not exist
+        raise ValueError(f"Investigation with ID {investigationId} does not exist.")
 
 def get_asins_from_investigation(investigationId, db):
-    # Retrieve the investigation from Firestore
-    investigation_ref = db.collection(u'investigations').document(investigationId)
+    investigation_ref = db.collection('investigations').document(investigationId)
     investigation = investigation_ref.get()
 
     if investigation.exists:
-        # Retrieve the asins from the investigation
         asins = investigation.get('asins')
-        return asins
+        if asins:
+            return asins
+        else:
+            raise ValueError(f"Investigation with ID {investigationId} does not have any ASINs.")
     else:
-        print('Investigation does not exist')
-        return None
+        raise ValueError(f"Investigation with ID {investigationId} does not exist.")
+
 
 # ===========================
