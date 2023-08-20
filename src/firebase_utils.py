@@ -147,13 +147,16 @@ def get_reviews_from_asin(asin, db):
     # Store all reviews in a list
     productReviews = []
     for review in reviews_query:
-        productReviews.append(review.to_dict())
+        review_data = review.to_dict()
+        review_data['asin'] = asin  # Add the 'asin' key to each review
+        productReviews.append(review_data)
 
     if productReviews:
         return productReviews
     else:
         print(f'No product reviews found for ASIN {asin}')
         return None
+
 
 def get_investigation_and_reviews(investigationId, db):
     asins = get_asins_from_investigation(investigationId, db)
@@ -173,16 +176,13 @@ def get_clean_reviews(investigationId, db):
     update_investigation_status(investigationId, "startedReviews", db)
     reviews_download = get_investigation_and_reviews(investigationId, db)
     flattened_reviews = [item for sublist in reviews_download for item in sublist]
-    for review in flattened_reviews:
-        review['asin_data'] = review['asin']
-        review['asin'] = review['asin']['original']
     return flattened_reviews
 
 def write_reviews_to_firestore(cleanReviewsList, db):
     # Group reviews by ASIN
     reviewsByAsin = defaultdict(list)
     for review in cleanReviewsList:
-        asinString = review['asin']['original'] if isinstance(review['asin'], dict) else review['asin']
+        asinString = review['asin']
         reviewsByAsin[asinString].append(review)
 
     startTime = time.time()

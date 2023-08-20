@@ -151,11 +151,6 @@ def process_reviews_with_gpt(reviewsList, db):
                 reviewDict[col] = None
         reviewDict.pop('insights')
 
-
-    for reviewDict in reviewsList:
-        print(reviewDict.keys())
-        reviewDict['asin'] = reviewDict.pop('asin_data')  # De reverificat asta
-
     write_reviews_to_firestore(reviewsList, db)
     return reviewsList
 
@@ -217,12 +212,8 @@ def cluster_reviews(clean_reviews_list):
     df['cluster'] = df['cluster'].astype(int)
     print(df.columns)
 
-    if 'asin' in df.columns:
-        df['asinOriginal'] = df['asin'].apply(lambda x: x['original'])
-    else:
-        print("'asin' column not found in df!")
 
-    return df[['attribute', 'cluster', 'Value', 'id', 'asinOriginal']].drop_duplicates()
+    return df[['attribute', 'cluster', 'Value', 'id', 'asin']].drop_duplicates()
 
 # %%
 ############################################ CLUSTER LABELING ############################################
@@ -270,6 +261,8 @@ def label_clusters(cluster_df):
     cluster_response_df.reset_index(inplace=True, drop=True)
     cluster_response_df['clusterLabel'] = eval_responses
 
+
+
     # Merge the cluster labels back to the main cluster_df
     df_with_clusters = cluster_df.merge(cluster_response_df, on=['attribute', 'cluster'], how='left')
     drop_columns = ['n_tokens', 'embedding', 'Date', 'Author', 'Images']
@@ -283,11 +276,14 @@ def quantify_observations(reviewsWithClusters, cleanReviews):
     """Quantify observations at both the investigation and ASIN levels."""
     
     df_with_clusters = reviewsWithClusters.merge(pd.DataFrame(cleanReviews), left_on='id', right_on='id', how='left')
-
+    
+    print(reviewsWithClusters.columns)
+    print(pd.DataFrame(cleanReviews).columns)
+    
     agg_result = df_with_clusters.groupby(['attribute', 'clusterLabel']).agg({
         'rating': lambda x: list(x),
         'id': lambda x: list(x),
-        'asinOriginal': lambda x: list(x),
+        'asin': lambda x: list(x),
         }).reset_index()
 
     count_result = df_with_clusters.groupby(['attribute', 'clusterLabel']).size().reset_index(name='observationCount')
@@ -306,19 +302,19 @@ def quantify_observations(reviewsWithClusters, cleanReviews):
     attributeClustersWithPercentage['percentageOfObservationsVsTotalNumberOfReviews'] = attributeClustersWithPercentage['observationCount'] / number_of_reviews * 100
 
     # Quantify observations at the ASIN level
-    agg_result_asin = df_with_clusters.groupby(['attribute', 'clusterLabel', 'asinOriginal']).agg({
+    agg_result_asin = df_with_clusters.groupby(['attribute', 'clusterLabel', 'asin']).agg({
         'rating': lambda x: list(x),
         'id': lambda x: list(x),
     }).reset_index()
 
-    count_result_asin = df_with_clusters.groupby(['attribute', 'clusterLabel', 'asinOriginal']).size().reset_index(name='observationCount')
-    attributeClustersWithPercentageByAsin = pd.merge(agg_result_asin, count_result_asin, on=['attribute', 'clusterLabel', 'asinOriginal'])
+    count_result_asin = df_with_clusters.groupby(['attribute', 'clusterLabel', 'asin']).size().reset_index(name='observationCount')
+    attributeClustersWithPercentageByAsin = pd.merge(agg_result_asin, count_result_asin, on=['attribute', 'clusterLabel', 'asin'])
 
     m_asin = [np.mean([int(r) for r in e]) for e in attributeClustersWithPercentageByAsin['rating']]
     k_asin = [int(round(e, 0)) for e in m_asin]
     attributeClustersWithPercentageByAsin['rating_avg'] = k_asin
 
-    df_with_clusters['totalObservationsPerAttributeAsin'] = df_with_clusters.groupby(['attribute', 'asinOriginal'])['asinOriginal'].transform('count')
+    df_with_clusters['totalObservationsPerAttributeAsin'] = df_with_clusters.groupby(['attribute', 'asin'])['asin'].transform('count')
     attributeClustersWithPercentageByAsin['percentageOfObservationsVsTotalNumberPerAttribute'] = attributeClustersWithPercentageByAsin['observationCount'] / df_with_clusters['totalObservationsPerAttributeAsin'] * 100
     attributeClustersWithPercentageByAsin['percentageOfObservationsVsTotalNumberOfReviews'] = attributeClustersWithPercentageByAsin['observationCount'] / number_of_reviews * 100
 
