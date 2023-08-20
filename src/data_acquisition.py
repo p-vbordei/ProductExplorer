@@ -170,17 +170,17 @@ def test_write_to_firestore_for_first_asin():
 # %%
 
 # Product Details
-print("\nFetching product details for the first ASIN...")
-test_get_product_details_for_first_asin()
+#print("\nFetching product details for the first ASIN...")
+#test_get_product_details_for_first_asin()
 
 # %%
 # Reviews
-print("\nFetching reviews for the first ASIN...")
-test_get_product_reviews_for_first_asin()
+#print("\nFetching reviews for the first ASIN...")
+#test_get_product_reviews_for_first_asin()
 # %%
 # Firestore
-print("\nWriting product details and reviews for the first ASIN to Firebase...")
-test_write_to_firestore_for_first_asin()
+#print("\nWriting product details and reviews for the first ASIN to Firebase...")
+#test_write_to_firestore_for_first_asin()
 
 
 # %%
