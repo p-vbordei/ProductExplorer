@@ -14,6 +14,9 @@ import { PhotoService } from './demo/service/photo.service';
 import { provideFirebaseApp, getApp, initializeApp } from '@angular/fire/app';
 import { getFirestore, provideFirestore } from '@angular/fire/firestore';
 import { environment } from '../environments/environment';
+import { provideAnalytics,getAnalytics,ScreenTrackingService,UserTrackingService } from '@angular/fire/analytics';
+import { provideAuth,getAuth } from '@angular/fire/auth';
+import { providePerformance,getPerformance } from '@angular/fire/performance';
 
 
 @NgModule({
@@ -21,15 +24,18 @@ import { environment } from '../environments/environment';
         AppComponent, NotfoundComponent
     ],
     imports: [
-        provideFirebaseApp(() => initializeApp(environment.firebaseConfig)),
+        provideFirebaseApp(() => initializeApp(environment.firebase)),
         provideFirestore(() => getFirestore()),
         AppRoutingModule,
-        AppLayoutModule
+        AppLayoutModule,
+        provideAnalytics(() => getAnalytics()),
+        provideAuth(() => getAuth()),
+        providePerformance(() => getPerformance())
     ],
     providers: [
         { provide: LocationStrategy, useClass: HashLocationStrategy },
         CountryService, CustomerService, EventService, IconService, NodeService,
-        PhotoService, ProductService
+        PhotoService, ProductService, ScreenTrackingService,UserTrackingService
     ],
     bootstrap: [AppComponent]
 })

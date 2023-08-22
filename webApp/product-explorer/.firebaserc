@@ -1,0 +1,14 @@
+{
+  "targets": {
+    "productexplorerdata": {
+      "hosting": {
+        "product-explorer": [
+          "productexplorerdata"
+        ]
+      }
+    }
+  },
+  "projects": {
+    "default": "productexplorerdata"
+  }
+}

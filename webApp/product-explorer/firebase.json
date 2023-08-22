@@ -1,0 +1,9 @@
+{
+  "hosting": [
+    {
+      "target": "product-explorer",
+      "source": ".",
+      "frameworksBackend": {}
+    }
+  ]
+}
