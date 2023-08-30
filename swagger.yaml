@@ -175,12 +175,12 @@ paths:
               type: object
               required:
                 - user_id
-                - asins
+                - asinList
               properties:
                 user_id:
                   type: string
                   description: The ID of the user.
-                asins:
+                asinList:
                   type: array
                   items:
                     type: string
@@ -465,12 +465,12 @@ components:
       type: object
       required:
         - userId
-        - asins
+        - asinList
       properties:
         userId:
           type: string
           description: The ID of the user initiating the investigation.
-        asins:
+        asinList:
           type: array
           items:
             type: string
@@ -485,7 +485,7 @@ components:
         userId:
           type: string
           description: The ID of the user who initiated the investigation.
-        asins:
+        asinList:
           type: array
           items:
             type: string
@@ -536,9 +536,9 @@ components:
     DataAcquisitionRequest:
       type: object
       required:
-        - asins
+        - asinList
       properties:
-        asins:
+        asinList:
           type: array
           items:
             type: string

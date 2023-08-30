@@ -78,7 +78,7 @@ def use_investigation(userId, db):
     else:
         return False
 
-def add_investigation(userId, asins, db):
+def add_investigation(userId, asinList, db):
     """Add an investigation for the user."""
     user_ref = get_user_ref(userId, db)
     user = user_ref.get()
@@ -88,7 +88,7 @@ def add_investigation(userId, asins, db):
         investigation_ref.set({
             'userId': userId,
             'receivedTimestamp': firestore.SERVER_TIMESTAMP,
-            'asins': asins,
+            'asinList': asinList,
             'status': 'received',
             'startedTimestamp': None,
             'finishedTimestamp': None,

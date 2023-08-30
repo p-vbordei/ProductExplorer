@@ -93,11 +93,11 @@ def get_product_details_from_asin(asin, db):
         return None
 
 def get_investigation_and_product_details(investigationId, db):
-    asins = get_asins_from_investigation(investigationId, db)
+    asinList = get_asins_from_investigation(investigationId, db)
     products = []
 
-    if asins is not None:
-        for asin in asins:
+    if asinList is not None:
+        for asin in asinList:
             productDetails = get_product_details_from_asin(asin, db)
             productDetails['asin'] = asin
             if productDetails is not None:
@@ -159,11 +159,11 @@ def get_reviews_from_asin(asin, db):
 
 
 def get_investigation_and_reviews(investigationId, db):
-    asins = get_asins_from_investigation(investigationId, db)
+    asinList = get_asins_from_investigation(investigationId, db)
     reviewsList = []
 
-    if asins is not None:
-        for asin in asins:
+    if asinList is not None:
+        for asin in asinList:
             asinReviews = get_reviews_from_asin(asin, db)
             if asinReviews is not None:
                 reviewsList.append(asinReviews)

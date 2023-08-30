@@ -24,10 +24,10 @@ def api_start_investigation():
     """
     data = request.json
     userId = data.get('userId')
-    asins = data.get('asins')
+    asinList = data.get('asinList')
     
-    if not userId or not asins:
-        return jsonify({"error": "userIDs and asins are required"}), 400
+    if not userId or not asinList:
+        return jsonify({"error": "userIDs and asinList are required"}), 400
 
     try:
         result = start_investigation(data, db)
@@ -43,13 +43,13 @@ def api_run_data_acquisition():
     Initiates data acquisition based on the provided list of ASINs.
     """
     data = request.json
-    asins = data.get('asins')
+    asinList = data.get('asinList')
     
-    if not asins:
-        return jsonify({"error": "asins are required"}), 400
+    if not asinList:
+        return jsonify({"error": "asinList are required"}), 400
 
     try:
-        result = execute_data_acquisition(asins)
+        result = execute_data_acquisition(asinList)
         if result:
             return jsonify({"message": "Data acquisition completed successfully"}), 200
         else:
@@ -98,10 +98,10 @@ def api_run_end_to_end_investigation():
     """
     data = request.json
     userId = data.get('userId')
-    asins = data.get('asins')
+    asinList = data.get('asinList')
     
-    if not userId or not asins:
-        return jsonify({"error": "userId and asins are required"}), 400
+    if not userId or not asinList:
+        return jsonify({"error": "userId and asinList are required"}), 400
 
     try:
         result = run_end_to_end_investigation(data)

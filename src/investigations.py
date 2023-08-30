@@ -8,10 +8,10 @@ def start_investigation(data, db):
     """Start a new investigation with given data."""
     try:
         userId = data.get('userId')
-        asins = data.get('asins')
+        asinList = data.get('asinList')
 
-        if not userId or not asins:
-            raise ValueError("userId and asins are required fields.")
+        if not userId or not asinList:
+            raise ValueError("userId and asinList are required fields.")
 
         investigation_ref = db.collection('investigations').document()
         investigationId = investigation_ref.id
@@ -19,7 +19,7 @@ def start_investigation(data, db):
         investigation_data = {
             'id': investigationId,
             'userId': userId,
-            'asins': asins,
+            'asinList': asinList,
             'status': 'started',
             'startTimestamp': 'Pending Firestore Timestamp',
         }
@@ -27,7 +27,7 @@ def start_investigation(data, db):
         investigation_ref.set({
             'id': investigationId,
             'userId': userId,
-            'asins': asins,
+            'asinList': asinList,
             'status': 'started',
             'startTimestamp': firestore.SERVER_TIMESTAMP,
         })
@@ -90,9 +90,9 @@ def get_asins_from_investigation(investigationId, db):
     investigation = investigation_ref.get()
 
     if investigation.exists:
-        asins = investigation.get('asins')
-        if asins:
-            return asins
+        asinList = investigation.get('asinList')
+        if asinList:
+            return asinList
         else:
             raise ValueError(f"Investigation with ID {investigationId} does not have any ASINs.")
     else:

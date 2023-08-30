@@ -16,7 +16,7 @@ except ImportError:
         from .firebase_utils import initialize_firestore
 
 # Your ASINs
-asin_list = ['B09XM29XGF', 'B09WR4BW2Y']
+asinList = ['B09XM29XGF', 'B09WR4BW2Y']
 
 
 # Amazon Scraper details
@@ -114,19 +114,19 @@ async def process_asin(asin, db):
         return
     update_firestore(asin, details, reviews, db)
 
-async def run_data_acquisition(asin_list):
+async def run_data_acquisition(asinList):
     try:
         db = initialize_firestore()
-        tasks = [process_asin(asin, db) for asin in asin_list]
+        tasks = [process_asin(asin, db) for asin in asinList]
         await asyncio.gather(*tasks)
         return True
     except Exception as e:
         print(f"Error during data acquisition: {e}")
         return False
 
-def execute_data_acquisition(asin_list):
+def execute_data_acquisition(asinList):
     nest_asyncio.apply()
-    return asyncio.run(run_data_acquisition(asin_list))
+    return asyncio.run(run_data_acquisition(asinList))
 # %%
 # ######## TESTING FUNCTIONS #########
 
@@ -134,7 +134,7 @@ def execute_data_acquisition(asin_list):
 # Test function to get product details for the first ASIN
 def test_get_product_details_for_first_asin():
     nest_asyncio.apply()
-    asin = asin_list[0]
+    asin = asinList[0]
     details = asyncio.run(get_product_details(asin))
     print(f"Product details for ASIN {asin}:")
     print(details)
@@ -143,7 +143,7 @@ def test_get_product_details_for_first_asin():
 # Test function to get reviews for the first ASIN
 def test_get_product_reviews_for_first_asin():
     nest_asyncio.apply()
-    asin = asin_list[0]
+    asin = asinList[0]
     reviews = asyncio.run(get_product_reviews(asin))
     print(f"Reviews for ASIN {asin}:")
     for review_page in reviews:
@@ -156,7 +156,7 @@ def test_get_product_reviews_for_first_asin():
 # Test function to write product details and reviews for the first ASIN to Firebase
 def test_write_to_firestore_for_first_asin():
     nest_asyncio.apply()
-    asin = asin_list[0]
+    asin = asinList[0]
     db = initialize_firestore()
     
     # Fetch product details and reviews

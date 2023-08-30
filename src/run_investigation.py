@@ -40,11 +40,11 @@ def run_end_to_end_investigation(data):
         print(f"Error starting the investigation: {e}")
         return False
 
-    asins = investigationData.get('asins')
+    asinList = investigationData.get('asinList')
     userId = investigationData.get('userId')
     investigationId = investigationData.get('id')
 
-    if not asins:
+    if not asinList:
         print("No ASINs found for the investigation.")
         return False
     try:
@@ -54,7 +54,7 @@ def run_end_to_end_investigation(data):
         return False
 
     try:
-        execute_data_acquisition(asins)
+        execute_data_acquisition(asinList)
         print('Data acquisition completed successfully')
     except Exception as e:
         print(f"Error during data acquisition: {e}")
