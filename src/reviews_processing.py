@@ -7,6 +7,7 @@ import asyncio
 import pandas as pd
 import numpy as np
 from sklearn.cluster import AgglomerativeClustering
+import logging
 
 try:
     from src import app
@@ -325,39 +326,78 @@ def quantify_observations(reviewsWithClusters, cleanReviews):
 ############################################ RUN ############################################
 
 # %%
+
+
 def run_reviews_investigation(investigationId):
+    try:
+        # Initialize Firestore
+        db = initialize_firestore()
+    except Exception as e:
+        logging.error(f"Error initializing Firestore: {e}")
+        return
 
-    # Initialize Firestore
-    db = initialize_firestore()
+    try:
+        # Get clean reviews
+        reviews = get_clean_reviews(investigationId, db)
+    except Exception as e:
+        logging.error(f"Error getting clean reviews: {e}")
+        return
 
-    # Get clean reviews
-    reviews = get_clean_reviews(investigationId, db)
+    try:
+        # Process reviews with GPT
+        cleanReviews = process_reviews_with_gpt(reviews, db)
+    except Exception as e:
+        logging.error(f"Error processing reviews with GPT: {e}")
+        return
 
-    # Process reviews with GPT
-    cleanReviews = process_reviews_with_gpt(reviews, db)
+    try:
+        # Cluster reviews
+        cluster_df = cluster_reviews(cleanReviews)
+    except Exception as e:
+        logging.error(f"Error clustering reviews: {e}")
+        return
 
-    # Cluster reviews
-    cluster_df = cluster_reviews(cleanReviews)
+    try:
+        # Label clusters
+        reviewsWithClusters = label_clusters(cluster_df)
+    except Exception as e:
+        logging.error(f"Error labeling clusters: {e}")
+        return
 
-    # Label clusters
-    reviewsWithClusters = label_clusters(cluster_df)
+    try:
+        # Quantify observations
+        attributeClustersWithPercentage, attributeClustersWithPercentageByAsin = quantify_observations(reviewsWithClusters, cleanReviews)
+    except Exception as e:
+        logging.error(f"Error quantifying observations: {e}")
+        return
 
-    # Quantify observations
-    attributeClustersWithPercentage, attributeClustersWithPercentageByAsin = quantify_observations(reviewsWithClusters, cleanReviews)
+    try:
+        # Save results to Firestore
+        save_cluster_info_to_firestore(attributeClustersWithPercentage, attributeClustersWithPercentageByAsin, investigationId, db)
+    except Exception as e:
+        logging.error(f"Error saving cluster info to Firestore: {e}")
+        return
 
-    # Save results to Firestore
-    save_cluster_info_to_firestore(attributeClustersWithPercentage, attributeClustersWithPercentageByAsin, investigationId, db)
+    try:
+        # Process datapoints
+        datapoints = list(set(attributeClustersWithPercentage['attribute']))
+        datapointsDict = {}
+        for att in datapoints:
+            df = attributeClustersWithPercentage[attributeClustersWithPercentage['attribute'] == att]
+            datapoints_list = process_datapoints(df)
+            datapointsDict[att] = datapoints_list
+    except Exception as e:
+        logging.error(f"Error processing datapoints: {e}")
+        return
 
-    # Process datapoints
-    datapoints = list(set(attributeClustersWithPercentage['attribute']))
-    datapointsDict = {}
-    for att in datapoints:
-        df = attributeClustersWithPercentage[attributeClustersWithPercentage['attribute'] == att]
-        datapoints_list = process_datapoints(df)
-        datapointsDict[att] = datapoints_list
+    try:
+        # Write insights to Firestore
+        write_insights_to_firestore(investigationId, datapointsDict, db)
+    except Exception as e:
+        logging.error(f"Error writing insights to Firestore: {e}")
+        return
 
-    # Write insights to Firestore
-    write_insights_to_firestore(investigationId, datapointsDict, db)
+    logging.info(f"Reviews investigation for {investigationId} completed successfully.")
 
 
 # %%

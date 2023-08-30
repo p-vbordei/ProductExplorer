@@ -4,6 +4,7 @@
 
 #%%
 import os
+import logging
 try:
     from src import app
     from src.firebase_utils import get_investigation_and_product_details, update_investigation_status, update_firestore_individual_products, initialize_firestore, save_product_details_to_firestore
@@ -31,12 +32,14 @@ def process_products(investigationId, GPT_MODEL, db):
     - list: A list of processed products.
     """
     
-    # Fetch products
+
     try:
+        # Fetch products
         products = get_investigation_and_product_details(investigationId, db)
     except Exception as e:
-        print(f"Error fetching product details for investigation {investigationId}: {e}")
+        logging.error(f"Error fetching product details for investigation {investigationId}: {e}")
         return []
+
 
     functions = [
                 {
@@ -93,48 +96,48 @@ def process_products(investigationId, GPT_MODEL, db):
 
 
     for product in products:
-        title = product.get('title')
-        asin = product['asin']
-        bullets = product['features']
-
-        print(asin)
-        print(bullets)
-        print(title)
-
-        messages = [
-            {"role": "user", "content": f"PRODUCT TITLE:``` {title} ``` PRODUCT BULLETS:```{bullets}```"},
-        ]
-
-        response = chat_completion_request(
-            messages=messages,
-            functions=functions,
-            function_call={"name": "describe_product"},
-            temperature=0,
-            model=GPT_MODEL
-        )
-
         try:
+            title = product.get('title')
+            asin = product['asin']
+            bullets = product['features']
+
+            messages = [
+                {"role": "user", "content": f"PRODUCT TITLE:``` {title} ``` PRODUCT BULLETS:```{bullets}```"},
+            ]
+
+            response = chat_completion_request(
+                messages=messages,
+                functions=functions,
+                function_call={"name": "describe_product"},
+                temperature=0,
+                model=GPT_MODEL
+            )
+
             response = response.json()
-            print(response)
             product['product_description_data'] = response
         except Exception as e:
-            print(f"Error generating product description for product {asin}: {e}")
+            logging.error(f"Error generating product description for product {asin}: {e}")
             continue
 
-
-    # Process Responses
     for product in products:
-        product['cleanProductDescriptionData'] = clean_description_data(product['product_description_data'])  # Changed to CamelCase
-        data = eval(product['cleanProductDescriptionData']['choices'][0]['message']['function_call']['arguments'])  # Updated to use CamelCase key
-        product['cleanProductDescriptionData'] = data  # Updated to use CamelCase key
+        try:
+            product['cleanProductDescriptionData'] = clean_description_data(product['product_description_data'])
+            data = eval(product['cleanProductDescriptionData']['choices'][0]['message']['function_call']['arguments'])
+            product['cleanProductDescriptionData'] = data
+        except Exception as e:
+            logging.error(f"Error processing product description data for product {product.get('asin', 'Unknown ASIN')}: {e}")
+            continue
 
-
-    newProductsList = [] 
+    newProductsList = []
     for product in products:
-        asinLevelData = {}
-        asinLevelData = product
-        newProductsList.append(asinLevelData)
-        
+        try:
+            asinLevelData = {}
+            asinLevelData = product
+            newProductsList.append(asinLevelData)
+        except Exception as e:
+            logging.error(f"Error appending product data for product {product.get('asin', 'Unknown ASIN')}: {e}")
+            continue
+
     return newProductsList
 
 
@@ -644,16 +647,58 @@ def process_product_description(products, GPT_MODEL):
 
 
 # %%
+
 def run_products_investigation(investigationId):
-    
-    db = initialize_firestore()
-    update_investigation_status(investigationId, "startedProducts", db)
-    newProductsList = process_products(investigationId, GPT_MODEL, db)
-    update_firestore_individual_products(newProductsList, db)
-    update_investigation_status(investigationId, "finishedIndividualProducts", db)
-    finalProductsData = process_product_description(newProductsList, GPT_MODEL)
-    save_product_details_to_firestore(db, investigationId, finalProductsData)
-    update_investigation_status(investigationId, 'finishedProducts', db)
+    try:
+        db = initialize_firestore()
+    except Exception as e:
+        logging.error(f"Error initializing Firestore: {e}")
+        return
+
+    try:
+        update_investigation_status(investigationId, "startedProducts", db)
+    except Exception as e:
+        logging.error(f"Error updating investigation status to 'startedProducts': {e}")
+        return
+
+    try:
+        newProductsList = process_products(investigationId, GPT_MODEL, db)
+    except Exception as e:
+        logging.error(f"Error processing products: {e}")
+        return
+
+    try:
+        update_firestore_individual_products(newProductsList, db)
+    except Exception as e:
+        logging.error(f"Error updating individual products in Firestore: {e}")
+        return
+
+    try:
+        update_investigation_status(investigationId, "finishedIndividualProducts", db)
+    except Exception as e:
+        logging.error(f"Error updating investigation status to 'finishedIndividualProducts': {e}")
+        return
+
+    try:
+        finalProductsData = process_product_description(newProductsList, GPT_MODEL)
+    except Exception as e:
+        logging.error(f"Error processing final product descriptions: {e}")
+        return
+
+    try:
+        save_product_details_to_firestore(db, investigationId, finalProductsData)
+    except Exception as e:
+        logging.error(f"Error saving final product details to Firestore: {e}")
+        return
+
+    try:
+        update_investigation_status(investigationId, 'finishedProducts', db)
+    except Exception as e:
+        logging.error(f"Error updating investigation status to 'finishedProducts': {e}")
+        return
+
+    logging.info(f"Product investigation for {investigationId} completed successfully.")
+
 
 # =============================================================================
 

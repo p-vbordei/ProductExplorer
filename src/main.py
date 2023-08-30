@@ -42,20 +42,36 @@ def api_run_data_acquisition():
     """
     Initiates data acquisition based on the provided list of ASINs.
     """
-    data = request.json
-    asinList = data.get('asinList')
-    
-    if not asinList:
-        return jsonify({"error": "asinList are required"}), 400
-
     try:
+        data = request.json
+        if not data:
+            logging.error("No JSON payload received for data acquisition")
+            return jsonify({"error": "No JSON payload received"}), 400
+
+        asinList = data.get('asinList')
+        
+        if not asinList:
+            logging.error("Missing asinList for data acquisition")
+            return jsonify({"error": "asinList is required"}), 400
+
+        if not isinstance(asinList, list) or len(asinList) == 0:
+            logging.error("asinList should be a non-empty list")
+            return jsonify({"error": "asinList should be a non-empty list"}), 400
+
+        logging.info(f"Starting data acquisition for ASINs: {asinList}")
         result = execute_data_acquisition(asinList)
+        
         if result:
+            logging.info("Data acquisition completed successfully")
             return jsonify({"message": "Data acquisition completed successfully"}), 200
         else:
+            logging.error("Data acquisition failed")
             return jsonify({"error": "Data acquisition failed"}), 500
+
     except Exception as e:
+        logging.error(f"An exception occurred during data acquisition: {str(e)}")
         return jsonify({"error": str(e)}), 500
+
 
 
 def api_run_products_investigation():
@@ -66,14 +82,21 @@ def api_run_products_investigation():
     investigationId = data.get('investigationId')
     
     if not investigationId:
+        logging.error("Missing investigationId for products investigation")
         return jsonify({"error": "investigationId is required"}), 400
 
     try:
+        logging.info(f"Starting products investigation for ID: {investigationId}")
         run_products_investigation(investigationId)
+        logging.info(f"Completed products investigation for ID: {investigationId}")
         return jsonify({"message": "Investigation completed successfully"}), 200
     except Exception as e:
+        logging.error(f"Failed to complete products investigation for ID: {investigationId}. Error: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
+
+
+import logging
 
 def api_run_reviews_investigation():
     """
@@ -83,13 +106,18 @@ def api_run_reviews_investigation():
     investigationId = data.get('investigationId')
     
     if not investigationId:
+        logging.error("Missing investigationId")
         return jsonify({"error": "investigationId is required"}), 400
 
     try:
+        logging.info(f"Starting reviews investigation for ID: {investigationId}")
         run_reviews_investigation(investigationId)
+        logging.info(f"Completed reviews investigation for ID: {investigationId}")
         return jsonify({"message": "Reviews investigation completed successfully"}), 200
     except Exception as e:
+        logging.error(f"Failed to complete reviews investigation for ID: {investigationId}. Error: {str(e)}")
         return jsonify({"error": str(e)}), 500
+
 
 
 def api_run_end_to_end_investigation():
