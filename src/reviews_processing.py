@@ -117,7 +117,7 @@ def process_reviews_with_gpt(reviewsList, db):
                             "description": "If specified. Actionable observations on product problems to be addressed. Thorough detailing [max 100 words]. Eg: the product started to rust after one year, although I was expecting it to last 5 years before rusting."
                         },
                     },
-                    "required": ["reviewSummary", "buyerMotivation", "customerExpectations", "howTheProductIsUsed", "whereTheProductIsUsed", "userDescription", "packaging", "season", "whenTheProductIsUsed", "price", "quality", "durability", "easeOfUse", "setupAndInstructions", "noiseAndSmell", "colors", "sizeAndFit", "dangerAppraisal", "designAndAppearance", "partsAndComponents", "issues"]
+                    "required": ["reviewSummary", "buyerMotivation", "customerExpectations", "howTheProductIsUsed", "whereTheProductIsUsed", "appraisal","userDescription", "packaging", "season", "whenTheProductIsUsed", "price", "quality", "durability", "easeOfUse", "setupAndInstructions", "noiseAndSmell", "colors", "sizeAndFit", "dangerAppraisal", "designAndAppearance", "partsAndComponents", "issues"]
                 },
             }
         ]
@@ -128,11 +128,16 @@ def process_reviews_with_gpt(reviewsList, db):
 
         contentList = []
         for reviewDict in reviewsList:
-            review = reviewDict['review']
+            try:
+                review = reviewDict['text']
+            except KeyError:
+                logging.error(f"KeyError: 'text' not found in dictionary at index {i}. Full dict: {reviewDict}")
+                continue
             messages = [
                 {"role": "user", "content": f"REVIEW: ```{review}```"},
             ]
             contentList.append(messages)
+        logging.info("Content list prepared.")
 
         async def main():
             responses = await get_completion_list(contentList, functions, function_call)
@@ -145,13 +150,13 @@ def process_reviews_with_gpt(reviewsList, db):
             data = item['function_call']['arguments']
             data = data.replace('null', 'None')
             evalData = eval(data)
-
             evalResponses.append(evalData)
             reviewsList[i]['insights'] = evalData
+            logging.debug(f"Processed response {i+1}/{len(responses)}.")
 
         newCols = list(reviewsList[1]['insights'].keys())
 
-        for reviewDict in tqdm(reviewsList, desc="Updating review dictionaries"):
+        for i, reviewDict in tqdm(enumerate(reviewsList), total=len(reviewsList), desc="Updating review dictionaries"):
             for col in newCols:
                 try:
                     reviewDict[col] = reviewDict['insights'][col]
@@ -159,13 +164,14 @@ def process_reviews_with_gpt(reviewsList, db):
                     logging.warning(f"KeyError: {e}")
                     reviewDict[col] = None
             reviewDict.pop('insights')
+            logging.debug(f"Updated review dictionary {i+1}/{len(reviewsList)}.")
 
         write_reviews_to_firestore(reviewsList, db)
 
         # Stop the timer and print the elapsed time
         end_time = time.time()
         elapsed_time = end_time - start_time
-        print(f"Total time taken for processing: {elapsed_time:.2f} seconds")
+        logging.info(f"Total time taken for processing: {elapsed_time:.2f} seconds")
 
         return reviewsList
 
@@ -183,6 +189,7 @@ def run_reviews_investigation(investigationId):
     try:
         # Initialize Firestore
         db = initialize_firestore()
+        logging.info("Initialized Firestore successfully.")
     except Exception as e:
         logging.error(f"Error initializing Firestore: {e}")
         return
@@ -190,6 +197,7 @@ def run_reviews_investigation(investigationId):
     try:
         # Get clean reviews
         reviews = get_clean_reviews(investigationId, db)
+        logging.info("Retrieved clean reviews successfully.")
     except Exception as e:
         logging.error(f"Error getting clean reviews: {e}")
         return
@@ -197,6 +205,7 @@ def run_reviews_investigation(investigationId):
     try:
         # Process reviews with GPT
         cleanReviews = process_reviews_with_gpt(reviews, db)
+        logging.info("Processed reviews with GPT successfully.")
     except Exception as e:
         logging.error(f"Error processing reviews with GPT: {e}")
         return
@@ -204,6 +213,7 @@ def run_reviews_investigation(investigationId):
     try:
         # Cluster reviews
         cluster_df = cluster_reviews(cleanReviews)
+        logging.info("Clustered reviews successfully.")
     except Exception as e:
         logging.error(f"Error clustering reviews: {e}")
         return
@@ -211,6 +221,7 @@ def run_reviews_investigation(investigationId):
     try:
         # Label clusters
         reviewsWithClusters = label_clusters(cluster_df)
+        logging.info("Labeled clusters successfully.")
     except Exception as e:
         logging.error(f"Error labeling clusters: {e}")
         return
@@ -218,6 +229,7 @@ def run_reviews_investigation(investigationId):
     try:
         # Quantify observations
         attributeClustersWithPercentage, attributeClustersWithPercentageByAsin = quantify_observations(reviewsWithClusters, cleanReviews)
+        logging.info("Quantified observations successfully.")
     except Exception as e:
         logging.error(f"Error quantifying observations: {e}")
         return
@@ -225,6 +237,7 @@ def run_reviews_investigation(investigationId):
     try:
         # Save results to Firestore
         save_cluster_info_to_firestore(attributeClustersWithPercentage, attributeClustersWithPercentageByAsin, investigationId, db)
+        logging.info("Saved cluster info to Firestore successfully.")
     except Exception as e:
         logging.error(f"Error saving cluster info to Firestore: {e}")
         return
@@ -237,6 +250,7 @@ def run_reviews_investigation(investigationId):
             df = attributeClustersWithPercentage[attributeClustersWithPercentage['attribute'] == att]
             datapoints_list = process_datapoints(df)
             datapointsDict[att] = datapoints_list
+        logging.info("Processed datapoints successfully.")
     except Exception as e:
         logging.error(f"Error processing datapoints: {e}")
         return
@@ -244,6 +258,7 @@ def run_reviews_investigation(investigationId):
     try:
         # Write insights to Firestore
         write_insights_to_firestore(investigationId, datapointsDict, db)
+        logging.info("Wrote insights to Firestore successfully.")
     except Exception as e:
         logging.error(f"Error writing insights to Firestore: {e}")
         return
