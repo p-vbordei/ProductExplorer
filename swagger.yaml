@@ -174,10 +174,10 @@ paths:
             schema:
               type: object
               required:
-                - user_id
+                - userId
                 - asinList
               properties:
-                user_id:
+                userId:
                   type: string
                   description: The ID of the user.
                 asinList:
