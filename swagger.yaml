@@ -536,9 +536,9 @@ components:
     DataAcquisitionRequest:
       type: object
       required:
-        - asin_list
+        - asins
       properties:
-        asin_list:
+        asins:
           type: array
           items:
             type: string
