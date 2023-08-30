@@ -94,6 +94,7 @@ def update_firestore(asin, details, reviews, db):
         if review_page is not None:
             for review in review_page:  # Directly iterate over review_page
                 review_id = review['id']
+                review['asin'] = asin
                 review_ref = doc_ref.collection('reviews').document(review_id)
                 batch.set(review_ref, review)
 
