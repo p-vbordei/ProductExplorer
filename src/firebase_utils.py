@@ -80,30 +80,48 @@ def initialize_firestore():
 
 ########### PRODUCTS #############
 
+
 def get_product_details_from_asin(asin, db):
-    # Retrieve the product details from Firestore
-    product_ref = db.collection('products').document(asin)
-    product = product_ref.get()
+    try:
+        # Retrieve the product details from Firestore
+        product_ref = db.collection('products').document(asin)
+        product = product_ref.get()
+    except Exception as e:
+        logging.error(f"Error retrieving product details for ASIN {asin}: {e}")
+        return None
 
     if product.exists:
-        productDetails = product.get('details')
-        return productDetails
+        try:
+            productDetails = product.get('details')
+            return productDetails
+        except Exception as e:
+            logging.error(f"Error getting 'details' field for ASIN {asin}: {e}")
+            return None
     else:
-        print(f'No product details found for ASIN {asin}')
+        logging.warning(f'No product details found for ASIN {asin}')
         return None
 
 def get_investigation_and_product_details(investigationId, db):
-    asinList = get_asins_from_investigation(investigationId, db)
+    try:
+        asinList = get_asins_from_investigation(investigationId, db)
+    except Exception as e:
+        logging.error(f"Error getting ASINs for investigation {investigationId}: {e}")
+        return []
+
     products = []
 
     if asinList is not None:
         for asin in asinList:
-            productDetails = get_product_details_from_asin(asin, db)
-            productDetails['asin'] = asin
-            if productDetails is not None:
-                products.append(productDetails)
-    return products
+            try:
+                productDetails = get_product_details_from_asin(asin, db)
+                if productDetails is not None:
+                    productDetails['asin'] = asin
+                    products.append(productDetails)
+            except Exception as e:
+                logging.error(f"Error appending product details for ASIN {asin}: {e}")
+                continue
 
+    return products
 
 def update_firestore_individual_products(newProductsList, db):
     # Update the Firestore database
@@ -112,8 +130,7 @@ def update_firestore_individual_products(newProductsList, db):
         try:
             doc_ref.set(product, merge=True)  # Use set() with merge=True to update or create a new document
         except Exception as e:
-            print(f"Error updating document {product['asin']}: {e}")
-
+            logging.error(f"Error updating document {product['asin']}: {e}")
 
 def save_product_details_to_firestore(db, investigationId, productData):
     """
@@ -141,41 +158,65 @@ def save_product_details_to_firestore(db, investigationId, productData):
 ########### REVIEWS #############
 
 def get_reviews_from_asin(asin, db):
-    # Retrieve the reviews from Firestore
-    reviews_query = db.collection('products').document(asin).collection('reviews').stream()
+    try:
+        # Retrieve the reviews from Firestore
+        reviews_query = db.collection('products').document(asin).collection('reviews').stream()
+    except Exception as e:
+        logging.error(f"Error retrieving reviews for ASIN {asin}: {e}")
+        return None
 
     # Store all reviews in a list
     productReviews = []
     for review in reviews_query:
-        review_data = review.to_dict()
-        review_data['asin'] = asin  # Add the 'asin' key to each review
-        productReviews.append(review_data)
+        try:
+            review_data = review.to_dict()
+            review_data['asin'] = asin  # Add the 'asin' key to each review
+            productReviews.append(review_data)
+        except Exception as e:
+            logging.error(f"Error processing review for ASIN {asin}: {e}")
+            continue
 
     if productReviews:
         return productReviews
     else:
-        print(f'No product reviews found for ASIN {asin}')
+        logging.warning(f'No product reviews found for ASIN {asin}')
         return None
 
-
 def get_investigation_and_reviews(investigationId, db):
-    asinList = get_asins_from_investigation(investigationId, db)
+    try:
+        asinList = get_asins_from_investigation(investigationId, db)
+    except Exception as e:
+        logging.error(f"Error getting ASINs for investigation {investigationId}: {e}")
+        return []
+
     reviewsList = []
 
     if asinList is not None:
         for asin in asinList:
-            asinReviews = get_reviews_from_asin(asin, db)
-            if asinReviews is not None:
-                reviewsList.append(asinReviews)
-    return reviewsList
+            try:
+                asinReviews = get_reviews_from_asin(asin, db)
+                if asinReviews is not None:
+                    reviewsList.append(asinReviews)
+            except Exception as e:
+                logging.error(f"Error appending reviews for ASIN {asin}: {e}")
+                continue
 
+    return reviewsList
 
 def get_clean_reviews(investigationId, db):
     """Retrieve and clean reviews."""
+    try:
+        update_investigation_status(investigationId, "startedReviews", db)
+    except Exception as e:
+        logging.error(f"Error updating investigation status for {investigationId}: {e}")
 
-    update_investigation_status(investigationId, "startedReviews", db)
-    reviews_download = get_investigation_and_reviews(investigationId, db)
-    flattened_reviews = [item for sublist in reviews_download for item in sublist]
+    try:
+        reviews_download = get_investigation_and_reviews(investigationId, db)
+        flattened_reviews = [item for sublist in reviews_download for item in sublist]
+    except Exception as e:
+        logging.error(f"Error flattening reviews for investigation {investigationId}: {e}")
+        return []
+
     return flattened_reviews
 
 def write_reviews_to_firestore(cleanReviewsList, db):
@@ -193,20 +234,23 @@ def write_reviews_to_firestore(cleanReviewsList, db):
 
         for review in reviews:
             review_id = review['id']
-
             review_ref = db.collection('products').document(asinString).collection('reviews').document(review_id)
-            batch.set(review_ref, review, merge=True)
+            try:
+                batch.set(review_ref, review, merge=True)
+            except Exception as e:
+                logging.error(f"Error adding review to batch for ASIN {asinString}: {e}")
+                continue
+
         try:
             batch.commit()
-            print(f"Successfully saved/updated reviews for ASIN {asinString}")
+            logging.info(f"Successfully saved/updated reviews for ASIN {asinString}")
         except Exception as e:
-            print(f"Error saving/updating reviews for ASIN {asinString}: {e}")
+            logging.error(f"Error saving/updating reviews for ASIN {asinString}: {e}")
 
     endTime = time.time()
     elapsedTime = endTime - startTime
 
-    print(f"Successfully saved/updated all reviews. Time taken: {elapsedTime} seconds")
-
+    logging.info(f"Successfully saved/updated all reviews. Time taken: {elapsedTime} seconds")
 
 
 def save_cluster_info_to_firestore(attributeClustersWithPercentage, attributeClustersWithPercentageByAsin, investigationId, db):
@@ -218,33 +262,34 @@ def save_cluster_info_to_firestore(attributeClustersWithPercentage, attributeClu
     - attributeClustersWithPercentageByAsin (DataFrame): DataFrame containing attribute clusters with percentage information by ASIN.
     - investigationId (str): The ID of the investigation.
     """
- 
-    # Create a dictionary with the cluster information
-    clusters_dict = {
-        'attributeClustersWithPercentage': attributeClustersWithPercentage.to_dict(orient='records'),
-        'attributeClustersWithPercentageByAsin': attributeClustersWithPercentageByAsin.to_dict(orient='records'),
-    }
+    try:
+        # Create a dictionary with the cluster information
+        clusters_dict = {
+            'attributeClustersWithPercentage': attributeClustersWithPercentage.to_dict(orient='records'),
+            'attributeClustersWithPercentageByAsin': attributeClustersWithPercentageByAsin.to_dict(orient='records'),
+        }
 
-    startTime = time.time()
+        startTime = time.time()
 
-    cluster_ref = db.collection(u'clusters').document(investigationId)
-    cluster = cluster_ref.get()
-    if cluster.exists:
-        cluster_ref.update(clusters_dict)
-    else:
-        cluster_ref.set(clusters_dict)
+        cluster_ref = db.collection(u'clusters').document(investigationId)
+        cluster = cluster_ref.get()
+        if cluster.exists:
+            cluster_ref.update(clusters_dict)
+        else:
+            cluster_ref.set(clusters_dict)
 
-    endTime = time.time()
-    elapsedTime = endTime - startTime
+        endTime = time.time()
+        elapsedTime = endTime - startTime
 
-    print(f"Successfully saved/updated clusters to firestore. Time taken: {elapsedTime} seconds")
-
+        logging.info(f"Successfully saved/updated clusters to firestore. Time taken: {elapsedTime} seconds")
+    except Exception as e:
+        logging.error(f"Error saving/updating clusters to firestore for investigation {investigationId}: {e}")
 
 def write_insights_to_firestore(investigationId, datapointsDict, db):
-    batch = db.batch()
-
-    startTime = time.time()
     try:
+        batch = db.batch()
+
+        startTime = time.time()
         for attribute, datapoints_list in datapointsDict.items():
             # Ensure all numbers are either int or float
             for datapoint in datapoints_list:
@@ -261,8 +306,9 @@ def write_insights_to_firestore(investigationId, datapointsDict, db):
         batch.commit()
         endTime = time.time()
         elapsedTime = endTime - startTime
-        print(f"Data for {investigationId} successfully written to Firestore. Time taken: {elapsedTime} seconds")
+        logging.info(f"Data for {investigationId} successfully written to Firestore. Time taken: {elapsedTime} seconds")
     except Exception as e:
-        print(f"Error writing data for {investigationId} to Firestore: {e}")
+        logging.error(f"Error writing data for {investigationId} to Firestore: {e}")
+
 
 # ===================
