@@ -81,12 +81,10 @@ def quantify_observations(reviewsWithClusters, cleanReviews):
         logging.info(f"Columns in cleanReviews DataFrame: {pd.DataFrame(cleanReviews).columns}")
         
         # Merge DataFrames
-        df_with_clusters = reviewsWithClusters.merge(pd.DataFrame(cleanReviews), left_on='id', right_on='id', how='left')
-        
-        # Debugging Step 2: Log NaN values
+        df_with_clusters = reviewsWithClusters.merge(pd.DataFrame(cleanReviews), on=['id', 'asin'])
+
+        logging.info(f"Columns in merged DataFrame: {df_with_clusters.columns}")
         logging.info(f"Number of NaN values in 'asin' column: {df_with_clusters['asin'].isna().sum()}")
-        
-        # Debugging Step 3: Log data types
         logging.info(f"Data type of 'asin' column: {df_with_clusters['asin'].dtype}")
         
         agg_result = df_with_clusters.groupby(['attribute', 'clusterLabel']).agg({
