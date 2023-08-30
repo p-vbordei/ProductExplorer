@@ -4,6 +4,7 @@
 from flask import jsonify, request
 import os
 import logging
+import time
 logging.basicConfig(level=logging.INFO)
 
 from src import app, connex_app
@@ -128,61 +129,80 @@ def api_run_end_to_end_investigation():
     """
     Initiates an end-to-end investigation based on the provided user ID and list of ASINs.
     """
-    data = request.json
-    userId = data.get('userId')
-    asinList = data.get('asinList')
-    
-    if not userId or not asinList:
-        return jsonify({"error": "userId and asinList are required"}), 400
+    start_time = time.time()  # Start the timer
 
     try:
+        data = request.json
+        userId = data.get('userId')
+        asinList = data.get('asinList')
+
+        if not userId or not asinList:
+            return jsonify({"error": "userId and asinList are required"}), 400
+
         result = run_end_to_end_investigation(data)
+
         if result:
+            end_time = time.time()  # Stop the timer
+            elapsed_time = end_time - start_time
+            logging.info(f"Total time taken for end-to-end investigation: {elapsed_time:.2f} seconds")  # Log the elapsed time
+
             return jsonify({"message": "End-to-end investigation completed successfully"}), 200
         else:
             return jsonify({"error": "End-to-end investigation failed"}), 500
+
     except Exception as e:
+        logging.error(f"Error in api_run_end_to_end_investigation: {e}")  # Log the error
         return jsonify({"error": str(e)}), 500
-    
+
 
 def api_create_user(db = db):
     data = request.json
     try:
         userId = create_user(data, db)
+        logging.info(f"User created successfully with userId: {userId}")
         return jsonify({"userId": userId}), 201
     except Exception as e:
+        logging.error(f"Error in api_create_user: {e}")
         return jsonify({"error": str(e)}), 500
 
 def api_get_user(db = db):
     userId = request.args.get('userId')
     if not userId:
+        logging.warning("userId is required for api_get_user")
         return jsonify({"error": "userId is required"}), 400
     user_data = get_user(userId, db)
     if user_data:
+        logging.info(f"User data retrieved successfully for userId: {userId}")
         return jsonify(user_data), 200
     else:
+        logging.warning(f"User not found for userId: {userId}")
         return jsonify({"error": "User not found"}), 404
-
 
 def api_subscribe_user(db = db):
     data = request.json
     userId = data.get('userId')
     package = data.get('package')
     if not userId or not package:
+        logging.warning("userId and package are required for api_subscribe_user")
         return jsonify({"error": "userId and package are required"}), 400
     try:
         subscription_data = subscribe_user(userId, package, db)
+        logging.info(f"User subscribed successfully with data: {subscription_data}")
         return jsonify(subscription_data), 201
     except Exception as e:
+        logging.error(f"Error in api_subscribe_user: {e}")
         return jsonify({"error": str(e)}), 500
 
 def api_log_payment(db = db):
     data = request.json
     try:
         payment_id = log_payment(data, db)
+        logging.info(f"Payment logged successfully with paymentId: {payment_id}")
         return jsonify({"paymentId": payment_id}), 201
     except Exception as e:
+        logging.error(f"Error in api_log_payment: {e}")
         return jsonify({"error": str(e)}), 500
+
 
 def api_subscribe_user_to_package(db = db):
     data = request.json
@@ -190,13 +210,19 @@ def api_subscribe_user_to_package(db = db):
     package = data.get('package')
     start_date = data.get('startDate')
     payment_intent_id = data.get('paymentIntentId')
+    
     if not all([userId, package, start_date, payment_intent_id]):
+        logging.warning("All fields are required for api_subscribe_user_to_package")
         return jsonify({"error": "All fields are required"}), 400
+    
     try:
         subscribe_user_to_package(userId, package, start_date, payment_intent_id, db)
+        logging.info(f"User {userId} subscribed successfully to package {package} starting from {start_date} with payment intent ID {payment_intent_id}")
         return jsonify({"message": "Subscription successful"}), 200
     except Exception as e:
+        logging.error(f"Error in api_subscribe_user_to_package: {e}")
         return jsonify({"error": str(e)}), 500
+
 
 if __name__ == "__main__":
     app.run(port=8080)
