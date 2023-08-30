@@ -5,6 +5,10 @@ import pandas as pd
 import numpy as np
 import asyncio
 from sklearn.cluster import AgglomerativeClustering
+
+from tqdm import tqdm
+import time
+
 import logging
 logging.basicConfig(level=logging.INFO)
 
@@ -48,7 +52,7 @@ def cluster_reviews(clean_reviews_list):
         df = asyncio.run(process_dataframe_async_embedding(df))
 
         # Clustering
-        max_n_clusters = 2
+        max_n_clusters = 7
         df["cluster"] = np.nan
         types_list = reviewsDataDf['attribute'].unique()
         for type in types_list:
@@ -76,10 +80,8 @@ def cluster_reviews(clean_reviews_list):
 # %%
 ############################################ CLUSTER LABELING ############################################
 
-import asyncio
-import logging
-
 def label_clusters(cluster_df):
+    start_time = time.time()
     try:
         # Define labeling function
         labeling_function = [
@@ -101,7 +103,8 @@ def label_clusters(cluster_df):
 
         # Prepare content list
         content_list = []
-        for type in cluster_df['attribute'].unique():
+        unique_attributes = cluster_df['attribute'].unique()
+        for type in tqdm(unique_attributes, desc="Processing attributes"):  # tqdm progress bar
             for cluster in cluster_df[cluster_df['attribute'] == type]['cluster'].unique():
                 values = cluster_df[(cluster_df['attribute'] == type) & (cluster_df['cluster'] == cluster)]['Value'].unique()
                 messages = [{"role": "user", "content": f"The value presented are part of {type}. Provide a single label of seven words  for this list of values : ```{values}```. "}]
@@ -127,6 +130,11 @@ def label_clusters(cluster_df):
         df_with_clusters = cluster_df.merge(cluster_response_df, on=['attribute', 'cluster'], how='left')
         drop_columns = ['n_tokens', 'embedding', 'Date', 'Author', 'Images']
         df_with_clusters = df_with_clusters.drop(columns=drop_columns, errors='ignore')
+
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        logging.info(f"Total time taken for labeling clusters: {elapsed_time:.2f} seconds")
+
 
         return df_with_clusters
 
