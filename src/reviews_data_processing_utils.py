@@ -4,6 +4,7 @@
 import re
 from tiktoken import get_encoding
 import logging
+logging.basicConfig(level=logging.INFO)
 import numpy as np
 import pandas as pd
 

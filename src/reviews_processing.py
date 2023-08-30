@@ -5,6 +5,7 @@ import asyncio
 from tqdm import tqdm
 import time
 import logging
+logging.basicConfig(level=logging.INFO)
 
 try:
     from src import app

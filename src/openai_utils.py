@@ -11,7 +11,8 @@ import requests
 import tiktoken
 import nest_asyncio
 nest_asyncio.apply()
-
+import logging
+logging.basicConfig(level=logging.INFO)
 
 embedding_model = "text-embedding-ada-002"
 embedding_encoding = "cl100k_base"

@@ -6,6 +6,7 @@ import numpy as np
 import asyncio
 from sklearn.cluster import AgglomerativeClustering
 import logging
+logging.basicConfig(level=logging.INFO)
 
 try:
     from src.openai_utils import get_completion_list, process_dataframe_async_embedding

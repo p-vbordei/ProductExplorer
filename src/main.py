@@ -3,6 +3,8 @@
 # %%
 from flask import jsonify, request
 import os
+import logging
+logging.basicConfig(level=logging.INFO)
 
 from src import app, connex_app
 from src.investigations import start_investigation
@@ -14,7 +16,9 @@ from src.users import (create_user, get_user, subscribe_user, log_payment,
                        subscribe_user_to_package)
 from src.firebase_utils import initialize_firestore
 # %%
-
+logging.info("This is an info message.")
+logging.warning("This is a warning message.")
+logging.error("This is an error message.")
 # %%
 db = initialize_firestore()
 

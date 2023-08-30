@@ -3,6 +3,7 @@
 from typing import List
 import requests
 import logging
+logging.basicConfig(level=logging.INFO)
 
 def extract_brand_name(string: str) -> str:
     try:

@@ -5,6 +5,8 @@
 #%%
 import os
 import logging
+logging.basicConfig(level=logging.INFO)
+
 try:
     from src import app
     from src.firebase_utils import get_investigation_and_product_details, update_investigation_status, update_firestore_individual_products, initialize_firestore, save_product_details_to_firestore

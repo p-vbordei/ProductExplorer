@@ -2,7 +2,8 @@
 # run_investigation.py
 # The scope of this file is to run end the end-to-end investigation process.
 # It will start an investigation, run data acquisition, run products processing, and run reviews processing.
-
+import logging
+logging.basicConfig(level=logging.INFO)
 
 try:
     from src import app, connex_app
