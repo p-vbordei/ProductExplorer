@@ -1,23 +1,20 @@
 # ##################
 # reviews_processing.py
 # %%
-
-import os
 import asyncio
-import pandas as pd
-import numpy as np
-from sklearn.cluster import AgglomerativeClustering
 import logging
 
 try:
     from src import app
-    from src.reviews_data_processing_utils import process_datapoints
+    from src.reviews_data_processing_utils import process_datapoints, quantify_observations
     from src.firebase_utils import initialize_firestore, get_clean_reviews , write_reviews_to_firestore, save_cluster_info_to_firestore, write_insights_to_firestore
-    from src.openai_utils import get_completion_list, process_dataframe_async_embedding
+    from src.openai_utils import get_completion_list
+    from src.reviews_clustering import cluster_reviews, label_clusters
 except ImportError:
-    from reviews_data_processing_utils import process_datapoints
+    from reviews_data_processing_utils import process_datapoints, quantify_observations
     from firebase_utils import initialize_firestore, get_clean_reviews , write_reviews_to_firestore, save_cluster_info_to_firestore, write_insights_to_firestore
-    from openai_utils import get_completion_list, process_dataframe_async_embedding
+    from openai_utils import get_completion_list
+    from reviews_clustering import cluster_reviews, label_clusters
 
 
 ####################################### PROCESS REVIEWS WITH GPT #######################################
@@ -156,172 +153,6 @@ def process_reviews_with_gpt(reviewsList, db):
     return reviewsList
 
 
-######################################### CLUSTERING #########################################
-# %%
-def cluster_reviews(clean_reviews_list):
-    # Convert reviews list to DataFrame
-    reviews_df = pd.DataFrame(clean_reviews_list)
-
-    # Drop unnecessary columns
-    drop_columns = ['Verified', 'Helpful', 'Title', 'review', 'Videos', 'Variation', 'Style', 'num_tokens',
-                     'review_num_tokens', 'review_data', 'title', 'date', 'verified_purchase', 
-                     'name', 'media', 'rating', 'n_tokens']
-    reviews_df = reviews_df.drop(columns=drop_columns, errors='ignore')
-
-    # Fill missing values and replace undesired values
-    dataCols = ["reviewSummary", "buyerMotivation", "customerExpectations", 
-                "howTheProductIsUsed", "whereTheProductIsUsed", "userDescription",
-                "packaging", "season", "whenTheProductIsUsed", "appraisal", "quality", "durability", 
-                "easeOfUse", "setupAndInstructions", "noiseAndSmell", "sizeAndFit", 
-                "dangerAppraisal", "designAndAppearance", "partsAndComponents", "issues"]
-
-    
-    replace_values = ['\n', 'not mentioned', np.nan, '', ' ', 'NA', 'N/A', 'missing',
-                      'NaN', 'unknown', 'Not mentioned', 'not specified', 'Not specified']
-    
-    for col in dataCols:
-        reviews_df[col] = reviews_df[col].fillna('unknown').replace(replace_values, 'unknown')
-
-    # Pivot the DataFrame
-    columnsToPivot = dataCols
-    reviewsDataDf = reviews_df.melt(id_vars=[col for col in reviews_df.columns if col not in columnsToPivot], value_vars=columnsToPivot, var_name='attribute', value_name='Value')
-
-    # Filter out 'unknown' values
-
-    df = reviewsDataDf.loc[reviewsDataDf['Value'] != 'unknown']
-
-
-    # Embedding
-    df = asyncio.run(process_dataframe_async_embedding(df))
-
-    # Clustering
-    max_n_clusters = 2
-    df["cluster"] = np.nan
-    types_list = reviewsDataDf['attribute'].unique()
-    for type in types_list:
-        df_type = df[df['attribute'] == type].copy()  # Explicitly create a copy
-        n_clusters = min(max_n_clusters, len(df_type['Value'].unique()))
-        if n_clusters > 1:
-            clustering = AgglomerativeClustering(n_clusters=n_clusters)
-            matrix = np.vstack(df_type["embedding"].values)
-            labels = clustering.fit_predict(matrix)
-            df_type["cluster"] = labels  # Modified assignment
-            df.loc[df['attribute'] == type, "cluster"] = df_type["cluster"]
-        else:
-            df.loc[df['attribute'] == type, "cluster"] = 0
-
-    df['cluster'] = df['cluster'].astype(int)
-    print(df.columns)
-
-
-    return df[['attribute', 'cluster', 'Value', 'id', 'asin']].drop_duplicates()
-
-# %%
-############################################ CLUSTER LABELING ############################################
-
-def label_clusters(cluster_df):
-    # Define labeling function
-    labeling_function = [
-        {
-            "name": "clusterLabel",
-            "description": "Provide a single label for the topic represented in the list of values.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "clusterLabel": {
-                        "type": "string",
-                        "description": "Provide a single label for the topic represented in the list of values. [7 words]. Example: 'Low perceived quality versus competitors', 'the assembly kit breaks easily and often', 'the speaker has a low sound quality','the taste was better than expected'',' "
-                    },
-                },
-                "required": ["clusterLabel"]
-            },
-        }
-    ]
-
-    # Prepare content list
-    content_list = []
-    for type in cluster_df['attribute'].unique():
-        for cluster in cluster_df[cluster_df['attribute'] == type]['cluster'].unique():
-            values = cluster_df[(cluster_df['attribute'] == type) & (cluster_df['cluster'] == cluster)]['Value'].unique()
-            messages = [{"role": "user", "content": f"The value presented are part of {type}. Provide a single label of seven words  for this list of values : ```{values}```. "}]
-            content_list.append(messages)
-
-    # Get responses
-    responses = asyncio.run(get_completion_list(content_list, labeling_function, {"name": "clusterLabel"}))
-
-    # Interpret the responses
-    eval_responses = []
-    for item in responses:
-        data = item['function_call']['arguments']
-        eval_data = eval(data)
-        eval_responses.append(eval_data['clusterLabel'])
-
-    # Create a DataFrame to hold unique combinations of 'attribute' and 'cluster'
-    cluster_response_df = cluster_df[['attribute', 'cluster']]
-    cluster_response_df.drop_duplicates(inplace=True)
-    cluster_response_df.reset_index(inplace=True, drop=True)
-    cluster_response_df['clusterLabel'] = eval_responses
-
-
-
-    # Merge the cluster labels back to the main cluster_df
-    df_with_clusters = cluster_df.merge(cluster_response_df, on=['attribute', 'cluster'], how='left')
-    drop_columns = ['n_tokens', 'embedding', 'Date', 'Author', 'Images']
-    df_with_clusters = df_with_clusters.drop(columns=drop_columns, errors='ignore')
-
-    return df_with_clusters
-
-############################################ QUANTIFY OBSERVATIONS ############################################
-
-def quantify_observations(reviewsWithClusters, cleanReviews):
-    """Quantify observations at both the investigation and ASIN levels."""
-    
-    df_with_clusters = reviewsWithClusters.merge(pd.DataFrame(cleanReviews), left_on='id', right_on='id', how='left')
-    
-    print(reviewsWithClusters.columns)
-    print(pd.DataFrame(cleanReviews).columns)
-    
-    agg_result = df_with_clusters.groupby(['attribute', 'clusterLabel']).agg({
-        'rating': lambda x: list(x),
-        'id': lambda x: list(x),
-        'asin': lambda x: list(x),
-        }).reset_index()
-
-    count_result = df_with_clusters.groupby(['attribute', 'clusterLabel']).size().reset_index(name='observationCount')
-    attributeClustersWithPercentage = pd.merge(agg_result, count_result, on=['attribute', 'clusterLabel'])
-
-    m = [np.mean([int(r) for r in e]) for e in attributeClustersWithPercentage['rating']]
-    k = [int(round(e, 0)) for e in m]
-    attributeClustersWithPercentage['rating_avg'] = k
-
-    total_observations_per_attribute = df_with_clusters.groupby('attribute').size()
-    attributeClustersWithPercentage = attributeClustersWithPercentage.set_index('attribute')
-    attributeClustersWithPercentage['percentageOfObservationsVsTotalNumberPerAttribute'] = attributeClustersWithPercentage['observationCount'] / total_observations_per_attribute * 100
-    attributeClustersWithPercentage = attributeClustersWithPercentage.reset_index()
-
-    number_of_reviews = reviewsWithClusters['id'].unique().shape[0]
-    attributeClustersWithPercentage['percentageOfObservationsVsTotalNumberOfReviews'] = attributeClustersWithPercentage['observationCount'] / number_of_reviews * 100
-
-    # Quantify observations at the ASIN level
-    agg_result_asin = df_with_clusters.groupby(['attribute', 'clusterLabel', 'asin']).agg({
-        'rating': lambda x: list(x),
-        'id': lambda x: list(x),
-    }).reset_index()
-
-    count_result_asin = df_with_clusters.groupby(['attribute', 'clusterLabel', 'asin']).size().reset_index(name='observationCount')
-    attributeClustersWithPercentageByAsin = pd.merge(agg_result_asin, count_result_asin, on=['attribute', 'clusterLabel', 'asin'])
-
-    m_asin = [np.mean([int(r) for r in e]) for e in attributeClustersWithPercentageByAsin['rating']]
-    k_asin = [int(round(e, 0)) for e in m_asin]
-    attributeClustersWithPercentageByAsin['rating_avg'] = k_asin
-
-    df_with_clusters['totalObservationsPerAttributeAsin'] = df_with_clusters.groupby(['attribute', 'asin'])['asin'].transform('count')
-    attributeClustersWithPercentageByAsin['percentageOfObservationsVsTotalNumberPerAttribute'] = attributeClustersWithPercentageByAsin['observationCount'] / df_with_clusters['totalObservationsPerAttributeAsin'] * 100
-    attributeClustersWithPercentageByAsin['percentageOfObservationsVsTotalNumberOfReviews'] = attributeClustersWithPercentageByAsin['observationCount'] / number_of_reviews * 100
-
-    return attributeClustersWithPercentage, attributeClustersWithPercentageByAsin
-
-
 
 ############################################ RUN ############################################
 
@@ -399,5 +230,5 @@ def run_reviews_investigation(investigationId):
 
     logging.info(f"Reviews investigation for {investigationId} completed successfully.")
 
-
+# ====================
 # %%
