@@ -14,7 +14,7 @@ from src.products_processing import run_products_investigation
 from src.reviews_processing import run_reviews_investigation
 from src.run_investigation import run_end_to_end_investigation
 from src.users import (create_user, get_user, subscribe_user, log_payment, 
-                       subscribe_user_to_package)
+                       subscribe_user_to_package, has_investigations_available)
 from src.firebase_utils import initialize_firestore
 # %%
 logging.info("This is an info message.")
@@ -221,6 +221,31 @@ def api_subscribe_user_to_package(db = db):
         return jsonify({"message": "Subscription successful"}), 200
     except Exception as e:
         logging.error(f"Error in api_subscribe_user_to_package: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+def api_has_investigations_available(db=db):
+    """
+    Checks if the user has remaining investigations available.
+    """
+    userId = request.args.get('userId')  # Get the userId from the request parameters
+    
+    if not userId:
+        logging.warning("userId is required for api_has_investigations_available")
+        return jsonify({"error": "userId is required"}), 400
+    
+    try:
+        result = has_investigations_available(userId, db)  # Call the function from users.py
+        
+        if result:
+            logging.info(f"User {userId} has investigations available.")
+            return jsonify({"message": "User has investigations available", "available": True}), 200
+        else:
+            logging.info(f"User {userId} does not have investigations available.")
+            return jsonify({"message": "User does not have investigations available", "available": False}), 200
+    
+    except Exception as e:
+        logging.error(f"Error in api_has_investigations_available: {e}")
         return jsonify({"error": str(e)}), 500
 
 

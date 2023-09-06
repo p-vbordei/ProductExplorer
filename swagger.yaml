@@ -361,6 +361,47 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /has_investigations_available:
+    get:
+      operationId: src.main.api_has_investigations_available
+      summary: Checks if the user has remaining investigations available.
+      description: |
+        Checks if the user, identified by the user ID, has remaining investigations available.
+      tags:
+        - Investigations
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          description: The ID of the user to check for remaining investigations.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successfully checked the availability of investigations.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  available:
+                    type: boolean
+        '400':
+          description: Bad request. Missing or invalid parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error or processing error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
 components:
   schemas:
     UserCreate:
