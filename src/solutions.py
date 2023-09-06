@@ -1,141 +1,30 @@
 # %%
 import pandas as pd
 import numpy as np
-from dotenv import load_dotenv
-import os
-import openai
-import json
-import logging
-
 import requests
-from tenacity import retry, wait_random_exponential, stop_after_attempt
-from termcolor import colored
+import logging
+logging.basicConfig(level=logging.INFO)
 
-
-load_dotenv()
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-HUGGINGFACEHUB_API_TOKEN = os.getenv('HUGGINGFACEHUB_API_TOKEN')
-
-if os.getenv("OPENAI_API_KEY") is not None:
-    print ("OPENAI_API_KEY is ready")
-else:
-    print ("OPENAI_API_KEY environment variable not found")
-
-GPT_MODEL = "gpt-3.5-turbo"
-INVESTIGATION = "investigationId2"
-
-from google.cloud import firestore
-import firebase_admin
-from firebase_admin import credentials, firestore
-
-# Firestore details
-cred_path = '/Users/vladbordei/Documents/Development/ProductExplorer/notebooks/productexplorerdata-firebase-adminsdk-ulb3d-465f23dff3.json'
-
-# Initialize Firestore
-cred = credentials.Certificate(cred_path)
-if not firebase_admin._apps:
-    firebase_admin.initialize_app(cred)
-db = firestore.client()
-
-
-# %%
-
-################## GPT FUNCTIONS ####################
-
-@retry(wait=wait_random_exponential(min=1, max=40), stop=stop_after_attempt(3))
-def chat_completion_request(messages, functions=None, function_call=None, temperature=0, model=GPT_MODEL):
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer " + openai.api_key,
-    }
-    json_data = {"model": model, "messages": messages, "temperature": temperature}
-    if functions is not None:
-        json_data.update({"functions": functions})
-    if function_call is not None:
-        json_data.update({"function_call": function_call})
-    try:
-        response = requests.post(
-            "https://api.openai.com/v1/chat/completions",
-            headers=headers,
-            json=json_data,
-        )
-        return response
-    except Exception as e:
-        print("Unable to generate ChatCompletion response")
-        print(f"Exception: {e}")
-        return e
+try:
+    from src import app, connex_app
+    from src.firebase_utils import initialize_firestore, get_product_data_from_investigation
+    from src.investigations import start_investigation, get_asins_from_investigation
+    from src.data_acquisition import execute_data_acquisition
+    from src.products_processing import run_products_investigation
+    from src.reviews_processing import run_reviews_investigation
+    from src.users import  update_investigation_status
+    from src.openai_utils import get_completion_list
+except ImportError:
+    from firebase_utils import initialize_firestore,  get_product_data_from_investigation
+    from investigations import start_investigation, get_asins_from_investigation
+    from data_acquisition import execute_data_acquisition
+    from products_processing import run_products_investigation
+    from reviews_processing import run_reviews_investigation
+    from users import  update_investigation_status
+    from openai_utils import get_completion_list
 
 
 
-############### FIREBASE FUNCTIONS ###############
-
-def update_investigation_status(investigation_id, new_status):
-    investigation_ref = db.collection(u'investigations').document(investigation_id)
-    investigation = investigation_ref.get()
-    if investigation.exists:
-        investigation_ref.update({
-            'status': new_status,
-            f'{new_status}_timestamp': firestore.SERVER_TIMESTAMP,
-        })
-        return True  # update was successful
-    else:
-        return False  # investigation does not exist
-    
-
-def get_asins_from_investigation(investigation_id):
-    # Retrieve the investigation from Firestore
-    investigation_ref = db.collection(u'investigations').document(investigation_id)
-    investigation = investigation_ref.get()
-
-    if investigation.exists:
-        # Retrieve the asins from the investigation
-        asins = investigation.get('asins')
-        return asins
-    else:
-        print('Investigation does not exist')
-        return None
-
-
-def get_reviews_from_asin(asin):
-    # Retrieve the reviews from Firestore
-    reviews_query = db.collection('products').document(asin).collection('reviews').stream()
-
-    # Store all reviews in a list
-    product_reviews = []
-    for review in reviews_query:
-        product_reviews.append(review.to_dict())
-
-    if product_reviews:
-        return product_reviews
-    else:
-        print(f'No product reviews found for ASIN {asin}')
-        return None
-
-
-def get_investigation_and_reviews(investigation_id):
-    asins = get_asins_from_investigation(investigation_id)
-    reviews_list = []
-
-    if asins is not None:
-        for asin in asins:
-            asin_reviews = get_reviews_from_asin(asin)
-            if asin_reviews is not None:
-                reviews_list.append(asin_reviews)
-    return reviews_list
-
-
-def get_short_product_data_from_investigation(investigation_id):
-    # Retrieve the investigation from Firestore
-    investigation_ref = db.collection(u'investigations').document(investigation_id)
-    investigation = investigation_ref.get()
-
-    if investigation.exists:
-        # Retrieve the asins from the investigation
-        short_product_data = investigation.get('short_product_data')
-        return short_product_data
-    else:
-        print('Investigation does not exist')
-        return None
 
 
 
@@ -146,10 +35,30 @@ def get_short_product_data_from_investigation(investigation_id):
 # %%
 # Read data about the product
 
+investigationId = 'investigation_1'
 
-update_investigation_status(INVESTIGATION, "started_solutions_processing")
-asins_list = get_asins_from_investigation(INVESTIGATION)
-product_description = get_short_product_data_from_investigation(INVESTIGATION)
+try:
+    # Initialize Firestore
+    db = initialize_firestore()
+    logging.info("Initialized Firestore successfully.")
+except Exception as e:
+    logging.error(f"Error initializing Firestore: {e}")
+
+try:
+    update_investigation_status(investigationId, 'startedProblemStatements', db)
+except Exception as e:
+    logging.error(f"Error updating investigation status to 'startedProblemStatements': {e}")
+    pass
+
+try:
+    product_description = get_product_data_from_investigation(investigationId)
+    logging.info("Retrieved product description successfully.")
+except Exception as e:
+    logging.error(f"Error getting product description: {e}")
+
+
+
+
 
 
 # %%

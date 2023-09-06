@@ -154,6 +154,30 @@ def save_product_details_to_firestore(db, investigationId, productData):
         logging.error(f"Error saving/updating investigation results with id {investigationId}: {e}", exc_info=True)
         return False
 
+def get_product_data_from_investigation(db, investigationId):
+    """
+    Retrieve product data from Firestore based on an investigation ID.
+
+    Parameters:
+    - db (object): Firestore database client.
+    - investigationId (str): The ID of the investigation.
+
+    Returns:
+    - dict: The product data retrieved.
+    - None: If there's an error or the investigation doesn't exist.
+    """
+
+    # Retrieve the product data from Firestore using the investigation ID
+    productDataRef = db.collection('productInsights').document(investigationId)
+    productData = productDataRef.get()
+
+    # Check if the document exists
+    if productData.exists:
+        return productData.to_dict()
+    else:
+        logging.warning(f"Investigation with id {investigationId} does not exist in 'productInsights'")
+        return None
+
 
 ########### REVIEWS #############
 

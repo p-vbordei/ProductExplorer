@@ -12,7 +12,7 @@ try:
     from src.data_acquisition import execute_data_acquisition
     from src.products_processing import run_products_investigation
     from src.reviews_processing import run_reviews_investigation
-    from src.users import use_investigation
+    from src.users import use_investigation, has_investigations_available, update_investigation_status
 except ImportError:
     from firebase_utils import initialize_firestore
     from investigations import start_investigation

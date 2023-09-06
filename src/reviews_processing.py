@@ -13,11 +13,13 @@ try:
     from src.firebase_utils import initialize_firestore, get_clean_reviews , write_reviews_to_firestore, save_cluster_info_to_firestore, write_insights_to_firestore
     from src.openai_utils import get_completion_list
     from src.reviews_clustering import cluster_reviews, label_clusters
+    from src.investigations import update_investigation_status
 except ImportError:
     from reviews_data_processing_utils import process_datapoints, quantify_observations
     from firebase_utils import initialize_firestore, get_clean_reviews , write_reviews_to_firestore, save_cluster_info_to_firestore, write_insights_to_firestore
     from openai_utils import get_completion_list
     from reviews_clustering import cluster_reviews, label_clusters
+    from investigations import update_investigation_status
 
 
 ####################################### PROCESS REVIEWS WITH GPT #######################################
@@ -193,6 +195,12 @@ def run_reviews_investigation(investigationId):
     except Exception as e:
         logging.error(f"Error initializing Firestore: {e}")
         return
+    
+    try:
+        update_investigation_status(investigationId, 'startedReviews', db)
+    except Exception as e:
+        logging.error(f"Error updating investigation status to 'startedReviews': {e}")
+        pass
 
     try:
         # Get clean reviews
@@ -209,6 +217,12 @@ def run_reviews_investigation(investigationId):
     except Exception as e:
         logging.error(f"Error processing reviews with GPT: {e}")
         return
+    
+    try:
+        update_investigation_status(investigationId, 'finishedProcessingReviewsWithGPT', db)
+    except Exception as e:
+        logging.error(f"Error updating investigation status to 'finishedProcessingReviewsWithGPT': {e}")
+        pass
 
     try:
         # Cluster reviews
@@ -262,7 +276,13 @@ def run_reviews_investigation(investigationId):
     except Exception as e:
         logging.error(f"Error writing insights to Firestore: {e}")
         return
-
+    
+    try:
+        update_investigation_status(investigationId, 'finishedReviews', db)
+    except Exception as e:
+        logging.error(f"Error updating investigation status to 'finishedReviews': {e}")
+        pass
+    
     logging.info(f"Reviews investigation for {investigationId} completed successfully.")
 
 # ====================
