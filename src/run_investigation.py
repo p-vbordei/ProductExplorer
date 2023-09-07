@@ -90,7 +90,5 @@ def run_end_to_end_investigation(data):
         return False
     return True
 
-
-
 #%%
 # ====================

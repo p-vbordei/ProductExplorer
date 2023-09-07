@@ -7,19 +7,11 @@ logging.basicConfig(level=logging.INFO)
 
 try:
     from src import app, connex_app
-    from src.firebase_utils import initialize_firestore, get_product_data_from_investigation
-    from src.investigations import start_investigation, get_asins_from_investigation
-    from src.data_acquisition import execute_data_acquisition
-    from src.products_processing import run_products_investigation
-    from src.reviews_processing import run_reviews_investigation
+    from src.firebase_utils import initialize_firestore, get_product_data_from_investigation, retreive_attributeClustersWithPercentage_from_firestore
     from src.users import  update_investigation_status
     from src.openai_utils import get_completion_list
 except ImportError:
-    from firebase_utils import initialize_firestore,  get_product_data_from_investigation
-    from investigations import start_investigation, get_asins_from_investigation
-    from data_acquisition import execute_data_acquisition
-    from products_processing import run_products_investigation
-    from reviews_processing import run_reviews_investigation
+    from firebase_utils import initialize_firestore,  get_product_data_from_investigation, retreive_attributeClustersWithPercentage_from_firestore
     from users import  update_investigation_status
     from openai_utils import get_completion_list
 
@@ -31,11 +23,10 @@ except ImportError:
 ########## DATA ACQUISITION ##############
 
 
-
 # %%
 # Read data about the product
 
-investigationId = 'investigation_1'
+investigationId = 'XM32WugzchytIZr6NWyJ'
 
 try:
     # Initialize Firestore
@@ -50,37 +41,44 @@ except Exception as e:
     logging.error(f"Error updating investigation status to 'startedProblemStatements': {e}")
     pass
 
+
 try:
-    product_description = get_product_data_from_investigation(investigationId)
+    product_description = get_product_data_from_investigation(db, investigationId)
     logging.info("Retrieved product description successfully.")
 except Exception as e:
     logging.error(f"Error getting product description: {e}")
 
 
+try:
+    attributeClustersWithPercentage = retreive_attributeClustersWithPercentage_from_firestore(investigationId, db)
+    logging.info("Retrieved attribute clusters with percentage successfully.")
+except Exception as e:
+    logging.error(f"Error getting attribute clusters with percentage: {e}")
 
 
 
 
-# %%
-attribute_clusters_with_percentage_path = '/Users/vladbordei/Documents/Development/ProductExplorer/data/interim/attribute_clusters_with_percentage.csv'
-attributes = pd.read_csv(attribute_clusters_with_percentage_path)
 
-# %%
-reviews_with_clusters_path = '/Users/vladbordei/Documents/Development/ProductExplorer/data/interim/reviews_with_clusters.csv'
-reviews_with_clusters = pd.read_csv(reviews_with_clusters_path)
+dfAttr = attributeClustersWithPercentage.copy()
+
+
+dfAttr.sort_values(by=['rating_avg'], inplace=True, ascending=True)
+
+
+
+
+
+
+
+
+
 
 
 
 #################################################
 ############### PROBLEM STATEMENT ###############
 
-
 # %%
-try:
-    attributes.drop(columns=['Unnamed: 0'], inplace=True)
-except:
-    pass
-
 
 # %%
 problem_statement_function = [

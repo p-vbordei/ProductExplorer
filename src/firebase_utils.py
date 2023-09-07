@@ -2,6 +2,7 @@
 # Description: Utility functions for interacting with Firestore
 # firebase_utils.py
 
+import pandas as pd
 import os
 import json
 from collections import defaultdict
@@ -308,6 +309,35 @@ def save_cluster_info_to_firestore(attributeClustersWithPercentage, attributeClu
         logging.info(f"Successfully saved/updated clusters to firestore. Time taken: {elapsedTime} seconds")
     except Exception as e:
         logging.error(f"Error saving/updating clusters to firestore for investigation {investigationId}: {e}")
+
+
+
+def retreive_attributeClustersWithPercentage_from_firestore(investigationId, db):
+    """
+    Retrieve the clusters from Firestore.
+
+    Parameters:
+    - investigationId (str): The ID of the investigation.
+
+    Returns:
+    - DataFrame: DataFrame containing attribute clusters with percentage information.
+    """
+    try:
+        cluster_ref = db.collection(u'clusters').document(investigationId)
+        cluster = cluster_ref.get()
+        if cluster.exists:
+            clusters_dict = cluster.to_dict()
+            attributeClustersWithPercentage = pd.DataFrame(clusters_dict['attributeClustersWithPercentage'])
+            return attributeClustersWithPercentage
+        else:
+            logging.warning(f"No clusters found for investigation {investigationId}")
+            return None
+    except Exception as e:
+        logging.error(f"Error retrieving clusters from Firestore for investigation {investigationId}: {e}")
+        return None
+
+
+
 
 def write_insights_to_firestore(investigationId, datapointsDict, db):
     try:
