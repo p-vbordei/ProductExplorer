@@ -464,46 +464,6 @@ reviewFunctions = [
         "parameters": {
             "type": "object",
             "properties": {
-                "buyerMotivationReviews": {
-                    "type": "object",
-                    "description": "Reviews describing why buyers made the purchase.",
-                    "properties": {
-                        "reviewID": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            },
-                            "description": "IDs of reviews describing buyer motivation."
-                        },
-                        "buyerMotivation": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            },
-                            "description": "Reasons for purchasing the product."
-                        }
-                    }
-                },
-                "partsAndComponentsReviews": {
-                    "type": "object",
-                    "description": "Reviews about parts and components of the product.",
-                    "properties": {
-                        "reviewID": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            },
-                            "description": "IDs of reviews about parts and components."
-                        },
-                        "partsAndComponents": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            },
-                            "description": "Feedback on parts and components."
-                        }
-                    }
-                },
                 "functionalJobReviews": {
                     "type": "object",
                     "description": "Reviews describing the main tasks the product performs.",
@@ -513,7 +473,6 @@ reviewFunctions = [
                             "items": {
                                 "type": "string"
                             },
-                            "description": "IDs of reviews about functional jobs."
                         },
                         "functionalJobs": {
                             "type": "array",
@@ -533,7 +492,6 @@ reviewFunctions = [
                             "items": {
                                 "type": "string"
                             },
-                            "description": "IDs of reviews about social jobs."
                         },
                         "socialJobs": {
                             "type": "array",
@@ -553,7 +511,6 @@ reviewFunctions = [
                             "items": {
                                 "type": "string"
                             },
-                            "description": "IDs of reviews about emotional jobs."
                         },
                         "emotionalJobs": {
                             "type": "array",
@@ -573,7 +530,6 @@ reviewFunctions = [
                             "items": {
                                 "type": "string"
                             },
-                            "description": "IDs of reviews about supporting jobs."
                         },
                         "supportingJobs": {
                             "type": "array",
@@ -593,7 +549,6 @@ reviewFunctions = [
                             "items": {
                                 "type": "string"
                             },
-                            "description": "IDs of reviews detailing pain points."
                         },
                         "painPoints": {
                             "type": "array",
@@ -613,7 +568,6 @@ reviewFunctions = [
                             "items": {
                                 "type": "string"
                             },
-                            "description": "IDs of reviews discussing product use cases."
                         },
                         "useCases": {
                             "type": "array",
@@ -633,7 +587,6 @@ reviewFunctions = [
                             "items": {
                                 "type": "string"
                             },
-                            "description": "IDs of reviews comparing the product."
                         },
                         "comparisonDetails": {
                             "type": "array",
@@ -653,7 +606,6 @@ reviewFunctions = [
                             "items": {
                                 "type": "string"
                             },
-                            "description": "IDs of reviews suggesting features."
                         },
                         "featureRequests": {
                             "type": "array",
@@ -673,7 +625,6 @@ reviewFunctions = [
                             "items": {
                                 "type": "string"
                             },
-                            "description": "IDs of reviews discussing usage frequency."
                         },
                         "usageFrequency": {
                             "type": "array",
@@ -693,7 +644,6 @@ reviewFunctions = [
                             "items": {
                                 "type": "string"
                             },
-                            "description": "IDs of reviews from specific demographic groups."
                         },
                         "demographics": {
                             "type": "array",
@@ -703,42 +653,18 @@ reviewFunctions = [
                             "description": "Information on the demographics of the reviewer."
                         }
                     }
-                },
-                "productLifecycleFeedback": {
-                    "type": "object",
-                    "description": "Feedback based on different stages of product lifecycle.",
-                    "properties": {
-                        "reviewID": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            },
-                            "description": "IDs of reviews based on lifecycle stages."
-                        },
-                        "lifecycleStage": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            },
-                            "description": "The stage of the product's lifecycle during the review."
-                        }
-                    }
                 }
             },
             "required": [
-                "buyerMotivationReviews",
-                "partsAndComponentsReviews",
                 "functionalJobReviews",
                 "socialJobReviews",
                 "emotionalJobReviews",
                 "supportingJobReviews",
                 "painPointsReviews",
                 "useCaseReviews",
-                "productComparisonReviews",
                 "featureRequestReviews",
                 "usageFrequencyReviews",
                 "customerDemographicsReviews",
-                "productLifecycleFeedback"
             ]
         }
     }
