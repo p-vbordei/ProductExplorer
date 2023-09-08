@@ -402,7 +402,7 @@ def num_tokens_from_string(string: str, encoding_name = "cl100k_base") -> int:
 
 
 # SPLIT TO BATCHES OF 'x' tokens
-def generate_batches(reviews, max_tokens=10000):
+def generate_batches(reviews, max_tokens=6000):
     """
     This function takes a list of reviews and groups them into batches based on token count. Each batch 
     has a token count that doesn't exceed the specified max_tokens limit. It returns a list of batches, 
@@ -457,227 +457,228 @@ except Exception as e:
     logging.error(f"Error getting clean reviews: {e}")
 
 # %%
-reviewFunctions = [
+marketUserAnalysisReviewFunctions = [
     {
-        "name": "reviewDataFunction",
-        "description": "Tag reviews with JTBD attributes for comprehensive analysis.",
+        "name": "marketUserAnalysis",
+        "description": "Naming follows the JTBD framework. Group reviews on topics for each type of job and be sure to that each label is described in two sentences. Extract associated review ids.",
         "parameters": {
             "type": "object",
             "properties": {
-                "functionalJobReviews": {
-                    "type": "object",
-                    "description": "Reviews describing the main tasks the product performs.",
-                    "properties": {
-                        "reviewID": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
+                "useCase": {
+                    "description": "Identifies the specific use case.",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string",
                             },
-                        },
-                        "functionalJobs": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            },
-                            "description": "Main tasks or problems the product solves."
+                            "id": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
                         }
                     }
                 },
-                "socialJobReviews": {
-                    "type": "object",
-                    "description": "Reviews about how using the product impacts social perception.",
-                    "properties": {
-                        "reviewID": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
+                "productComparison": {
+                    "description": "Compare the product to competitors.",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string",
                             },
-                        },
-                        "socialJobs": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            },
-                            "description": "How users want to be seen by others using the product."
+                            "id": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
                         }
                     }
                 },
-                "emotionalJobReviews": {
-                    "type": "object",
-                    "description": "Reviews about the emotional satisfaction from the product.",
-                    "properties": {
-                        "reviewID": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
+                "featureRequest": {
+                    "description": "Identifies the requested features or enhancements.",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string",
                             },
-                        },
-                        "emotionalJobs": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            },
-                            "description": "Feelings or states users aim to achieve with the product."
+                            "id": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
                         }
                     }
                 },
-                "supportingJobReviews": {
-                    "type": "object",
-                    "description": "Reviews about related tasks that support the main job.",
-                    "properties": {
-                        "reviewID": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
+                "usageFrequency": {
+                    "description": "Identifies the  patterns of usage frequency discussed.",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string",
                             },
-                        },
-                        "supportingJobs": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            },
-                            "description": "Tasks or activities that aid the main function of the product."
+                            "id": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
                         }
                     }
                 },
-                "painPointsReviews": {
-                    "type": "object",
-                    "description": "Reviews highlighting issues or dissatisfaction areas with the product.",
-                    "properties": {
-                        "reviewID": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
+                "customerDemographics": {
+                    "description": "Identifies the different demographic segments.",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string",
                             },
-                        },
-                        "painPoints": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            },
-                            "description": "Specific challenges or problems customers encountered."
-                        }
-                    }
-                },
-                "useCaseReviews": {
-                    "type": "object",
-                    "description": "Reviews discussing specific scenarios or uses of the product.",
-                    "properties": {
-                        "reviewID": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            },
-                        },
-                        "useCases": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            },
-                            "description": "Scenarios where the product was found useful or fell short."
-                        }
-                    }
-                },
-                "productComparisonReviews": {
-                    "type": "object",
-                    "description": "Reviews comparing the product to competitors.",
-                    "properties": {
-                        "reviewID": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            },
-                        },
-                        "comparisonDetails": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            },
-                            "description": "Specific aspects compared to other products."
-                        }
-                    }
-                },
-                "featureRequestReviews": {
-                    "type": "object",
-                    "description": "Reviews suggesting new features or enhancements.",
-                    "properties": {
-                        "reviewID": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            },
-                        },
-                        "featureRequests": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            },
-                            "description": "Features or improvements suggested by users."
-                        }
-                    }
-                },
-                "usageFrequencyReviews": {
-                    "type": "object",
-                    "description": "Reviews discussing how often the product is used.",
-                    "properties": {
-                        "reviewID": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            },
-                        },
-                        "usageFrequency": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            },
-                            "description": "How often the product is utilized by customers."
-                        }
-                    }
-                },
-                "customerDemographicsReviews": {
-                    "type": "object",
-                    "description": "Reviews categorized by customer demographics.",
-                    "properties": {
-                        "reviewID": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            },
-                        },
-                        "demographics": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            },
-                            "description": "Information on the demographics of the reviewer."
+                            "id": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
                         }
                     }
                 }
-            },
-            "required": [
-                "functionalJobReviews",
-                "socialJobReviews",
-                "emotionalJobReviews",
-                "supportingJobReviews",
-                "painPointsReviews",
-                "useCaseReviews",
-                "featureRequestReviews",
-                "usageFrequencyReviews",
-                "customerDemographicsReviews",
-            ]
+            }
         }
     }
 ]
 
 
+functionalEmotionalAnalysisReviewFunctions = [
+    {
+        "name": "functionalEmotionalAnalysis",
+        "description": "Naming follows the JTBD framework. Group reviews on topics for each type of job and be sure to that each label is described in two sentences. Extract associated review ids.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "functionalJob": {
+                    "description": "Identifies main tasks or problems the product solves.",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string",
+                            },
+                            "id": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                },
+                "socialJob": {
+                    "description": "Identifies how users want to be seen by others using the product.",
+                    "type": "array",
+                    "items": {      
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string",
+                            },
+                            "id": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                },
+                "emotionalJob": {
+                    "description": "Identifies the feelings or states users aim to achieve with the product",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string",
+                            },
+                            "id": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                },
+                "supportingJob": {
+                    "description": "Identifies the tasks or activities that aid the main function of the product.",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string",
+                            },
+                            "id": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                },
+                "painPoints": {
+                    "description": "Identifies the different pain points, specific challenges or problems customers encountered.",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string",
+                            },
+                            "id": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+]
+
+
+
+
+
 # %%
 
-functions = reviewFunctions
-function_call = {"name": "reviewDataFunction"}
+functions = marketUserAnalysisReviewFunctions
+function_call = {"name": "marketUserAnalysis"}
 
+
+# %%
+functions =  functionalEmotionalAnalysisReviewFunctions
+function_call = {"name": "functionalEmotionalAnalysis"}
+
+# %%
 # Prepare Review Batches
-review_batches = generate_batches(reviewsList, max_tokens=3000)
+review_batches = generate_batches(reviewsList, max_tokens=6000)
 
 
 # Generate Content List for Batches
@@ -736,195 +737,3 @@ for i, reviewDict in tqdm(enumerate(reviewsList), total=len(reviewsList), desc="
 
 
 
-
-
-##############
-
-
-# %%
-
-reviewFunctions = [
-    {
-        "name": "reviewDataFunction",
-        "description": "retreive information from reviews",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "reviewSummary": {
-                    "type": "string",
-                    "description": "A brief summary of the review. Eg: Good product overall, but improvements can be made in battery life and noise levels."
-                },
-                "buyerMotivation": {
-                    "type": "string",
-                    "description": "Reasons why the buyer purchased the product. Eg: to replace an old product, to try out a new product, to give as a gift"
-                },
-                "customerExpectations": {
-                    "type": "string",
-                    "description": "Expectations the customer had before purchasing the product. Eg: to be able to use the product for a long time, to be able to use the product in a variety of situations, to be able to use the product for a specific purpose"
-                },
-                "howTheProductIsUsed": {
-                    "type": "string",
-                    "description": "Information about what the product is used for or about how the product is used. Eg: doodling, practicing letters/shapes, playing games"
-                },
-                "whereTheProductIsUsed": {
-                    "type": "string",
-                    "description": "Suggested locations or situations where the product can be used. Eg: car, restaurant, garden, public parks"
-                },
-                "userDescription": {
-                    "type": "string",
-                    "description": "Description of the user for the product. Eg: children, preschoolers, basketball players, mothers, office workers"
-                },
-                "packaging": {
-                    "type": "string",
-                    "description": "Description of the product's packaging. Eg: sturdy recyclable box, wrapped in plastic, great for gifting"
-                },
-                "season": {
-                    "type": "string",
-                    "description": "Eg: fall and winter"
-                },
-                "whenTheProductIsUsed": {
-                    "type": "string",
-                    "description": "Time of day or week of use. Eg: early in the morning"
-                },
-                "appraisal": {
-                    "type": "string",
-                    "description": "observations on price or value"
-                },
-                "quality": {
-                    "type": "string",
-                    "description": "Observations on the quality. Eg: poor quality, great quality"
-                },
-                "durability": {
-                    "type": "string",
-                    "description": "Observations on the durability. Eg: not durable, durable, very durable"
-                },
-                "easeOfUse": {
-                    "type": "string",
-                    "description": "Observations on the ease of use. Eg: not easy to use, easy to use"
-                },
-                "setupAndInstructions": {
-                    "type": "string",
-                    "description": "Observations on the setup. Eg: not easy to set up, easy to set up, easy to follow instructions, not clear instructions"
-                },
-                "noiseAndSmell": {
-                    "type": "string",
-                    "description": "Observations on the noise level or smell. Eg: too loud, quiet, squeaky, smells like roses, plastic smell"
-                },
-                "sizeAndFit": {
-                    "type": "string",
-                    "description": "Observations on the fit. Eg: too tight, too loose, fits well, too small, too big"
-                },
-                "dangerAppraisal": {
-                    "type": "string",
-                    "description": "Observations on the safety of the product. Eg: dangerous, hazardous, safe, can break and harm, safe for children"
-                },
-                "designAndAppearance": {
-                    "type": "string",
-                    "description": "Observations on the design and appearance. Eg: not attractive, attractive, love the design, love the appearance"
-                },
-                "partsAndComponents": {
-                    "type": "string",
-                    "description": "Observations on the parts and components. Eg: missing parts, all parts included, parts are easy to assemble"
-                },
-                "issues": {
-                    "type": "string",
-                    "description": "If specified. Actionable observations on product problems to be addressed. Thorough detailing [max 100 words]. Eg: the product started to rust after one year, although I was expecting it to last 5 years before rusting."
-                },
-            },
-            "required": ["reviewSummary", "buyerMotivation", "customerExpectations", "howTheProductIsUsed", "whereTheProductIsUsed", "appraisal","userDescription", "packaging", "season", "whenTheProductIsUsed", "price", "quality", "durability", "easeOfUse", "setupAndInstructions", "noiseAndSmell", "colors", "sizeAndFit", "dangerAppraisal", "designAndAppearance", "partsAndComponents", "issues"]
-        },
-    }
-]
-
-# %%
-############
-reviewFunctions = [
-    {
-        "name": "reviewDataFunction",
-        "description": "tag reviews with attributes",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "buyerMotivationReviews": {
-                    "type": "object",
-                    "description": "Reviews that described buyer motivation.",
-                    "properties": {
-                        "reviewID": {
-                            "type": "array",
-                            "description": "IDs of reviews that described buyer motivation."
-                        },
-                        "buyerMotivation": {
-                            "type": "string",
-                            "description": "Reasons why the buyer purchased the product. Eg: to replace an old product, to try out a new product, to give as a gift"
-                        }
-                    }
-                },
-                "partsAndComponentsReviews": {
-                    "type": "object",
-                    "description": "Reviews that described parts and components.",
-                    "properties": {
-                        "reviewID": {
-                            "type": "array",
-                            "description": "IDs of reviews that described parts and components."
-                        },
-                        "partsAndComponents": {
-                            "type": "string",
-                            "description": "Observations on the parts and components. Eg: missing parts, all parts included, parts are easy to assemble"
-                        }
-                    }
-                }
-            },
-            "required": ["buyerMotivationReviews", "partsAndComponentsReviews"]
-        }
-    }
-]
-
-# %%
-
-
-reviewFunctions = [
-    {
-        "name": "reviewDataFunction",
-        "description": "tag reviews with attributes",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "buyerMotivationReviews": {
-                    "type": "object",
-                    "description": "Reviews that described buyer motivation.",
-                    "properties": {
-                        "reviewID": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            },
-                            "description": "IDs of reviews that described buyer motivation."
-                        },
-                        "buyerMotivation": {
-                            "type": "string",
-                            "description": "Reasons why the buyer purchased the product."
-                        }
-                    }
-                },
-                "partsAndComponentsReviews": {
-                    "type": "object",
-                    "description": "Reviews that described parts and components.",
-                    "properties": {
-                        "reviewID": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            },
-                            "description": "IDs of reviews that described parts and components."
-                        },
-                        "partsAndComponents": {
-                            "type": "string",
-                            "description": "Observations on the parts and components."
-                        }
-                    }
-                }
-            },
-            "required": ["buyerMotivationReviews", "partsAndComponentsReviews"]
-        }
-    }
-]
