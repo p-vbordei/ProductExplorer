@@ -1,0 +1,11 @@
+##################
+# app.yaml
+runtime: python310
+instance_class: F4
+entrypoint: gunicorn -b :$PORT 'src.__init__:app' --timeout 300
+automatic_scaling:
+  target_cpu_utilization: 0.8
+  min_instances: 0
+  max_instances: 5
+##======================
+

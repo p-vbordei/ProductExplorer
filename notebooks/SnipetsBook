@@ -79,3 +79,288 @@ df_data_page = df_index.copy()
 df_data_page['data'] = str(data_dict)
 loader = DataFrameLoader(df_data_page, page_content_column='data')
 documents = loader.load()
+
+
+
+
+
+
+####### CREAT ASIN LIST
+
+import pandas as pd
+
+asin_list = ['B07XCRVK2Y', 'B07X7YFZWG', 'B07XCRT49W', 'B07Q899BPB', 'B07QXMLSS5', 'B01M4OV4Q4', 'B085Q4W3WX', 'B09R9MMW6J', 'B07ZJ8HRN8', 'B085Q3TLF8', 'B07ZJ8FDPK', 'B09VBZZ9C8']
+
+# create a pandas dataframe
+df = pd.DataFrame(asin_list, columns=['asin'])
+
+# save the dataframe as a CSV file
+df.to_csv('asin_list.csv', index=False)
+
+
+
+################### Products 2A #######
+
+
+# https://github.com/openai/openai-cookbook/blob/main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb
+
+User_Prompt_1 = """
+PRODUCT TITLE and PRODUCT BULLETS from an ecommerce site \
+delimited with triple backticks. ``` \
+If information isn't present, use "unknown" value. \
+Product Summary  : summary to give feedback to the \
+product development department, responsible for researching \
+and developing the product. Max 100 words. \
+
+PRODUCT TITLE:```Magnetic board for children's learning and fun```
+
+PRODUCT BULLETS: ```\
+[" The included pencil works great to bring the magnet balls to the surface. \
+It is very sturdy and has survived multiple drops."," \
+Nice for a preschooler, love playing with it because of the satisfying \"click\" noises and the fun of a novel toy.\
+"," Randomly doodles, practicing abcs and shapes, playing tic tac toe, or making more elaborate designs. Have fun with it!\
+"," Magnetic boards are Really brilliant idea and innovative way of teaching child how to write, \
+They are happy to trace the letters with this magnetic board and quickly learning letters and numbers.\
+"," We bring it on long car rides, restaurant waiting for dinner, anywhere they need to be entertained. \
+Much better for their brains than screen time! Each age uses it a bit differently which is neat to see.","\
+MADE OF CHILD SAFE, NON-TOXIC, BPA-FREE and lead-free, tested in CPC accredited lab to ensure quality and safety"]\
+```"""
+
+
+AI_Prompt_1 = """\
+{\
+"Product Summary": "A durable magnetic board for children's learning and fun.\
+Includes a pencil for magnet balls, offering a satisfying 'click' sound. \
+Suitable for various ages and healthier than screen time.",\
+"What is in the box": "Magnetic board , pencil",\
+"Technical Facts": "Child safe, non-toxic, BPA-free, lead-free, tested in CPC accredited lab",\
+"Features": "Satisfying 'click' noises, various uses (doodling, practicing letters and shapes, playing games)",\
+"How the product is used": "Doodling, practicing letters/shapes, playing games",\
+"Where the product is used": "Car rides, restaurants, entertainment situations",\
+"User Description": "Preschoolers",\
+"Packaging": "unknown",\
+"Season": "unknown"\
+}"""
+
+
+
+chatbot_responses = dict()
+
+GPT_MODEL = "gpt-3.5-turbo-0613"
+
+for i in product.index:
+    print(i)
+    title  = product['title'][i]
+    asin  = product['asin'][i]
+    bullets = product['feature_bullets'][i]
+
+    # Get the product review
+    print(asin)
+    print(bullets)
+    print(title)
+
+   function_args = json.loads(response_message["function_call"]["arguments"])
+   function_response = fuction_to_call(
+        location=function_args.get("location"),
+        unit=function_args.get("unit"),
+            )
+
+
+    messages = [
+        {"role": "system", "content": "You are a highly analytic product researcher in a product development team"},
+        {"role": "user", "content": User_Prompt_1},
+        {"role": "assistant", "content": AI_Prompt_1},
+        {"role": "user", "content": f"PRODUCT TITLE:``` {title} ``` PRODUCT BULLETS:```{bullets}```"},
+        {"role": "function", "name": "describe_product", "content": function_response,}
+
+    ]
+
+    print("""Send to gpt
+          """)
+
+    # Send the prompt to the chatbot and get the response
+    response = openai.ChatCompletion.create(
+        model=GPT_MODEL,
+        messages=messages,
+        functions=functions,
+        function_call={"name": "describe_product"},
+        temperature=0
+    )
+
+    # Process the response and store in the dictionary
+
+    chatbot_responses[asin] = response["choices"][0]["message"]["function_call"]
+    product.loc[i, 'product_description_data'] = chatbot_responses[asin]
+    print(response["choices"][0]["message"]["function_call"])
+
+
+###############################
+
+
+# https://lucolivi.medium.com/the-proper-way-to-make-calls-to-chatgpt-api-52e635bea8ff
+
+ASYNC
+
+
+import asyncio
+import aiohttp
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_random_exponential,
+)
+
+headers = {
+    "Content-Type": "application/json",
+    "Authorization": f"Bearer {OPENAI_API_KEY}"
+}
+
+class ProgressLog:
+    def __init__(self, total):
+        self.total = total
+        self.done = 0
+
+    def increment(self):
+        self.done = self.done + 1
+
+    def __repr__(self):
+        return f"Done runs {self.done}/{self.total}."
+
+@retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(20), before_sleep=print, retry_error_callback=lambda _: None)
+async def get_completion(content, session, semaphore, progress_log):
+    async with semaphore:
+
+        async with session.post("https://api.openai.com/v1/chat/completions", headers=headers, json={
+            "model": "gpt-3.5-turbo",
+            "messages": [{"role": "user", "content": content}],
+            "temperature": 0
+        }) as resp:
+
+            response_json = await resp.json()
+
+            progress_log.increment()
+            print(progress_log)
+
+            return response_json["choices"][0]['message']["content"]
+
+async def get_completion_list(content_list, max_parallel_calls, timeout):
+    semaphore = asyncio.Semaphore(value=max_parallel_calls)
+    progress_log = ProgressLog(len(content_list))
+
+    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(timeout)) as session:
+        return await asyncio.gather(*[get_completion(content, session, semaphore, progress_log) for content in content_list])
+    
+
+    ####
+
+    messages = [
+    {"role": "user", "content": f"REVIEW: ```{review}```"},
+]
+
+# Send the request to the LLM and get the response
+response =  chat_completion_request(
+    messages=messages,
+    functions=functions,
+    function_call={"name": "review_data_function"},
+    temperature=0,
+    model=GPT_MODEL
+)
+
+# Process the response and store in the dictionary
+
+main_product_summary_response = response.json()["choices"]
+
+
+
+
+#########
+###############
+Sample de extras info din rapid api in async, fara timing
+
+
+import asyncio
+import nest_asyncio
+nest_asyncio.apply()
+import aiohttp
+import json
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import firestore
+
+# Your ASINs
+asin_list = [
+    'B08X2324ZL', 'B09MQ689XL', 'B0BCW8X98V', 'B09NR5JW8Y', 
+    'B0BHS5VPCZ', 'B0BCVY1DHR', 'B0BNXCJ3MV', 'B0BCTTCSBZ', 
+    'B091325ZMB', 'B093HCXGC9', 'B0BL6MR1KN', 'B09PN11Y65', 
+    'B0BLNBS36G', 'B0BVZ3H4MB', 'B0BW8Y2B8Z', 'B0BDFZPNVY'
+]
+
+# Amazon Scraper details
+base_url = "https://h-amazon-data-scraper2.p.rapidapi.com/products/"
+api_key = "70201ee0c8ed29661bc6ae00a84341fb"
+headers = {
+    "X-RapidAPI-Key": "4da31a08e5mshaca05d98a3d9d6ep1fffb1jsn019717508cc8",
+    "X-RapidAPI-Host": "h-amazon-data-scraper2.p.rapidapi.com"
+}
+
+# Firestore details
+cred_path = '/Users/vladbordei/Documents/Development/ProductExplorer/notebooks/productexplorerdata-firebase-adminsdk-ulb3d-465f23dff3.json'
+
+# Initialize Firestore
+cred = credentials.Certificate(cred_path)
+if not firebase_admin._apps:
+    firebase_admin.initialize_app(cred)
+db = firestore.client()
+
+async def get_product_details(asin):
+    async with aiohttp.ClientSession() as session:
+        url = f"{base_url}{asin}"
+        async with session.get(url, headers=headers, params={"api_key": api_key}) as response:
+            return await response.text()
+
+async def get_product_reviews(asin):
+    async with aiohttp.ClientSession() as session:
+        url = f"{base_url}{asin}/reviews"
+        async with session.get(url, headers=headers, params={"api_key": api_key}) as response:
+            return await response.text()
+
+def update_firestore(asin, details, reviews):
+    doc_ref = db.collection('products').document(asin)
+    doc_ref.set({
+        'details': json.loads(details),
+        'reviews': json.loads(reviews)
+    }, merge=True)
+
+async def main():
+    for asin in asin_list:
+        details = await get_product_details(asin)
+        reviews = await get_product_reviews(asin)
+        update_firestore(asin, details, reviews)
+
+loop = asyncio.get_event_loop()
+loop.run_until_complete(main())
+
+
+
+#########
+###################
+
+
+# %%
+# Data Testing
+
+import json
+from pathlib import Path
+
+file_path = '/Users/vladbordei/Documents/Development/ProductExplorer/data/external/review_jsons/reviews(B0BCTTCSBZ)_1691131250529.json'
+# Read product JSON
+with open(file_path) as f:
+    product_data = json.load(f)
+    product_data = product_data[0]
+    asin = product_data['asin']
+    print(asin)
+    print(product_data['title'])
+
+    ##########
+
+    

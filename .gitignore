@@ -19,9 +19,11 @@ lib64/
 parts/
 sdist/
 var/
+src/.env
 *.egg-info/
 .installed.cfg
 *.egg
+
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -84,3 +86,17 @@ target/
 # Compiled files
 layout.css
 src/assets/demo/styles/badges.css
+
+# vim
+*.swp
+*.swo
+
+# Mypy cache
+.mypy_cache/
+
+
+#Docker Compose for now
+docker/
+
+notebooks/productexplorerdata-firebase-adminsdk-ulb3d-465f23dff3.json
+

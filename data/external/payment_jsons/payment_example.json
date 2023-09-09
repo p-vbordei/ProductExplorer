@@ -1,0 +1,10 @@
+{
+    "paymentId1": {
+        "user_id": "userId1",
+        "subscription_id": "subscriptionId1",
+        "amount": 100.00,
+        "date": "2023-06-01",
+        "status": "completed",
+        "payment_intent": "pi_xxxxxxxxxxxxx"
+    }
+}

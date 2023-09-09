@@ -1,0 +1,33 @@
+Attribute,cluster_label,asin,rating,id,observation_count,rating_avg,percentage_of_observations_vs_total_number_per_attribute,percentage_of_observations_vs_total_number_of_reviews
+Appraisal,Mixed feelings about the value and quality,B091325ZMB,"[4, 3]","['R2JYQZUA5OAV5W', 'R35CEK9IHL5ZE3']",2,4,40.0,13.333333333333334
+Appraisal,Mixed feelings about the value and quality,B0BW8Y2B8Z,[5],['R1LHH9TVPQDK8Y'],1,5,20.0,6.666666666666667
+Buyer Motivation,Motivations for buying garden beds,B091325ZMB,"[5, 4, 4, 1, 3]","['R1EQTHWLB90N33', 'R20YIZBSW0VB6Y', 'R2JYQZUA5OAV5W', 'R2X94WSDMXO1L5', 'R35CEK9IHL5ZE3']",5,3,100.0,33.33333333333333
+Buyer Motivation,Motivations for buying garden beds,B0BW8Y2B8Z,"[5, 1, 5, 5, 5]","['R1LHH9TVPQDK8Y', 'R2G0IKKV5Z9TFK', 'R3D0591ENXK60I', 'RBYNCMY0B8XXA', 'RPKKTGHGH96U6']",5,4,100.0,33.33333333333333
+Customer Expectations,Customer Expectations,B091325ZMB,"[5, 4, 4, 1, 3]","['R1EQTHWLB90N33', 'R20YIZBSW0VB6Y', 'R2JYQZUA5OAV5W', 'R2X94WSDMXO1L5', 'R35CEK9IHL5ZE3']",5,3,100.0,33.33333333333333
+Customer Expectations,Customer Expectations,B0BW8Y2B8Z,"[5, 1, 5, 5]","['R1LHH9TVPQDK8Y', 'R2G0IKKV5Z9TFK', 'R3D0591ENXK60I', 'RBYNCMY0B8XXA']",4,4,80.0,26.666666666666668
+Design and Appearance,Design and Appearance,B091325ZMB,"[5, 3, 5]","['R2Y6GNLQWR5F0R', 'R35CEK9IHL5ZE3', 'RJV4MGN1IJUWX']",3,4,60.0,20.0
+Design and Appearance,Design and Appearance,B0BW8Y2B8Z,[5],['R3D0591ENXK60I'],1,5,20.0,6.666666666666667
+Durability,Mixed perceptions about the durability of the product,B091325ZMB,"[5, 4, 1, 3]","['R1EQTHWLB90N33', 'R2JYQZUA5OAV5W', 'R2X94WSDMXO1L5', 'R35CEK9IHL5ZE3']",4,3,80.0,26.666666666666668
+Durability,Mixed perceptions about the durability of the product,B0BW8Y2B8Z,"[5, 1, 5]","['R1LHH9TVPQDK8Y', 'R2G0IKKV5Z9TFK', 'R3D0591ENXK60I']",3,4,60.0,20.0
+Ease of Use,Ease of Use,B091325ZMB,"[4, 1, 3]","['R20YIZBSW0VB6Y', 'R2X94WSDMXO1L5', 'R35CEK9IHL5ZE3']",3,3,75.0,20.0
+Ease of Use,Ease of Use,B0BW8Y2B8Z,"[1, 5, 5]","['R2G0IKKV5Z9TFK', 'R3D0591ENXK60I', 'RBYNCMY0B8XXA']",3,4,75.0,20.0
+How the product is used,Versatile usage for gardening and storage purposes,B091325ZMB,"[5, 4, 4, 1, 3]","['R1EQTHWLB90N33', 'R20YIZBSW0VB6Y', 'R2JYQZUA5OAV5W', 'R2X94WSDMXO1L5', 'R35CEK9IHL5ZE3']",5,3,125.0,33.33333333333333
+How the product is used,Versatile usage for gardening and storage purposes,B0BW8Y2B8Z,"[5, 1, 5, 5]","['R1LHH9TVPQDK8Y', 'R2G0IKKV5Z9TFK', 'R3D0591ENXK60I', 'RBYNCMY0B8XXA']",4,4,100.0,26.666666666666668
+Issues,Issues with product quality and durability,B091325ZMB,"[5, 5, 4, 5, 1, 3]","['R1EQTHWLB90N33', 'R1JIQKIJIH4TSY', 'R20YIZBSW0VB6Y', 'R2UASZR16FII3H', 'R2X94WSDMXO1L5', 'R35CEK9IHL5ZE3']",6,4,120.0,40.0
+Issues,Issues with product quality and durability,B0BW8Y2B8Z,[1],['R2G0IKKV5Z9TFK'],1,1,20.0,6.666666666666667
+Noise and Smell,No noise or smell,B0BW8Y2B8Z,[5],['R3D0591ENXK60I'],1,5,20.0,6.666666666666667
+Packaging,Sturdy recyclable box,B0BW8Y2B8Z,[5],['R3D0591ENXK60I'],1,5,20.0,6.666666666666667
+Parts and Components,Parts and Components,B091325ZMB,[1],['R2X94WSDMXO1L5'],1,1,20.0,6.666666666666667
+Parts and Components,Parts and Components,B0BW8Y2B8Z,[5],['R3D0591ENXK60I'],1,5,25.0,6.666666666666667
+Quality,Mixed feelings about the quality of the product,B091325ZMB,"[5, 4, 4, 1, 3]","['R1EQTHWLB90N33', 'R20YIZBSW0VB6Y', 'R2JYQZUA5OAV5W', 'R2X94WSDMXO1L5', 'R35CEK9IHL5ZE3']",5,3,125.0,33.33333333333333
+Quality,Mixed feelings about the quality of the product,B0BW8Y2B8Z,"[5, 1, 5, 5]","['R1LHH9TVPQDK8Y', 'R2G0IKKV5Z9TFK', 'R3D0591ENXK60I', 'RBYNCMY0B8XXA']",4,4,100.0,26.666666666666668
+Season,Spring and summer,B0BW8Y2B8Z,[5],['R3D0591ENXK60I'],1,5,25.0,6.666666666666667
+Setup and Instructions,Setup and Instructions,B091325ZMB,"[4, 1, 5]","['R20YIZBSW0VB6Y', 'R2X94WSDMXO1L5', 'RAT6JD8O1FFHS']",3,3,60.0,20.0
+Setup and Instructions,Setup and Instructions,B0BW8Y2B8Z,"[1, 5, 5]","['R2G0IKKV5Z9TFK', 'R3D0591ENXK60I', 'RBYNCMY0B8XXA']",3,4,60.0,20.0
+Size and Fit,Size and Fit,B091325ZMB,[4],['R20YIZBSW0VB6Y'],1,4,20.0,6.666666666666667
+Size and Fit,Size and Fit,B0BW8Y2B8Z,[5],['R3D0591ENXK60I'],1,5,20.0,6.666666666666667
+User Description,Diverse group of gardening enthusiasts and users,B091325ZMB,"[5, 4, 4, 1, 3]","['R1EQTHWLB90N33', 'R20YIZBSW0VB6Y', 'R2JYQZUA5OAV5W', 'R2X94WSDMXO1L5', 'R35CEK9IHL5ZE3']",5,3,100.0,33.33333333333333
+User Description,Diverse group of gardening enthusiasts and users,B0BW8Y2B8Z,"[5, 1, 5, 5]","['R1LHH9TVPQDK8Y', 'R2G0IKKV5Z9TFK', 'R3D0591ENXK60I', 'RBYNCMY0B8XXA']",4,4,100.0,26.666666666666668
+When the product is used,During the day,B0BW8Y2B8Z,[5],['R3D0591ENXK60I'],1,5,25.0,6.666666666666667
+Where the product is used,Where the product is used,B091325ZMB,"[5, 4, 4, 1, 3, 5]","['R1EQTHWLB90N33', 'R20YIZBSW0VB6Y', 'R2JYQZUA5OAV5W', 'R2X94WSDMXO1L5', 'R35CEK9IHL5ZE3', 'RJV4MGN1IJUWX']",6,4,150.0,40.0
+Where the product is used,Where the product is used,B0BW8Y2B8Z,"[5, 1, 5, 5]","['R1LHH9TVPQDK8Y', 'R2G0IKKV5Z9TFK', 'R3D0591ENXK60I', 'RBYNCMY0B8XXA']",4,4,100.0,26.666666666666668
