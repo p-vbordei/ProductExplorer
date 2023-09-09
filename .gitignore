@@ -83,6 +83,10 @@ target/
 # Mac OS-specific storage files
 .DS_Store
 
+# Compiled files
+layout.css
+src/assets/demo/styles/badges.css
+
 # vim
 *.swp
 *.swo
@@ -95,3 +99,4 @@ target/
 docker/
 
 notebooks/productexplorerdata-firebase-adminsdk-ulb3d-465f23dff3.json
+

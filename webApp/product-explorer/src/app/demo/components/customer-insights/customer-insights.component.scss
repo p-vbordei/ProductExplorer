@@ -1,0 +1,23 @@
+
+:host ::ng-deep .p-progressbar {
+    min-width: 150px;
+}
+
+/* Hide the actual percentage label */
+:host ::ng-deep .p-progressbar-label {
+    visibility: hidden;
+}
+
+/* Introduce a pseudo element for the entire progress bar that mimics the label */
+:host ::ng-deep .p-progressbar::before {
+    content: attr(aria-valuenow) '%'; /* Fetch the percentage value */
+    position: absolute;
+    top: 45%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+    /* The following styles are based on what the original label has. Adjust accordingly */
+    font-family: var(--font-family);  /* Using the CSS variable */
+    font-size: var(--font-size);
+    color: var(--text-color);
+}
