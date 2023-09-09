@@ -31,8 +31,8 @@
    
                         <th>Name</th>
                         <th>ASINs</th>
-                        <th pSortableColumn="started_timestamp">Started <p-sortIcon field="started_timestamp"></p-sortIcon></th>
-                        <th pSortableColumn="finished_timestamp">Finished <p-sortIcon field="finished_timestamp"></p-sortIcon></th>
+                        <th pSortableColumn="startTimestamp">Started <p-sortIcon field="startTimestamp"></p-sortIcon></th>
+                        <th pSortableColumn="finishedTimestamp">Finished <p-sortIcon field="finishedTimestamp"></p-sortIcon></th>
                         <th>Status</th>
                     </tr>
                 </ng-template>
@@ -40,8 +40,8 @@
                     <tr [pSelectableRow]="rowData">
                         <td>{{rowData.name}}</td>
                         <td>{{rowData.asins}}</td>
-                        <td>{{rowData.started_timestamp | date:'medium'}}</td>
-                        <td>{{rowData.finished_timestamp | date:'medium'}}</td>
+                        <td>{{rowData.startTimestamp | date:'medium'}}</td>
+                        <td>{{rowData.finishedTimestamp | date:'medium'}}</td>
                         <td><span [class]="'customer-badge status-' + rowData.status">{{rowData.status}}</span></td>
                     </tr>
                 </ng-template>

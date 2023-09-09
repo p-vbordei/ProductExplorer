@@ -10,7 +10,7 @@ import { AppLayoutComponent } from "./layout/app.layout.component";
                 path: '', component: AppLayoutComponent,
                 children: [
                     { path: '', loadChildren: () => import('./demo/components/investigations/investigations.module').then(m => m.InvestigationsModule) },
-                    { path: 'customer-insights', loadChildren: () => import('./demo/components/customer-insights/customer-insights.module').then(m => m.CustomerInsightsModule) },
+                    { path: 'investigation-details/:id', loadChildren: () => import('./demo/components/investigation-details/investigation-details.module').then(m => m.InvestigationDetailsModule) },
                     { path: 'uikit', loadChildren: () => import('./demo/components/uikit/uikit.module').then(m => m.UIkitModule) },
                     { path: 'utilities', loadChildren: () => import('./demo/components/utilities/utilities.module').then(m => m.UtilitiesModule) },
                     { path: 'documentation', loadChildren: () => import('./demo/components/documentation/documentation.module').then(m => m.DocumentationModule) },

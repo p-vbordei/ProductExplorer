@@ -27,8 +27,8 @@ export class InvestigationsComponent implements OnInit, OnDestroy {
             const res = {
                 name: "AmazonBasics USB-C Cable",
                 asins: entry.asinList,
-                finished_timestamp: new Date(entry.finishedProductsTimestamp.nanoseconds),
-                started_timestamp: new Date(entry.startTimestamp.nanoseconds),
+                finishedTimestamp: new Date(entry.finishedProductsTimestamp.nanoseconds),
+                startTimestamp: new Date(entry.startTimestamp.nanoseconds),
                 status: entry.status == "startedReviews" ? "pending" : entry.status,
                 id: entry.id
                 } as any;

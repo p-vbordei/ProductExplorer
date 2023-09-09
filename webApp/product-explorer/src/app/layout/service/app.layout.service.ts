@@ -17,6 +17,7 @@ interface LayoutState {
     configSidebarVisible: boolean;
     staticMenuMobileActive: boolean;
     menuHoverActive: boolean;
+    selectedInvestigationId: string 
 }
 
 @Injectable({
@@ -39,7 +40,8 @@ export class LayoutService {
         profileSidebarVisible: false,
         configSidebarVisible: false,
         staticMenuMobileActive: false,
-        menuHoverActive: false
+        menuHoverActive: false,
+        selectedInvestigationId: null 
     };
 
     private configUpdate = new Subject<AppConfig>();

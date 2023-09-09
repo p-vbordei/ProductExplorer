@@ -1,10 +1,11 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { MenuItem } from 'primeng/api';
-import { Product } from '../../api/product';
-import { ProductService } from '../../service/product.service';
+import { Product } from '../../../api/product';
+import { ProductService } from '../../../service/product.service';
 import { Subscription } from 'rxjs';
 import { LayoutService } from 'src/app/layout/service/app.layout.service';
 import * as FileSaver from 'file-saver';
+import { ActivatedRoute } from '@angular/router';
 
 interface Column {
     field: string;
@@ -56,16 +57,19 @@ export class CustomerInsightsComponent implements OnInit, OnDestroy {
     subscription!: Subscription;
 
 
-    constructor(private productService: ProductService, public layoutService: LayoutService) {
+    constructor(private route: ActivatedRoute, public layoutService: LayoutService) {
         this.subscription = this.layoutService.configUpdate$.subscribe(() => {
             this.initCharts();
         });
     }
 
     ngOnInit() {
+        const investigationId = this.route.snapshot.paramMap.get('id');
+        this.layoutService.state.selectedInvestigationId = investigationId;
+        console.log(investigationId);
         this.initCharts();
         this.initTables();
-        this.productService.getProductsSmall().then(data => this.products = data);
+        
 
         this.items = [
             { label: 'Add New', icon: 'pi pi-fw pi-plus' },
