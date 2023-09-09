@@ -46,11 +46,15 @@ export class LayoutService {
 
     private configUpdate = new Subject<AppConfig>();
 
+    private stateUpdate = new Subject<LayoutState>();
+
     private overlayOpen = new Subject<any>();
 
     configUpdate$ = this.configUpdate.asObservable();
 
     overlayOpen$ = this.overlayOpen.asObservable();
+
+    stateUpdate$ = this.stateUpdate.asObservable();
 
     onMenuToggle() {
         if (this.isOverlay()) {
@@ -97,6 +101,10 @@ export class LayoutService {
 
     onConfigUpdate() {
         this.configUpdate.next(this.config);
+    }
+
+    onStateUpdate() {
+        this.stateUpdate.next(this.state);
     }
 
 }

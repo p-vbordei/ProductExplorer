@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { MenuItem } from 'primeng/api';
 import { Product } from '../../../api/product';
-import { ProductService } from '../../../service/product.service';
+import { CustomerInsightsService } from '../../../service/customer-insights.service';
 import { Subscription } from 'rxjs';
 import { LayoutService } from 'src/app/layout/service/app.layout.service';
 import * as FileSaver from 'file-saver';
@@ -57,16 +57,16 @@ export class CustomerInsightsComponent implements OnInit, OnDestroy {
     subscription!: Subscription;
 
 
-    constructor(private route: ActivatedRoute, public layoutService: LayoutService) {
-        this.subscription = this.layoutService.configUpdate$.subscribe(() => {
-            this.initCharts();
-        });
+    constructor(private route: ActivatedRoute, public layoutService: LayoutService,private customerInsightsService: CustomerInsightsService) {
     }
 
     ngOnInit() {
         const investigationId = this.route.snapshot.paramMap.get('id');
         this.layoutService.state.selectedInvestigationId = investigationId;
-        console.log(investigationId);
+        this.layoutService.onStateUpdate();
+        
+        this.getDocumentData(investigationId);
+
         this.initCharts();
         this.initTables();
         
@@ -99,6 +99,13 @@ export class CustomerInsightsComponent implements OnInit, OnDestroy {
 
 
     }
+
+    getDocumentData(id) {
+        this.customerInsightsService.getCustomerInsights(id).subscribe(data => {
+            console.log(data);
+        });
+    }
+
 
     initCharts() {
         const documentStyle = getComputedStyle(document.documentElement);

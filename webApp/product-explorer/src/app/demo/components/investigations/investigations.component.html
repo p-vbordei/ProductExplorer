@@ -38,7 +38,11 @@
                 </ng-template>
                 <ng-template pTemplate="body" let-rowData let-columns="columns">
                     <tr [pSelectableRow]="rowData">
-                        <td>{{rowData.name}}</td>
+                        <td>
+                            <a [routerLink]="['/investigation-details', rowData.id, 'customer-insights']">
+                                {{rowData.name}}
+                            </a>
+                        </td>
                         <td>{{rowData.asins}}</td>
                         <td>{{rowData.startTimestamp | date:'medium'}}</td>
                         <td>{{rowData.finishedTimestamp | date:'medium'}}</td>

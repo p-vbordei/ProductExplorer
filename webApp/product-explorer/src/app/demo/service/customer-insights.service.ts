@@ -7,12 +7,12 @@ import { Observable } from 'rxjs';
 })
 export class CustomerInsightsService {
   firestore: Firestore = inject(Firestore)
-  investigations$: Observable<any[]>;
+  customerInsights$: Observable<any[]>;
 
   constructor() { }
 
-  getInvestigations() {
-    this.investigations$ = collectionData(collection(this.firestore, 'investigations'), { idField: 'id' })
-    return this.investigations$
+  getCustomerInsights(id) {
+    this.customerInsights$ = collectionData(collection(this.firestore, 'reviewsInsights', id, 'attributeWithPercentage'));
+    return this.customerInsights$;
   }
 }
