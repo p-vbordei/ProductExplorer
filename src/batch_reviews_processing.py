@@ -5,6 +5,7 @@ import asyncio
 from tqdm import tqdm
 import time
 import logging
+import pandas as pd
 logging.basicConfig(level=logging.INFO)
 
 try:
@@ -394,6 +395,51 @@ for i, reviewDict in tqdm(enumerate(reviewsList), total=len(reviewsList), desc="
 
 import tiktoken
 
+def transform_rating_to_star_format(rating):
+    """
+    Transforms a numerical or textual rating to a star format.
+
+    Args:
+    - rating (int or str): A numerical rating value between 1 to 5 or a textual rating.
+
+    Returns:
+    - str: A string representation of the rating in the format "5*" or "1*", or the textual rating followed by a "*".
+    """
+    
+    if isinstance(rating, int) and 1 <= rating <= 5:
+        return f"{rating}*"
+    elif isinstance(rating, str):
+        return f"{rating}*"
+    else:
+        raise ValueError("Rating must be a number between 1 and 5 or a textual value.")
+
+def add_uid_to_reviews(reviewsList):
+    """
+    Adds a 'uid' to each review in the reviewsList based on its index.
+
+    Args:
+    - reviewsList (list): List of dictionaries with reviews.
+
+    Returns:
+    - list: Updated list of reviews with 'uid' added.
+    """
+
+    # Extract 'id' from each dictionary
+    ids = [review['id'] for review in reviewsList]
+
+    # Create DataFrame
+    id_uid_df = pd.DataFrame(ids, columns=['id'])
+    id_uid_df['uid'] = id_uid_df.index
+
+    # Create a mapping of 'id' to 'uid'
+    id_to_uid_mapping = id_uid_df.set_index('id')['uid'].to_dict()
+
+    # Add 'uid' to each dictionary in reviewsList
+    for review in reviewsList:
+        review['uid'] = id_to_uid_mapping.get(review['id'], None)
+
+    return reviewsList
+
 def num_tokens_from_string(string: str, encoding_name = "cl100k_base") -> int:
     """Returns the number of tokens in a text string."""
     encoding = tiktoken.get_encoding(encoding_name)
@@ -420,16 +466,17 @@ def generate_batches(reviews, max_tokens=6000):
     current_tokens = 0
 
     for review in reviews:
-        review_id = review['id']
+        review_id = review['uid']
         review_text = review['text']
+        review_rating = transform_rating_to_star_format(review['rating'])
 
         imp_tokens = num_tokens_from_string(review_text, encoding_name="cl100k_base")
         if current_tokens + imp_tokens + 1 <= max_tokens:
-            current_batch.append((review_id, review_text))
+            current_batch.append((review_id,review_rating, review_text))
             current_tokens += imp_tokens + 1
         else:
             batches.append(current_batch)
-            current_batch = [(review_id, review_text)]
+            current_batch = [(review_id, review_rating, review_text)]
             current_tokens = imp_tokens
     if current_batch:
         batches.append(current_batch)
@@ -457,6 +504,16 @@ except Exception as e:
     logging.error(f"Error getting clean reviews: {e}")
 
 # %%
+updated_reviewsList = add_uid_to_reviews(reviewsList)
+
+
+# %%
+# Prepare Review Batches
+review_batches = generate_batches(updated_reviewsList, max_tokens=8000)
+
+
+
+# %%
 marketUserAnalysisReviewFunctions = [
     {
         "name": "marketUserAnalysis",
@@ -476,7 +533,7 @@ marketUserAnalysisReviewFunctions = [
                             "id": {
                                 "type": "array",
                                 "items": {
-                                    "type": "string"
+                                    "type": "number"
                                 }
                             }
                         }
@@ -494,7 +551,7 @@ marketUserAnalysisReviewFunctions = [
                             "id": {
                                 "type": "array",
                                 "items": {
-                                    "type": "string"
+                                    "type": "number"
                                 }
                             }
                         }
@@ -512,7 +569,7 @@ marketUserAnalysisReviewFunctions = [
                             "id": {
                                 "type": "array",
                                 "items": {
-                                    "type": "string"
+                                    "type": "number"
                                 }
                             }
                         }
@@ -530,7 +587,7 @@ marketUserAnalysisReviewFunctions = [
                             "id": {
                                 "type": "array",
                                 "items": {
-                                    "type": "string"
+                                    "type": "number"
                                 }
                             }
                         }
@@ -548,7 +605,7 @@ marketUserAnalysisReviewFunctions = [
                             "id": {
                                 "type": "array",
                                 "items": {
-                                    "type": "string"
+                                    "type": "number"
                                 }
                             }
                         }
@@ -558,7 +615,6 @@ marketUserAnalysisReviewFunctions = [
         }
     }
 ]
-
 
 functionalEmotionalAnalysisReviewFunctions = [
     {
@@ -579,7 +635,7 @@ functionalEmotionalAnalysisReviewFunctions = [
                             "id": {
                                 "type": "array",
                                 "items": {
-                                    "type": "string"
+                                    "type": "number"
                                 }
                             }
                         }
@@ -597,7 +653,7 @@ functionalEmotionalAnalysisReviewFunctions = [
                             "id": {
                                 "type": "array",
                                 "items": {
-                                    "type": "string"
+                                    "type": "number"
                                 }
                             }
                         }
@@ -615,7 +671,7 @@ functionalEmotionalAnalysisReviewFunctions = [
                             "id": {
                                 "type": "array",
                                 "items": {
-                                    "type": "string"
+                                    "type": "number"
                                 }
                             }
                         }
@@ -633,7 +689,7 @@ functionalEmotionalAnalysisReviewFunctions = [
                             "id": {
                                 "type": "array",
                                 "items": {
-                                    "type": "string"
+                                    "type": "number"
                                 }
                             }
                         }
@@ -651,7 +707,7 @@ functionalEmotionalAnalysisReviewFunctions = [
                             "id": {
                                 "type": "array",
                                 "items": {
-                                    "type": "string"
+                                    "type": "number"
                                 }
                             }
                         }
@@ -661,9 +717,6 @@ functionalEmotionalAnalysisReviewFunctions = [
         }
     }
 ]
-
-
-
 
 
 # %%
@@ -677,16 +730,12 @@ functions =  functionalEmotionalAnalysisReviewFunctions
 function_call = {"name": "functionalEmotionalAnalysis"}
 
 # %%
-# Prepare Review Batches
-review_batches = generate_batches(reviewsList, max_tokens=6000)
-
-
 # Generate Content List for Batches
 contentList = []
 
 for batch in review_batches:
-    batch_review = f"\n\n <Review IDs>  will be followed by `review text`:"
-    batch_review += "\n\n".join([f"<{review_id}>\n`{review_text}`" for review_id, review_text in batch])
+    batch_review = f"\n\n <Review IDs>  will be followed by <Review Rating> and than by  `review text`:"
+    batch_review += "\n\n".join([f"<{review_id}>\n,<{review_rating}>\n,`{review_text}`" for review_id, review_rating, review_text in batch])
     
     messages = [
         {"role": "user", "content": batch_review},
@@ -737,3 +786,12 @@ for i, reviewDict in tqdm(enumerate(reviewsList), total=len(reviewsList), desc="
 
 
 
+#####
+# RAMAS DE FACUT\
+# PARTEA DE JOS E BATCH PROCESSING
+# ASTA E DE TERMINAT
+# REVIEW IDs trebuie schimbate in ceva muult mai skinny, niste numere
+# %%
+# Trebuie scoase spatiile goale din schema de functie
+# Trebuie facut batch processing pentru ambele functii, adica schimbata functia de completion pt a accepta 2 functii atunci cand scrie procesul de batching asinc
+# Trebuie rescrisa intreaga arhitectura de procesare rezultate
