@@ -1,41 +1,62 @@
-import { Component, OnInit, OnDestroy, Optional } from '@angular/core';
-import { Auth, authState, signInAnonymously, signOut, User, GoogleAuthProvider, signInWithPopup } from '@angular/fire/auth';
-import { EMPTY, Observable, Subscription } from 'rxjs';
-import { Router } from '@angular/router';
+import { Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { AuthService } from 'src/app/demo/service/auth.service';
 import { LayoutService } from 'src/app/layout/service/app.layout.service';
+import { MessageService } from 'primeng/api';
 
 @Component({
   selector: 'app-login',
   templateUrl: './login.component.html',
-  styles: [`
-      :host ::ng-deep .pi-eye,
-      :host ::ng-deep .pi-eye-slash {
-          transform:scale(1.6);
-          margin-right: 1rem;
-          color: var(--primary-color) !important;
-      }
-  `]
+  styleUrls: ['./login.component.scss']
 })
 export class LoginComponent implements OnInit {
 
-  valCheck: string[] = ['remember'];
-  password!: string;
-
-  private readonly userDisposable: Subscription|undefined;
-  public readonly user: Observable<User | null> = EMPTY;
-
+  email: string;
+  password: string;
+  signupEmail: string;
+  signupPassword: string;
+  showSignUp = false;
+  confirmPassword: string;
 
   redirect = ['/'];
 
-  constructor(@Optional() private auth: Auth, public layoutService: LayoutService,  private router: Router) {}
+  constructor(private authService: AuthService, public layoutService: LayoutService, private messageService: MessageService) {}
 
   ngOnInit(): void { }
 
+  toggleSignUp() {
+    this.showSignUp = !this.showSignUp;
+  }
 
   async loginWithGoogle() {
-    const provider = new GoogleAuthProvider();
-    await signInWithPopup(this.auth, provider);
-    await this.router.navigate(this.redirect);
+    try {
+      await this.authService.loginWithGoogle();
+      this.messageService.add({severity:'success', summary: 'Success', detail: 'Logged in with Google'});
+    } catch (error) {
+      this.messageService.add({severity:'error', summary: 'Error', detail: error.message || 'Error logging in with Google'});
+    }
   }
+
+  async signUp() { 
+    if (this.signupPassword !== this.confirmPassword) {
+      this.messageService.add({severity:'error', summary: 'Error', detail: 'Passwords do not match!'});
+      return;
+    }
+    try {
+      await this.authService.signUp(this.signupEmail, this.signupPassword);
+      this.messageService.add({severity:'success', summary: 'Success', detail: 'Account created successfully'});
+    } catch (error) {
+      this.messageService.add({severity:'error', summary: 'Error', detail: error.message || 'Error creating account'});
+    }
+  }
+
+  async login() {
+    try {
+        await this.authService.login(this.email, this.password);
+        this.messageService.add({severity:'success', summary: 'Success', detail: 'Logged in successfully'});
+    } catch (error) {
+        this.messageService.add({severity:'error', summary: 'Error', detail: error.message || 'Error logging in'});
+    }
+}
+
 
 }

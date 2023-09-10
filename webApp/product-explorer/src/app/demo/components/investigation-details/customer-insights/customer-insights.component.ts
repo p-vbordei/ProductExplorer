@@ -65,7 +65,7 @@ export class CustomerInsightsComponent implements OnInit, OnDestroy {
         this.layoutService.state.selectedInvestigationId = investigationId;
         this.layoutService.onStateUpdate();
         
-        this.getDocumentData(investigationId);
+        console.log(this.getDocumentData(investigationId))
 
         this.initCharts();
         this.initTables();
@@ -100,10 +100,412 @@ export class CustomerInsightsComponent implements OnInit, OnDestroy {
 
     }
 
-    getDocumentData(id) {
-        this.customerInsightsService.getCustomerInsights(id).subscribe(data => {
-            console.log(data);
-        });
+    getDocumentData(id) { 
+        return [
+            {
+                "clusters": [
+                    {
+                        "clusterLabel": "Good value for the price, Great value for the price",
+                        "observationCount": 12,
+                        "totalNumberOfObservations": 18,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 20,
+                        "attribute": "appraisal",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 66.67
+                    },
+                    {
+                        "clusterLabel": "Mixed opinions about the price",
+                        "observationCount": 6,
+                        "totalNumberOfObservations": 18,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 10,
+                        "attribute": "appraisal",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 33.33
+                    }
+                ]
+            },
+            {
+                "clusters": [
+                    {
+                        "clusterLabel": "Motivation to purchase toddler stools",
+                        "observationCount": 33,
+                        "totalNumberOfObservations": 58,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 55,
+                        "attribute": "buyerMotivation",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 56.9
+                    },
+                    {
+                        "clusterLabel": "To entertain kids and provide a fun play area",
+                        "observationCount": 25,
+                        "totalNumberOfObservations": 58,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 41.67,
+                        "attribute": "buyerMotivation",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 43.1
+                    }
+                ]
+            },
+            {
+                "clusters": [
+                    {
+                        "clusterLabel": "Sturdy and durable steps",
+                        "observationCount": 33,
+                        "totalNumberOfObservations": 58,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 55,
+                        "attribute": "customerExpectations",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 56.9
+                    },
+                    {
+                        "clusterLabel": "To provide a variety of engaging and educational play options",
+                        "observationCount": 25,
+                        "totalNumberOfObservations": 58,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 41.67,
+                        "attribute": "customerExpectations",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 43.1
+                    }
+                ]
+            },
+            {
+                "clusters": [
+                    {
+                        "clusterLabel": "Potential safety issue, sharp edges, flexible and crack, lack of information, unknown",
+                        "observationCount": 6,
+                        "totalNumberOfObservations": 14,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 10,
+                        "attribute": "dangerAppraisal",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 42.86
+                    },
+                    {
+                        "clusterLabel": "Safe for children, Safe for young children",
+                        "observationCount": 8,
+                        "totalNumberOfObservations": 14,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 13.33,
+                        "attribute": "dangerAppraisal",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 57.14
+                    }
+                ]
+            },
+            {
+                "clusters": [
+                    {
+                        "clusterLabel": "Attractive design, Simple design, Unknown",
+                        "observationCount": 4,
+                        "totalNumberOfObservations": 11,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 6.67,
+                        "attribute": "designAndAppearance",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 36.36
+                    },
+                    {
+                        "clusterLabel": "Cute and colorful design",
+                        "observationCount": 7,
+                        "totalNumberOfObservations": 11,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 11.67,
+                        "attribute": "designAndAppearance",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 63.64
+                    }
+                ]
+            },
+            {
+                "clusters": [
+                    {
+                        "clusterLabel": "Durability",
+                        "observationCount": 21,
+                        "totalNumberOfObservations": 24,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 35,
+                        "attribute": "durability",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 87.5
+                    },
+                    {
+                        "clusterLabel": "No information provided, Unknown",
+                        "observationCount": 3,
+                        "totalNumberOfObservations": 24,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 5,
+                        "attribute": "durability",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 12.5
+                    }
+                ]
+            },
+            {
+                "clusters": [
+                    {
+                        "clusterLabel": "Ease of Use",
+                        "observationCount": 5,
+                        "totalNumberOfObservations": 13,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 8.33,
+                        "attribute": "easeOfUse",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 38.46
+                    },
+                    {
+                        "clusterLabel": "Ease of use",
+                        "observationCount": 8,
+                        "totalNumberOfObservations": 13,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 13.33,
+                        "attribute": "easeOfUse",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 61.54
+                    }
+                ]
+            },
+            {
+                "clusters": [
+                    {
+                        "clusterLabel": "Used by kids for play",
+                        "observationCount": 19,
+                        "totalNumberOfObservations": 57,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 31.67,
+                        "attribute": "howTheProductIsUsed",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 33.33
+                    },
+                    {
+                        "clusterLabel": "Used for various physical activities and games",
+                        "observationCount": 38,
+                        "totalNumberOfObservations": 57,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 63.33,
+                        "attribute": "howTheProductIsUsed",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 66.67
+                    }
+                ]
+            },
+            {
+                "clusters": [
+                    {
+                        "clusterLabel": "Issues with product quality and durability",
+                        "observationCount": 15,
+                        "totalNumberOfObservations": 24,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 25,
+                        "attribute": "issues",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 62.5
+                    },
+                    {
+                        "clusterLabel": "No issues or complaints about the product",
+                        "observationCount": 9,
+                        "totalNumberOfObservations": 24,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 15,
+                        "attribute": "issues",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 37.5
+                    }
+                ]
+            },
+            {
+                "clusters": [
+                    {
+                        "clusterLabel": "No information provided, Unknown",
+                        "observationCount": 3,
+                        "totalNumberOfObservations": 7,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 5,
+                        "attribute": "noiseAndSmell",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 42.86
+                    },
+                    {
+                        "clusterLabel": "No noise or smell",
+                        "observationCount": 4,
+                        "totalNumberOfObservations": 7,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 6.67,
+                        "attribute": "noiseAndSmell",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 57.14
+                    }
+                ]
+            },
+            {
+                "clusters": [
+                    {
+                        "clusterLabel": "Lack of packaging information and transparency",
+                        "observationCount": 3,
+                        "totalNumberOfObservations": 9,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 5,
+                        "attribute": "packaging",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 33.33
+                    },
+                    {
+                        "clusterLabel": "Packaging quality and materials",
+                        "observationCount": 6,
+                        "totalNumberOfObservations": 9,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 10,
+                        "attribute": "packaging",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 66.67
+                    }
+                ]
+            },
+            {
+                "clusters": [
+                    {
+                        "clusterLabel": "All parts included and easy to assemble",
+                        "observationCount": 4,
+                        "totalNumberOfObservations": 10,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 6.67,
+                        "attribute": "partsAndComponents",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 40
+                    },
+                    {
+                        "clusterLabel": "Parts and components are incomplete or missing",
+                        "observationCount": 6,
+                        "totalNumberOfObservations": 10,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 10,
+                        "attribute": "partsAndComponents",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 60
+                    }
+                ]
+            },
+            {
+                "clusters": [
+                    {
+                        "clusterLabel": "Sturdy and durable materials with unknown quality",
+                        "observationCount": 5,
+                        "totalNumberOfObservations": 23,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 8.33,
+                        "attribute": "quality",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 21.74
+                    },
+                    {
+                        "clusterLabel": "Variations in quality perception",
+                        "observationCount": 18,
+                        "totalNumberOfObservations": 23,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 30,
+                        "attribute": "quality",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 78.26
+                    }
+                ]
+            },
+            {
+                "clusters": [
+                    {
+                        "clusterLabel": "Great toys for active play and learning",
+                        "observationCount": 57,
+                        "totalNumberOfObservations": 80,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 95,
+                        "attribute": "reviewSummary",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 71.25
+                    },
+                    {
+                        "clusterLabel": "Mixed reviews on product quality and functionality",
+                        "observationCount": 23,
+                        "totalNumberOfObservations": 80,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 38.33,
+                        "attribute": "reviewSummary",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 28.75
+                    }
+                ]
+            },
+            {
+                "clusters": [
+                    {
+                        "clusterLabel": "All seasons, All year, Spring and summer",
+                        "observationCount": 5,
+                        "totalNumberOfObservations": 10,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 8.33,
+                        "attribute": "season",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 50
+                    },
+                    {
+                        "clusterLabel": "Seasonal events and weather conditions",
+                        "observationCount": 5,
+                        "totalNumberOfObservations": 10,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 8.33,
+                        "attribute": "season",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 50
+                    }
+                ]
+            },
+            {
+                "clusters": [
+                    {
+                        "clusterLabel": "No information provided, Unknown",
+                        "observationCount": 3,
+                        "totalNumberOfObservations": 7,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 5,
+                        "attribute": "setupAndInstructions",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 42.86
+                    },
+                    {
+                        "clusterLabel": "No setup required, simple and clear instructions",
+                        "observationCount": 4,
+                        "totalNumberOfObservations": 7,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 6.67,
+                        "attribute": "setupAndInstructions",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 57.14
+                    }
+                ]
+            },
+            {
+                "clusters": [
+                    {
+                        "clusterLabel": "No information provided, Unknown",
+                        "observationCount": 3,
+                        "totalNumberOfObservations": 12,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 5,
+                        "attribute": "sizeAndFit",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 25
+                    },
+                    {
+                        "clusterLabel": "Size and Fit",
+                        "observationCount": 9,
+                        "totalNumberOfObservations": 12,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 15,
+                        "attribute": "sizeAndFit",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 75
+                    }
+                ]
+            },
+            {
+                "clusters": [
+                    {
+                        "clusterLabel": "Children of various ages and abilities",
+                        "observationCount": 49,
+                        "totalNumberOfObservations": 61,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 81.67,
+                        "attribute": "userDescription",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 80.33
+                    },
+                    {
+                        "clusterLabel": "Kids, students, and children",
+                        "observationCount": 12,
+                        "totalNumberOfObservations": 61,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 20,
+                        "attribute": "userDescription",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 19.67
+                    }
+                ]
+            },
+            {
+                "clusters": [
+                    {
+                        "clusterLabel": "Various usage scenarios for the product",
+                        "observationCount": 10,
+                        "totalNumberOfObservations": 14,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 16.67,
+                        "attribute": "whenTheProductIsUsed",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 71.43
+                    },
+                    {
+                        "clusterLabel": "When the product is used",
+                        "observationCount": 4,
+                        "totalNumberOfObservations": 14,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 6.67,
+                        "attribute": "whenTheProductIsUsed",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 28.57
+                    }
+                ]
+            },
+            {
+                "clusters": [
+                    {
+                        "clusterLabel": "Indoor and outdoor play areas for children",
+                        "observationCount": 28,
+                        "totalNumberOfObservations": 54,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 46.67,
+                        "attribute": "whereTheProductIsUsed",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 51.85
+                    },
+                    {
+                        "clusterLabel": "The product is used in various locations",
+                        "observationCount": 26,
+                        "totalNumberOfObservations": 54,
+                        "percentageOfObservationsVsTotalNumberOfReviews": 43.33,
+                        "attribute": "whereTheProductIsUsed",
+                        "percentageOfObservationsVsTotalNumberPerAttribute": 48.15
+                    }
+                ]
+            }
+        ]
+        // this.customerInsightsService.getCustomerInsights(id).subscribe(data => {
+        //     console.log(JSON.stringify(data));
+        // });
     }
 
 
