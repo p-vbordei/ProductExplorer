@@ -2,6 +2,7 @@ import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { AuthService } from 'src/app/demo/service/auth.service';
 import { LayoutService } from 'src/app/layout/service/app.layout.service';
 import { MessageService } from 'primeng/api';
+import { ActivatedRoute } from '@angular/router';
 
 export enum AuthState {
   LOGIN = 'LOGIN',
@@ -31,9 +32,15 @@ export class LoginComponent implements OnInit {
 
   redirect = ['/'];
 
-  constructor(private authService: AuthService, public layoutService: LayoutService, private messageService: MessageService) {}
+  constructor(private authService: AuthService, public layoutService: LayoutService, private messageService: MessageService, private route: ActivatedRoute) {}
 
-  ngOnInit(): void { }
+  ngOnInit(): void {
+    this.route.queryParams.subscribe(params => {
+      if (params['view'] === 'signup') {
+        this.currentState = AuthState.SIGNUP;
+      }
+    });
+   }
 
   async loginWithGoogle() {
     try {

@@ -11,6 +11,10 @@ export class AuthService {
 
   constructor(private auth: Auth, private router: Router) { }
 
+  get isLoggedIn(): boolean {
+    return !!this.auth.currentUser;
+  }
+  
   // Sign up with email and password
   async signUp(email: string, password: string): Promise<void> {
     try {
