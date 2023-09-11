@@ -123,6 +123,16 @@ async def get_completion_list(content_list, functions=None, function_call=None, 
     async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(timeout)) as session:
         return await asyncio.gather(*[get_completion(content, session, semaphore, progress_log, functions, function_call, GPT_MODEL) for content in content_list])
 
+async def get_completion_list_multifunction(content_list, functions_list, function_calls_list, GPT_MODEL=GPT_MODEL):
+    semaphore = asyncio.Semaphore(value=max_parallel_calls)
+    progress_log = ProgressLog(len(content_list) * len(functions_list))  # Adjust for multiple functions
+
+    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(timeout)) as session:
+        tasks = []
+        for i in range(len(functions_list)):
+            for content in content_list:
+                tasks.append(get_completion(content, session, semaphore, progress_log, functions_list[i], function_calls_list[i], GPT_MODEL))
+        return await asyncio.gather(*tasks)
 
 
 async def get_embedding(text: str, model="text-embedding-ada-002") -> list[float]:
