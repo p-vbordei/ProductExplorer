@@ -8,7 +8,8 @@
 
 
                 <div>
-                    <div *ngIf="!showSignUp">
+                    <p-toast></p-toast>
+                    <div *ngIf="currentState === AuthState.LOGIN">
                         <label for="email1" class="block text-900 text-xl font-medium mb-2">Email</label>
                         <input id="email1" type="text" placeholder="Email address" [(ngModel)]="email" pInputText
                             class="w-full md:w-30rem mb-5" style="padding:1rem">
@@ -18,9 +19,11 @@
                             styleClass="mb-5" inputStyleClass="w-full p-3 md:w-30rem"></p-password>
 
                         <div class="flex align-items-center justify-content-between mb-5 gap-5">
-                            <a (click)="toggleSignUp()" class="font-medium no-underline ml-2 text-right cursor-pointer"
+                            <a (click)="currentState = AuthState.SIGNUP"
+                                class="font-medium no-underline ml-2 text-right cursor-pointer"
                                 style="color: var(--primary-color)">Sign Up</a>
-                            <a class="font-medium no-underline ml-2 text-right cursor-pointer"
+                            <a (click)="currentState = AuthState.FORGOT_PASSWORD"
+                                class="font-medium no-underline ml-2 text-right cursor-pointer"
                                 style="color: var(--primary-color)">Forgot password?</a>
                         </div>
 
@@ -38,10 +41,10 @@
 
 
                     <!-- Sign Up Form (Initially hidden) -->
-                    <div *ngIf="showSignUp">
+                    <div *ngIf="currentState === AuthState.SIGNUP">
                         <label for="signupEmail" class="block text-900 text-xl font-medium mb-2">Email</label>
-                        <input id="signupEmail" type="text" placeholder="Email address" pInputText
-                            class="w-full md:w-30rem mb-5" style="padding:1rem">
+                        <input id="signupEmail" [(ngModel)]="signupEmail" type="text" placeholder="Email address"
+                            pInputText class="w-full md:w-30rem mb-5" style="padding:1rem">
 
                         <label for="signupPassword" class="block text-900 font-medium text-xl mb-2">Password</label>
                         <p-password id="signupPassword" [(ngModel)]="signupPassword" placeholder="Password"
@@ -52,14 +55,58 @@
                         <p-password id="confirmPassword" [(ngModel)]="confirmPassword" placeholder="Confirm Password"
                             [toggleMask]="true" styleClass="mb-5" inputStyleClass="w-full p-3 md:w-30rem"></p-password>
                         <div class="flex align-items-center justify-content-between mb-5 gap-5">
-                            <a (click)="toggleSignUp()" class="font-medium no-underline ml-2 text-right cursor-pointer"
+                            <a (click)="currentState = AuthState.LOGIN"
+                                class="font-medium no-underline ml-2 text-right cursor-pointer"
                                 style="color: var(--primary-color)">Already have an account? Sign In</a>
                         </div>
-                        <p-toast></p-toast>
+
                         <button pButton pRipple (click)="signUp()" label="Sign Up"
                             class="w-full p-3 text-xl mb-3"></button>
 
                     </div>
+
+                    <!-- Forgot Password Form (Step 1: Email Input) -->
+                    <div *ngIf="currentState === AuthState.FORGOT_PASSWORD">
+                        <label for="forgotEmail" class="block text-900 text-xl font-medium mb-2">Email</label>
+                        <input id="forgotEmail" [(ngModel)]="forgotEmail" type="text" placeholder="Email address"
+                            pInputText class="w-full md:w-30rem mb-5" style="padding:1rem">
+                        <div class="flex align-items-center justify-content-between mb-5 gap-5">
+                            <a (click)="currentState = AuthState.LOGIN"
+                                class="font-medium no-underline ml-2 text-right cursor-pointer"
+                                style="color: var(--primary-color)">Remembered your password? Go back to Sign In.</a>
+                        </div>
+                        <button pButton pRipple (click)="sendResetEmail()" label="Send Reset Email"
+                            class="w-full p-3 text-xl mb-3"></button>
+                    </div>
+
+                    <!-- Forgot Password Form (Step 2: Code and New Password Input) -->
+                    <div *ngIf="currentState === AuthState.RESET_PASSWORD">
+                        <label for="resetCode" class="block text-900 text-xl font-medium mb-2">Code</label>
+                        <input id="resetCode" type="text" placeholder="Enter the code from email" pInputText
+                            class="w-full md:w-30rem mb-5" style="padding:1rem">
+                        <label for="newPassword" class="block text-900 text-xl font-medium mb-2">New Password</label>
+                        <p-password id="newPassword" [(ngModel)]="newPassword" placeholder="New Password"
+                            [toggleMask]="true" styleClass="mb-5" inputStyleClass="w-full p-3 md:w-30rem"></p-password>
+
+                        <label for="confirmNewPassword" class="block text-900 text-xl font-medium mb-2">Confirm New
+                            Password</label>
+                        <p-password id="confirmNewPassword" [(ngModel)]="confirmNewPassword"
+                            placeholder="Confirm New Password" [toggleMask]="true" styleClass="mb-5"
+                            inputStyleClass="w-full p-3 md:w-30rem"></p-password>
+
+                        <div class="flex align-items-center justify-content-between mb-5 gap-5">
+                            <a (click)="sendResetEmail()"
+                                class="font-medium no-underline ml-2 text-right cursor-pointer"
+                                style="color: var(--primary-color)">Didn't receive the code? Click here to resend</a>
+                            <a (click)="currentState = AuthState.LOGIN"
+                                class="font-medium no-underline ml-2 text-right cursor-pointer"
+                                style="color: var(--primary-color)">Sign In</a>
+                        </div>
+
+                        <button pButton pRipple (click)="onConfirmPasswordReset()" label="Reset Password"
+                            class="w-full p-3 text-xl mb-3"></button>
+                    </div>
+
                 </div>
             </div>
         </div>

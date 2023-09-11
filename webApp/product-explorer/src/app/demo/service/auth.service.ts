@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
-import { Auth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, signOut, GoogleAuthProvider } from '@angular/fire/auth';
+import { Auth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, signOut, GoogleAuthProvider, sendPasswordResetEmail, confirmPasswordReset } from '@angular/fire/auth';
 
 @Injectable({
   providedIn: 'root'
@@ -28,8 +28,7 @@ export class AuthService {
       await signInWithEmailAndPassword(this.auth, email, password);
       await this.router.navigate(this.redirect);
     } catch (error) {
-      console.error("Sign Up Error:", error); // Log for debugging
-        throw error;
+      throw error;
     }
   }
 
@@ -51,6 +50,26 @@ export class AuthService {
       await this.router.navigate(['/auth/login']);  // Assuming you have a login route
     } catch (error) {
       throw new Error(error.message || 'Error during logout.');
+    }
+  }
+
+  async sendPasswordResetEmail(email: string): Promise<void> {
+    try {
+        await sendPasswordResetEmail(this.auth, email);
+    } catch (error) {
+        console.error("Forgot Password Error:", error); // Log for debugging
+        throw error;
+    }
+  }
+
+  async confirmPasswordReset(code: string, newPassword: string): Promise<void> {
+    try {
+        await confirmPasswordReset(this.auth, code, newPassword);
+        // Optionally, navigate the user to a different page after resetting the password
+        await this.router.navigate(['/login']);  // Assuming you have a login route
+    } catch (error) {
+        console.error("Password Reset Confirmation Error:", error); // Log for debugging
+        throw error;
     }
   }
 }
