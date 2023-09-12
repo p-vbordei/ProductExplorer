@@ -269,7 +269,6 @@ def extractTagsForReview(reviewUid, evalData):
     try:
         # Check if evalData is a dictionary
         if not isinstance(evalData, dict):  
-            logging.error(f"evalData is not a dictionary for review UID {reviewUid}. Data: {evalData}")
             return tags  # Return empty tags if evalData is not a dictionary
 
         # Loop through topics and labels in evalData
