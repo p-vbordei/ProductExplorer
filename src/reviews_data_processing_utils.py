@@ -157,15 +157,19 @@ def transform_rating_to_star_format(rating):
     else:
         raise ValueError("Rating must be a number between 1 and 5 or a textual value.")
 
+
 def add_uid_to_reviews(reviewsList):
     """
-    Adds a 'uid' to each review in the reviewsList based on its index.
+    Adds a 'uid' to each review in the reviewsList based on its index and 
+    returns a dictionary mapping from 'uid' to 'id'.
 
     Args:
     - reviewsList (list): List of dictionaries with reviews.
 
     Returns:
-    - list: Updated list of reviews with 'uid' added.
+    - tuple: A tuple containing:
+        - list: Updated list of reviews with 'uid' added.
+        - dict: Dictionary mapping from 'uid' to 'id'.
     """
 
     # Extract 'id' from each dictionary
@@ -178,11 +182,15 @@ def add_uid_to_reviews(reviewsList):
     # Create a mapping of 'id' to 'uid'
     id_to_uid_mapping = id_uid_df.set_index('id')['uid'].to_dict()
 
+    # Initialize dictionary for 'uid' to 'id' mapping
+    uid_to_id_mapping = {}
+
     # Add 'uid' to each dictionary in reviewsList
     for review in reviewsList:
         review['uid'] = id_to_uid_mapping.get(review['id'], None)
+        uid_to_id_mapping[review['uid']] = review['id']
 
-    return reviewsList
+    return reviewsList, uid_to_id_mapping
 
 
 
@@ -223,8 +231,6 @@ def generate_batches(reviews, max_tokens):
     return batches
 
 
-
-
 def aggregate_all_categories(data):
     """
     Aggregate items from all products under the same broad groupings.
@@ -248,37 +254,25 @@ def aggregate_all_categories(data):
     return aggregated_results
 
 
-
-def extractTagsForReview(reviewUid, evalData):
+def attach_tags_to_reviews(updatedReviewsList, sortedResult):
     """
-    Extract tags associated with a specific review UID from the evaluation data.
-
-    Parameters:
-    - reviewUid (int or str): The unique identifier for the review.
-    - evalData (dict): Dictionary containing evaluation data with topics and labels.
-
-    Returns:
-    - dict: A dictionary containing topics as keys and associated labels as values.
-
-    Notes:
-    - If the evalData is not a dictionary, an error is logged and an empty dictionary is returned.
-    - If there's an error during processing, it's logged and an empty dictionary is returned.
-    """
+    This function adds tags from sortedResults to the reviews in updatedReviewsList based on the uid.
     
-    tags = {}
-    try:
-        # Check if evalData is a dictionary
-        if not isinstance(evalData, dict):  
-            return tags  # Return empty tags if evalData is not a dictionary
-
-        # Loop through topics and labels in evalData
-        for topic, labels in evalData.items():
-            for label in labels:
-                # Check if the review UID matches with the label's UID
-                if reviewUid in label['uid']:
-                    tags[topic] = tags.get(topic, [])
-                    tags[topic].append(label['label'])
-    except Exception as e:
-        logging.error(f"Error in extractTagsForReview for UID {reviewUid}: {e}")
-        return {}
-    return tags
+    Args:
+    - updatedReviewsList (list): A list of dictionaries containing reviews.
+    - sortedResults (dict): A dictionary with tags for each uid.
+    
+    Returns:
+    - list: A list of dictionaries with the combined information.
+    """
+    for review in updatedReviewsList:
+        # Get uid from the review
+        uid = review.get('uid')
+        
+        # Fetch tags for the given uid from sortedResults
+        tags = sortedResult.get(uid, {})
+        
+        # Add tags to the review
+        review['tags'] = tags
+    
+    return updatedReviewsList
