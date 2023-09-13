@@ -12,13 +12,13 @@ import json
 
 try:
     from src import app
-    from src.reviews_data_processing_utils import process_datapoints, quantify_observations, generate_batches, add_uid_to_reviews, aggregate_all_categories, extractTagsForReview
+    from src.reviews_data_processing_utils import process_datapoints, quantify_observations, generate_batches, add_uid_to_reviews, aggregate_all_categories, attach_tags_to_reviews
     from src.firebase_utils import initialize_firestore, get_clean_reviews , write_reviews_to_firestore, save_cluster_info_to_firestore, write_insights_to_firestore
     from src.openai_utils import get_completion_list_multifunction, chat_completion_request
     from src.reviews_clustering import cluster_reviews, label_clusters
     from src.investigations import update_investigation_status
 except ImportError:
-    from reviews_data_processing_utils import process_datapoints, quantify_observations, generate_batches, add_uid_to_reviews, aggregate_all_categories, extractTagsForReview
+    from reviews_data_processing_utils import process_datapoints, quantify_observations, generate_batches, add_uid_to_reviews, aggregate_all_categories, attach_tags_to_reviews
     from firebase_utils import initialize_firestore, get_clean_reviews , write_reviews_to_firestore, save_cluster_info_to_firestore, write_insights_to_firestore
     from openai_utils import get_completion_list_multifunction, chat_completion_request
     from reviews_clustering import cluster_reviews, label_clusters
@@ -365,8 +365,11 @@ except Exception as e:
 
 
 # Allocate short Ids to reviews
-updatedReviewsList = add_uid_to_reviews(reviewsList)
+updatedReviewsList, uid_to_id_mapping = add_uid_to_reviews(reviewsList)
 
+
+
+# %%
 # Prepare Review Batches
 reviewBatches = generate_batches(updatedReviewsList, max_tokens=1000)
 
@@ -423,7 +426,7 @@ aggregatedResponses = aggregate_all_categories(evalResponses)
 GPT_MODEL = 'gpt-3.5-turbo-16k'
 
 messages = [
-    {"role": "user", "content": f"Process the results from a function runing on multiple reviews batches. Group together uid's from simmilar labels. Keep only what is distinct.\n {aggregatedResponses}"}
+    {"role": "user", "content": f"Process the results from a function runing on multiple reviews batches. Group together uid's from simmilar labels. Keep only what is distinct. Take a deep breath and work on this problem step-by-step.\n {aggregatedResponses}"}
 ]
 
 # Send the request to the LLM and get the response
@@ -439,9 +442,8 @@ response =  chat_completion_request(
 
 singleResponse = response.json()["choices"]
 
+##################
 # %%
-
-
 data = singleResponse[0]['message']['function_call']['arguments']
 processedData = json.loads(data)
 
@@ -468,26 +470,225 @@ for key, value_list in processedData.items():
                 result[uid] = {key: [label]}
 
 # Sort the result dictionary by 'uid' keys
-sorted_result = {k: result[k] for k in sorted(result)}
+sortedResult = {k: result[k] for k in sorted(result)}
 
-print(sorted_result)
+# %%
+def attach_tags_to_reviews(updatedReviewsList, sortedResult):
+    """
+    This function adds tags from sortedResults to the reviews in updatedReviewsList based on the uid.
+    
+    Args:
+    - updatedReviewsList (list): A list of dictionaries containing reviews.
+    - sortedResults (dict): A dictionary with tags for each uid.
+    
+    Returns:
+    - list: A list of dictionaries with the combined information.
+    """
+    for review in updatedReviewsList:
+        # Get uid from the review
+        uid = review.get('uid')
+        
+        # Fetch tags for the given uid from sortedResults
+        tags = sortedResult.get(uid, {})
+        
+        # Add tags to the review
+        review['tags'] = tags
+    
+    return updatedReviewsList
+
+# Example usage
+tagedReviews = attach_tags_to_reviews(updatedReviewsList, sortedResult)
+
+# %%
+# get the asin and review text for each uid
+uid_to_asin = {review['uid']: review['asin'] for review in tagedReviews}
+uid_to_text = {review['uid']: review['text'] for review in tagedReviews}
+uid_to_raing = {review['uid']: review['rating'] for review in tagedReviews}
+
+# %%
+# Add asin to each uid
+for key, value_list in processedData.items():
+    for item in value_list:
+        item['asin'] = [uid_to_asin[uid] for uid in item['uid']]
+
+# Add rating to each uid
+for key, value_list in processedData.items():
+    for item in value_list:
+        item['rating'] = [uid_to_raing[uid] for uid in item['uid']]
+
+    
+# %%
+def quantify_category_data(inputData):
+    processedData = {}
+    
+    for categoryKey, labels in inputData.items():
+        categoryTotalObservations = sum([len(labelData['uid']) for labelData in labels])
+        processedLabels = []
+        
+        for labelData in labels:
+            labelObservations = len(labelData['uid'])
+            labelPercentage = (labelObservations / categoryTotalObservations) * 100
+            formattedLabelPercentage = int("{:.0f}".format(labelPercentage))
+
+            
+            # Calculate average rating for label
+            averageRating = sum(labelData['rating']) / len(labelData['rating'])
+            formattedAverageRating = float("{:.1f}".format(averageRating))
+            
+            processedLabelData = {
+                'label': labelData['label'],
+                'uid': labelData['uid'],
+                'asin': list(set(labelData['asin'])),
+                '#': labelObservations,
+                '%': formattedLabelPercentage,
+                '*': formattedAverageRating
+            }
+            
+            processedLabels.append(processedLabelData)
+        
+        processedData[categoryKey] = processedLabels
+    
+    return processedData
+
+
+# %%
+quantifiedData = quantify_category_data(processedData)
+
+# %%
+# Add the text from the reviews to each label
+uid_to_text = {review['uid']: review['text'] for review in tagedReviews}
+
+for key, value_list in quantifiedData.items():
+    for item in value_list:
+        item['voiceOfCustomer'] = [uid_to_text[uid] for uid in item['uid']]
+
+
+# %%
+# Add id to each uid
+quantifiedDataId = quantifiedData.copy()
+for key, value_list in quantifiedDataId.items():
+    for item in value_list:
+        item['id'] = [uid_to_id_mapping[uid] for uid in item['uid']]
+
+# %%
+minimumQuantifiedData = {
+    key: [{k: entry[k] for k in ['label', '#', '*']} for entry in value]
+    for key, value in quantifiedData.items()
+}
 
 
 # %%
 
 
+problemIdentificationFunction = [
+    {
+        'name': 'identify_problems',
+        'description': "Select up to ten issues to be further investigated by the engineering team",
+        'parameters': {
+            'type': 'object',
+            'properties': {
+                'clusters': {
+                    'description': "A list of issues to be further investigated by the engineering team",
+                    'type': 'array',
+                    'items': {
+                        'type': 'object',
+                        'properties': {
+                            'name': {
+                                'type': 'string',
+                                'description': "Name of the issue to investigate"
+                            },
+                            'topics': {
+                                'type': 'array',
+                                'items': {
+                                    'type': 'object',
+                                    'properties': {
+                                        'label': {'type': 'string'},
+                                        'reason': {
+                                            'type': 'string',
+                                            'description': "Reason for investigating this topic"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+]
 
-# RAMAS DE FACUT: DE SCRIS O FUNCTIE CARE TRECE PRIN FIECARE UID SI SALVEAZA INTR_UN CAMP TAGS Date astea
 
-# Update the reviewsList to include tags
-for reviewDict in updatedReviewsList:
-    reviewUid = reviewDict['uid']
-    tagsForReview = {}
-    for data in aggregatedResponses:
-        tags = extractTagsForReview(reviewUid, data)
-        tagsForReview.update(tags)
-    if tagsForReview:
-        reviewDict['tags'] = tagsForReview
+
+
+
+
+print(problemIdentificationFunction)
 
 
 # %%
+
+problemIdentificationFunction = [{'name': 'identify_problems', 'description': 'Select up to ten issues to be further investigated by the engineering team', 'parameters': {'type': 'object', 'properties': {'clusters': {'description': 'A list of issues to be further investigated by the engineering team', 'type': 'array', 'items': {'type': 'object', 'properties': {'name': {'type': 'string', 'description': 'Name of the issue to investigate'}, 'topics': {'type': 'array', 'items': {'type': 'object', 'properties': {'label': {'type': 'string'}, 'reason': {'type': 'string', 'description': 'Reason for investigating this topic'}}}}}}}}}}]
+# %%
+GPT_MODEL = 'gpt-3.5-turbo'
+
+messages = [
+    {"role": "user", "content": f" What should the engineering team investigate? Select up to ten most important topics.Take a deep breath and work on this problem step-by-step. Data structure: [<key>: dict( 'label' ,'#': number of observations.'*': average rating.) \n{minimumQuantifiedData} \n"}
+]
+# %%
+
+# Send the request to the LLM and get the response
+response =  chat_completion_request(
+    messages=messages,
+    functions=problemIdentificationFunction,
+    function_call={"name": "identify_problems"},
+    temperature=0.3,
+    model=GPT_MODEL
+)
+
+# %%
+# Process the response and store in the dictionary
+
+singleResponse = response.json()["choices"]
+
+# %%
+data = singleResponse[0]['message']['function_call']['arguments']
+problemsToBeInvestigated = json.loads(data)
+
+#############
+
+# %%
+
+# %%
+problem_statement_function = [
+    {
+        "name": "problem_statement_function",
+        "description": """This function is designed to isolate and describe a singular, primary issue with a product being sold on Amazon, using the data from customer complaints and the product's description. 
+        Example Output:     
+            "problem_identification": "Lack of durability and insufficient planting space",
+            "problem_statement": "The garden beds are perceived as flimsy and require additional support. They also appear to provide less planting space than customers expected.",
+            "customer_voice_examples": [
+                "The garden beds are flimsy and require additional support with wood framing.", 
+                "Wished for more room for additional grow beds", 
+                "Oval-shaped box loses a little planting space, but not worried about it at this time"
+                ]""",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "problem_identification": {
+                    "type": "string",
+                    "description": "From the given data, identify and articulate the key problem or issue with the product." 
+                },
+                "problem_statement": {
+                    "type": "string",
+                    "description": "Elaborate on the identified problem, providing a detailed statement based on the observations made. This should be within a range of 200 words." 
+                },
+                "customer_voice_examples": {
+                    "type": "string",
+                    "description": "Select and provide quotes from customer complaints which further detail the problem and illustrate its impact. This should be up to 10 examples and within a range of 10 - 200 words." 
+                },
+            },
+            "required": ["problem_identification", "problem_statement", "customer_voice_examples"]
+        }
+    }
+]
