@@ -385,238 +385,8 @@ for batch in reviewBatches:
     contentList.append(messages)
 
 
-
-marketFunctions = [
-            {
-                "name": "market",
-                "description": "Naming follows the JTBD framework. Group reviews on topics for each type of job and be sure to that each label is described in two sentences. Extract associated review ids.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "useCase": {
-                            "description": "Identifies the specific use case",
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "label": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "productComparison": {
-                            "description": "Compare the product to competitors",
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "label": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "featureRequest": {
-                            "description": "Identifies the requested features or enhancements",
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "label": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "painPoints": {
-                            "description": "Identifies the different pain points, specific challenges or problems customers encountered",
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "label": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "usageFrequency": {
-                            "description": "Identifies the  patterns of usage frequency discussed",
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "label": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "usageTime": {
-                            "description": "Identifies when the product is used",
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "label": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "usageLocation": {
-                            "description": "Identifies where the product is used",
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "label": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "customerDemographics": {
-                            "description": "Identifies the different demographic segments",
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "label": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "functionalJob": {
-                            "description": "Identifies main tasks or problems the product solves",
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "label": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "socialJob": {
-                            "description": "Identifies how users want to be seen by others using the product",
-                            "type": "array",
-                            "items": {      
-                                "type": "object",
-                                "properties": {
-                                    "label": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "emotionalJob": {
-                            "description": "Identifies the feelings or states users aim to achieve with the product",
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "label": {
-                                        "type": "string",
-                                    },
-                                    "description": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "supportingJob": {
-                            "description": "Identifies the tasks or activities that aid the main function of the product",
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "label": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                } 
-                        }    }
-                    }
-                }
-            }
-        ]
-
-
+# am dat print la functiile de mai sus pt a reduce numarul de spatii albe care erau luate drept tokens
+marketFunctions = [{'name': 'market', 'description': 'Naming follows the JTBD framework. Group reviews on topics for each type of job and be sure to that each label is described in two sentences. Extract associated review ids.', 'parameters': {'type': 'object', 'properties': {'useCase': {'description': 'Identifies the specific use case', 'type': 'array', 'items': {'type': 'object', 'properties': {'label': {'type': 'string'}, 'uid': {'type': 'array', 'items': {'type': 'number'}}}}}, 'productComparison': {'description': 'Compare the product to competitors', 'type': 'array', 'items': {'type': 'object', 'properties': {'label': {'type': 'string'}, 'uid': {'type': 'array', 'items': {'type': 'number'}}}}}, 'featureRequest': {'description': 'Identifies the requested features or enhancements', 'type': 'array', 'items': {'type': 'object', 'properties': {'label': {'type': 'string'}, 'uid': {'type': 'array', 'items': {'type': 'number'}}}}}, 'painPoints': {'description': 'Identifies the different pain points, specific challenges or problems customers encountered', 'type': 'array', 'items': {'type': 'object', 'properties': {'label': {'type': 'string'}, 'uid': {'type': 'array', 'items': {'type': 'number'}}}}}, 'usageFrequency': {'description': 'Identifies the  patterns of usage frequency discussed', 'type': 'array', 'items': {'type': 'object', 'properties': {'label': {'type': 'string'}, 'uid': {'type': 'array', 'items': {'type': 'number'}}}}}, 'usageTime': {'description': 'Identifies when the product is used', 'type': 'array', 'items': {'type': 'object', 'properties': {'label': {'type': 'string'}, 'uid': {'type': 'array', 'items': {'type': 'number'}}}}}, 'usageLocation': {'description': 'Identifies where the product is used', 'type': 'array', 'items': {'type': 'object', 'properties': {'label': {'type': 'string'}, 'uid': {'type': 'array', 'items': {'type': 'number'}}}}}, 'customerDemographics': {'description': 'Identifies the different demographic segments', 'type': 'array', 'items': {'type': 'object', 'properties': {'label': {'type': 'string'}, 'uid': {'type': 'array', 'items': {'type': 'number'}}}}}, 'functionalJob': {'description': 'Identifies main tasks or problems the product solves', 'type': 'array', 'items': {'type': 'object', 'properties': {'label': {'type': 'string'}, 'uid': {'type': 'array', 'items': {'type': 'number'}}}}}, 'socialJob': {'description': 'Identifies how users want to be seen by others using the product', 'type': 'array', 'items': {'type': 'object', 'properties': {'label': {'type': 'string'}, 'uid': {'type': 'array', 'items': {'type': 'number'}}}}}, 'emotionalJob': {'description': 'Identifies the feelings or states users aim to achieve with the product', 'type': 'array', 'items': {'type': 'object', 'properties': {'label': {'type': 'string'}, 'description': {'type': 'string'}, 'uid': {'type': 'array', 'items': {'type': 'number'}}}}}, 'supportingJob': {'description': 'Identifies the tasks or activities that aid the main function of the product', 'type': 'array', 'items': {'type': 'object', 'properties': {'label': {'type': 'string'}, 'uid': {'type': 'array', 'items': {'type': 'number'}}}}}}}}]
 # Define function sets and function calls
 functionsList = [
     marketFunctions
@@ -820,4 +590,284 @@ minimumVoiceOfCustomerInput = {
     for key, value in quantifiedData.items() if key in categoriesToInvestigate
 }
 
+remainingQuantifiedDataInput = {
+    key: [{k: entry[k] for k in ['label', '#', '*',]} for entry in value]
+    for key, value in quantifiedData.items() if key in quantifiedData.keys() - categoriesToInvestigate
+}
 
+
+# %%
+
+from firebase_utils import get_product_data_from_investigation
+# %%
+try:
+    productDescription = get_product_data_from_investigation(db, investigationId)
+    logging.info("Retrieved product description successfully.")
+except Exception as e:
+    logging.error(f"Error getting product description: {e}")
+
+
+
+
+# %%
+problemStatementFunction = [
+    {
+        "name": "problem_statement_function",
+        "description": "This function is designed to isolate and describe singular, primary issues with products being sold on Amazon, using data from customer complaints and the product's description. Be very detailed and specific.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "problemStatements": {
+                    "type": "array",
+                    "description": "An array of problem statements, each containing problem identification, statement, and customer voice examples.",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "problem_identification": {
+                                "type": "string",
+                                "description": "Identify the key problem or issue with the product."
+                            },
+                            "problem_statement": {
+                                "type": "string",
+                                "description": "Elaborate on the identified problem, providing a detailed statement based on observations made. Be sure to include the context of the observation. This should be within a range of 200 words."
+                            },
+                            "customer_voice_examples": {
+                                "type": "array",
+                                "description": "Select and provide quotes from customer complaints that further detail the problem and illustrate its impact. This should be up to 5 examples and within a range of 10 - 200 words.",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "uid": {
+                                "type": "array",
+                                "description": "List of all uids for the reviews that are related or can be to used to describe, inform, enhance the problem statement. They will be provided to the engineering team to help drive a solution to the problem.",
+                                "items": {
+                                    "type": "number"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+]
+
+# %%
+GPT_MODEL = "gpt-3.5-turbo-16k"
+
+messages = [
+    {"role": "user", "content": f"Using the provided customer feedback and product description data, identify issues or opportunities and write problem statements.  PRODUCT DESCRIPTION: {productDescription} \n PRODUCT OBSEVATIONS: {minimumVoiceOfCustomerInput}, \n WHAT CUSTOMERS REVIEW: {remainingQuantifiedDataInput}"}
+]
+# Send the request to the LLM and get the response
+response =  chat_completion_request(
+    messages=messages,
+    functions=problemStatementFunction,
+    function_call={"name": "problem_statement_function"},
+    temperature=0.5,
+    model=GPT_MODEL
+)
+
+# Process the response and store in the dictionary
+
+singleResponse = response.json()["choices"]
+print(response.json()['usage'])
+
+data = singleResponse[0]['message']['function_call']['arguments']
+problemsToBeInvestigated = json.loads(data)
+
+problemsToBeInvestigated
+
+
+
+#######
+# %%
+
+productImprovementFunction = [
+    {
+        "name": "production_line_improvement_function",
+        "description": "Generate up to three product modification solutions that require changes to the production line, primary mould, or materials. These solutions are derived from customer feedback and the product's current specifications. Each solution should include a clear rationale and a step-by-step guide for implementation, ensuring thoroughness without resorting to non-standard technical jargon. All instructions should be easily understood by engineers in the relevant domain.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "productImprovements": {
+                    "type": "array",
+                    "description": "An array of product improvements, each containing a title, implementation details for the engineer, and considerations.",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "Title": {
+                                "type": "string",
+                            },
+                            "Details": {
+                                "type": "string",
+                            },
+                            "Implementation": {
+                                "type": "array",
+                                "description": "List of changes to the production line that will improve the product.",
+                                 "items": { 
+                                    "type": "object",
+                                    "properties": {
+                                        "component": { "type": "string" },
+                                        "change": { "type": "string" },
+                                        "reason": { "type": "string" },
+                                        "risk": { "type": "string" },
+                                        "benefit": { "type": "string" },
+                                        "notes": { "type": "string" }
+                                    }
+                        }}}
+                    }
+                }
+            }
+        }
+    }
+]
+
+# %%
+
+categoriesForProductImprovement = ['customerDemographics', 'useCase', 'functionalJob', 'usageLocation',]
+functionalVoiceOfCustomerInput = {
+    key: [
+        {
+            k: entry[k] if k != 'uid' else entry[k][:10]  # Limit the number of items in 'uid' to 10
+            for k in ['label', '#', '*', 'voiceOfCustomer', 'uid']
+        }
+        for entry in value
+    ]
+    for key, value in quantifiedData.items() if key in categoriesForProductImprovement
+}
+
+# %%
+
+GPT_MODEL = "gpt-3.5-turbo-16k"
+
+messages = [
+    {"role": "user", "content": f"PROBLEM STATEMENT: {problemsToBeInvestigated} \n PRODUCT DESCRIPTION: {productDescription} \n PRODUCT OBSEVATIONS: {functionalVoiceOfCustomerInput}, \n WHAT CUSTOMERS REVIEW: {minimumQuantifiedData}. "}
+]
+
+# %%
+
+# Send the request to the LLM and get the response
+response =  chat_completion_request(
+    messages=messages,
+    functions=productImprovementFunction,
+    function_call={"name": "production_line_improvement_function"},
+    temperature=0.5,
+    model=GPT_MODEL
+)
+
+# Process the response and store in the dictionary
+
+singleResponse = response.json()["choices"]
+print(response.json()['usage'])
+
+data = singleResponse[0]['message']['function_call']['arguments']
+
+try:
+    proposedProductImprovements = json.loads(data)
+except:
+    proposedProductImprovements = eval(data)
+    
+
+proposedProductImprovements
+# %%
+
+
+
+
+
+packagingImprovementFunction = [
+    {
+        "name": "CostEffectiveImprovements",
+        "description": "Generate up to ten cheap improvements",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "productImprovements": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "Title": {
+                                "type": "string",
+                            },
+                            "Details": {
+                                "type": "string",
+                            },
+                            "Implementation": {
+                                "type": "array",
+                                "description": "List of changes to the packaging or added items that will enhance the product.",
+                                "items": { 
+                                    "type": "object",
+                                    "properties": {
+                                        "component": { "type": "string" },
+                                        "change": { "type": "string" },
+                                        "reason": { "type": "string" },
+                                        "benefit": { "type": "string" },
+                                        "notes": { "type": "string" },
+                                        "cost": { "type": "string" },
+                                        "time": { "type": "string" }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+]
+
+
+
+categoriesForPackagingImprovement = ['useCase', 'functionalJob', 'customerDemographics', 'socialJob', 'emotionalJob', 'supportingJob']
+
+emotionalVoiceOfCustomerInput = {
+    key: [
+        {
+            k: entry[k] if k != 'uid' else entry[k][:3]  # Limit the number of items in 'uid' to 10
+            for k in ['label', '#', '*', 'voiceOfCustomer', 'uid']
+        }
+        for entry in value
+    ]
+    for key, value in quantifiedData.items() if key in categoriesForPackagingImprovement
+}
+
+remainingQuantifiedDataInput = {
+    key: [{k: entry[k] for k in ['label', '#', '*',]} for entry in value]
+    for key, value in quantifiedData.items() if key in quantifiedData.keys() - categoriesForPackagingImprovement
+}
+# %%
+
+GPT_MODEL = "gpt-3.5-turbo-16k"
+
+messages = [
+    {"role": "user", "content": f"PRODUCT DESCRIPTION: {productDescription} \n PRODUCT OBSEVATIONS: {emotionalVoiceOfCustomerInput} \n WHAT CUSTOMERS REVIEW: {remainingQuantifiedDataInput}  \n "}
+]
+
+# %%
+
+# Send the request to the LLM and get the response
+response =  chat_completion_request(
+    messages=messages,
+    functions=packagingImprovementFunction,
+    function_call={"name": "CostEffectiveImprovements"},
+    temperature=0.5,
+    model=GPT_MODEL
+)
+
+# Process the response and store in the dictionary
+
+singleResponse = response.json()["choices"]
+print(response.json()['usage'])
+
+data = singleResponse[0]['message']['function_call']['arguments']
+
+try:
+    proposedProductImprovements = json.loads(data)
+except:
+    proposedProductImprovements = eval(data)
+    
+
+proposedProductImprovements
+# %%
