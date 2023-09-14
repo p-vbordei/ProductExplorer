@@ -276,3 +276,36 @@ def attach_tags_to_reviews(updatedReviewsList, sortedResult):
         review['tags'] = tags
     
     return updatedReviewsList
+
+
+def quantify_category_data(inputData):
+    processedData = {}
+    
+    for categoryKey, labels in inputData.items():
+        categoryTotalObservations = sum([len(labelData['uid']) for labelData in labels])
+        processedLabels = []
+        
+        for labelData in labels:
+            labelObservations = len(labelData['uid'])
+            labelPercentage = (labelObservations / categoryTotalObservations) * 100
+            formattedLabelPercentage = int("{:.0f}".format(labelPercentage))
+
+            
+            # Calculate average rating for label
+            averageRating = sum(labelData['rating']) / len(labelData['rating'])
+            formattedAverageRating = float("{:.1f}".format(averageRating))
+            
+            processedLabelData = {
+                'label': labelData['label'],
+                'uid': labelData['uid'],
+                'asin': list(set(labelData['asin'])),
+                '#': labelObservations,
+                '%': formattedLabelPercentage,
+                '*': formattedAverageRating
+            }
+            
+            processedLabels.append(processedLabelData)
+        
+        processedData[categoryKey] = processedLabels
+    
+    return processedData
