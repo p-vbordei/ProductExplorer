@@ -15,7 +15,7 @@ try:
     from src.reviews_data_processing_utils import process_datapoints, quantify_observations, generate_batches, add_uid_to_reviews, aggregate_all_categories, attach_tags_to_reviews
     from src.firebase_utils import initialize_firestore, get_clean_reviews , write_reviews_to_firestore, save_cluster_info_to_firestore, write_insights_to_firestore, get_product_data_from_investigation
     from src.openai_utils import get_completion_list_multifunction, chat_completion_request
-    from src.reviews_clustering import cluster_reviews, label_clusters
+    from notebooks.obsolete.reviews_clustering import cluster_reviews, label_clusters
     from src.investigations import update_investigation_status
 except ImportError:
     from reviews_data_processing_utils import process_datapoints, quantify_observations, generate_batches, add_uid_to_reviews, aggregate_all_categories, attach_tags_to_reviews
@@ -871,3 +871,8 @@ except:
 
 proposedProductImprovements
 # %%
+
+
+- Problem Statements are identified and described for each of the clusters
+- Solutions for the Problem Statements are created and clustered. They are presented as solutions prepared by junior engineers.
+- Product Improvements are generated based on product understanding and previously presented solution clusters.
