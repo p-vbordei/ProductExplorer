@@ -16,7 +16,7 @@ except ImportError:
         from .firebase_utils import initialize_firestore
 
 # Your ASINs
-asinList = ['B09XM29XGF', 'B09WR4BW2Y']
+# asinList = ['B09XM29XGF', 'B09WR4BW2Y']
 
 
 # Amazon Scraper details
