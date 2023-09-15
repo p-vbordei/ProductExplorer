@@ -433,7 +433,7 @@ def run_reviews_investigation(investigationId: str) -> None:
         logging.error("Error writing quantified data to Firestore.")
         return
     
-    if not write_reviews_to_firestore(investigationId, tagedReviews, db):
+    if not write_reviews_to_firestore(tagedReviews, db):
         logging.error("Error writing processed reviews to Firestore.")
         return
 

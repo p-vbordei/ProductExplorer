@@ -1,1 +1,165 @@
-[{"id":"RPA4RSMM6W49O","asin":{"original":"B08X2324ZL","variant":"B08X2324ZL"},"review_data":"Reviewed in the United States on August 2, 2023","date":{"date":"August 2, 2023","unix":1690930800},"name":"jim","rating":1,"title":"1.0 out of 5 starsPoor quality product!","review":"I installed this garden system one year ago and it is already completely rusting out. The center bar that is supposed to hold the sides in so they don’t push outward from the dirt has completely rusted through and broken as you can see in the pictures. This is not a very quality product and it was very time-consuming to put together and is very flimsy. Don’t waste your money.","verified_purchase":false,"media":["https://m.media-amazon.com/images/I/915l0zUWIcL._SL1600_.jpg","https://m.media-amazon.com/images/I/91sqoI6DrZL._SL1600_.jpg","https://m.media-amazon.com/images/I/91ttkFtbdwL._SL1600_.jpg"]},{"id":"R2LQ0ZW4S3KXKY","asin":{"original":"B08X2324ZL","variant":"B08X2324ZL"},"review_data":"Reviewed in the United States on July 26, 2023","date":{"date":"July 26, 2023","unix":1690326000},"name":"AC","rating":5,"title":"5.0 out of 5 starsEasy to build","review":"I put this together in an hour and planted in July. My seeds have already sprouted and I love that it won’t require weeding. Saves my back from having to bend over as much too.","verified_purchase":false,"media":[]},{"id":"R1TPG96Z1XO0JA","asin":{"original":"B08X2324ZL","variant":"B0BW4XNWLQ"},"review_data":"Reviewed in the United States on July 26, 2023","date":{"date":"July 26, 2023","unix":1690326000},"name":"Norma","rating":5,"title":"5.0 out of 5 starsRAISED GARDEN BED","review":"I really love this raised bed, it was easy to assemble, the height and depth was perfect. I am thinking about purchasing another one.","verified_purchase":false,"media":[]},{"id":"RRSNNGRFUWWNI","asin":{"original":"B08X2324ZL","variant":"B08X2324ZL"},"review_data":"Reviewed in the United States on July 26, 2023","date":{"date":"July 26, 2023","unix":1690326000},"name":"Robyn S","rating":5,"title":"5.0 out of 5 starsWonderful Garden boxes","review":"These look great! We have gotten several compliments on the garden upgrades.","verified_purchase":false,"media":[]},{"id":"R3V71M837JKG65","asin":{"original":"B08X2324ZL","variant":"B08X2324ZL"},"review_data":"Reviewed in the United States on July 25, 2023","date":{"date":"July 25, 2023","unix":1690239600},"name":"heather","rating":5,"title":"5.0 out of 5 starsVery easy to build!","review":"I don’t know why people are complaining about the build being complicated. The directions were very simple. I bought two as a gift and the second one we built in half the time. The screwing can be tedious but that’s the worst of it.","verified_purchase":false,"media":[]},{"id":"RZ2D7O2K66L4Y","asin":{"original":"B08X2324ZL","variant":"B08X2324ZL"},"review_data":"Reviewed in the United States on July 20, 2023","date":{"date":"July 20, 2023","unix":1689807600},"name":"E Hopper","rating":4,"title":"4.0 out of 5 starsGood enough","review":"This raised bed is serving it's purpose and once it's fill it works fine, but it's kinda flimsy. The bar that goes down the middle is VERY flimsy.","verified_purchase":false,"media":[]},{"id":"R3LTTKKHNUC43E","asin":{"original":"B08X2324ZL","variant":"B08X2324ZL"},"review_data":"Reviewed in the United States on July 17, 2023","date":{"date":"July 17, 2023","unix":1689548400},"name":"moparguy","rating":3,"title":"3.0 out of 5 starsLight duty planter boxes","review":"The price was ok.I had a few bad fasteners in the lot.I ordered 2 and got 4. I had a hard time getting the supplier to pick up the return freight. I don't know where the order got fouled up. Finally got it resolved.","verified_purchase":false,"media":[]},{"id":"RQEDCVXFP06Q1","asin":{"original":"B08X2324ZL","variant":"B09TQ6B8V6"},"review_data":"Reviewed in the United States on July 16, 2023","date":{"date":"July 16, 2023","unix":1689462000},"name":"Davis","rating":4,"title":"4.0 out of 5 starsLight weight bendable","review":"I liked the overall form and support bars. It requires additional tightening of screws once in place. It is serving its purpose as of right now. My concern is holding form if I ever have to move it. It does bend easily!","verified_purchase":false,"media":[]},{"id":"R39SXPD56LYG1R","asin":{"original":"B08X2324ZL","variant":"B0BW4XNWLQ"},"review_data":"Reviewed in the United States on July 11, 2023","date":{"date":"July 11, 2023","unix":1689030000},"name":"Christy H","rating":1,"title":"1.0 out of 5 starsAwful","review":"It was hard to put together and cheap.","verified_purchase":false,"media":[]},{"id":"R33HYTMSHD1Z9P","asin":{"original":"B08X2324ZL","variant":"B08X2324ZL"},"review_data":"Reviewed in the United States on July 5, 2023","date":{"date":"July 5, 2023","unix":1688511600},"name":"Michael Mohr","rating":5,"title":"5.0 out of 5 starsGood Quality","review":"Easy to maintain","verified_purchase":false,"media":[]}]
+[
+    {
+        "id": "RPA4RSMM6W49O",
+        "asin": "B08X2324ZL",
+        "review_data": "Reviewed in the United States on August 2, 2023",
+        "date": {
+            "date": "August 2, 2023",
+            "unix": 1690930800
+        },
+        "name": "jim",
+        "rating": 1,
+        "title": "1.0 out of 5 starsPoor quality product!",
+        "text": "I installed this garden system one year ago and it is already completely rusting out. The center bar that is supposed to hold the sides in so they don’t push outward from the dirt has completely rusted through and broken as you can see in the pictures. This is not a very quality product and it was very time-consuming to put together and is very flimsy. Don’t waste your money.",
+        "verified_purchase": false,
+        "media": [
+            "https://m.media-amazon.com/images/I/915l0zUWIcL._SL1600_.jpg",
+            "https://m.media-amazon.com/images/I/91sqoI6DrZL._SL1600_.jpg",
+            "https://m.media-amazon.com/images/I/91ttkFtbdwL._SL1600_.jpg"
+        ]
+    },
+    {
+        "id": "R2LQ0ZW4S3KXKY",
+        "asin": "B08X2324ZL",
+        "review_data": "Reviewed in the United States on July 26, 2023",
+        "date": {
+            "date": "July 26, 2023",
+            "unix": 1690326000
+        },
+        "name": "AC",
+        "rating": 5,
+        "title": "5.0 out of 5 starsEasy to build",
+        "text": "I put this together in an hour and planted in July. My seeds have already sprouted and I love that it won’t require weeding. Saves my back from having to bend over as much too.",
+        "verified_purchase": false,
+        "media": []
+    },
+    {
+        "id": "R1TPG96Z1XO0JA",
+        "asin": {
+            "original": "B08X2324ZL",
+            "variant": "B0BW4XNWLQ"
+        },
+        "review_data": "Reviewed in the United States on July 26, 2023",
+        "date": {
+            "date": "July 26, 2023",
+            "unix": 1690326000
+        },
+        "name": "Norma",
+        "rating": 5,
+        "title": "5.0 out of 5 starsRAISED GARDEN BED",
+        "text": "I really love this raised bed, it was easy to assemble, the height and depth was perfect. I am thinking about purchasing another one.",
+        "verified_purchase": false,
+        "media": []
+    },
+    {
+        "id": "RRSNNGRFUWWNI",
+        "asin": "B08X2324ZL",
+        "review_data": "Reviewed in the United States on July 26, 2023",
+        "date": {
+            "date": "July 26, 2023",
+            "unix": 1690326000
+        },
+        "name": "Robyn S",
+        "rating": 5,
+        "title": "5.0 out of 5 starsWonderful Garden boxes",
+        "text": "These look great! We have gotten several compliments on the garden upgrades.",
+        "verified_purchase": false,
+        "media": []
+    },
+    {
+        "id": "R3V71M837JKG65",
+        "asin": "B08X2324ZL",
+        "review_data": "Reviewed in the United States on July 25, 2023",
+        "date": {
+            "date": "July 25, 2023",
+            "unix": 1690239600
+        },
+        "name": "heather",
+        "rating": 5,
+        "title": "5.0 out of 5 starsVery easy to build!",
+        "text": "I don’t know why people are complaining about the build being complicated. The directions were very simple. I bought two as a gift and the second one we built in half the time. The screwing can be tedious but that’s the worst of it.",
+        "verified_purchase": false,
+        "media": []
+    },
+    {
+        "id": "RZ2D7O2K66L4Y",
+        "asin": "B08X2324ZL",
+        "review_data": "Reviewed in the United States on July 20, 2023",
+        "date": {
+            "date": "July 20, 2023",
+            "unix": 1689807600
+        },
+        "name": "E Hopper",
+        "rating": 4,
+        "title": "4.0 out of 5 starsGood enough",
+        "text": "This raised bed is serving it's purpose and once it's fill it works fine, but it's kinda flimsy. The bar that goes down the middle is VERY flimsy.",
+        "verified_purchase": false,
+        "media": []
+    },
+    {
+        "id": "R3LTTKKHNUC43E",
+        "asin": "B08X2324ZL",
+        "review_data": "Reviewed in the United States on July 17, 2023",
+        "date": {
+            "date": "July 17, 2023",
+            "unix": 1689548400
+        },
+        "name": "moparguy",
+        "rating": 3,
+        "title": "3.0 out of 5 starsLight duty planter boxes",
+        "text": "The price was ok.I had a few bad fasteners in the lot.I ordered 2 and got 4. I had a hard time getting the supplier to pick up the return freight. I don't know where the order got fouled up. Finally got it resolved.",
+        "verified_purchase": false,
+        "media": []
+    },
+    {
+        "id": "RQEDCVXFP06Q1",
+        "asin": {
+            "original": "B08X2324ZL",
+            "variant": "B09TQ6B8V6"
+        },
+        "review_data": "Reviewed in the United States on July 16, 2023",
+        "date": {
+            "date": "July 16, 2023",
+            "unix": 1689462000
+        },
+        "name": "Davis",
+        "rating": 4,
+        "title": "4.0 out of 5 starsLight weight bendable",
+        "text": "I liked the overall form and support bars. It requires additional tightening of screws once in place. It is serving its purpose as of right now. My concern is holding form if I ever have to move it. It does bend easily!",
+        "verified_purchase": false,
+        "media": []
+    },
+    {
+        "id": "R39SXPD56LYG1R",
+        "asin": {
+            "original": "B08X2324ZL",
+            "variant": "B0BW4XNWLQ"
+        },
+        "review_data": "Reviewed in the United States on July 11, 2023",
+        "date": {
+            "date": "July 11, 2023",
+            "unix": 1689030000
+        },
+        "name": "Christy H",
+        "rating": 1,
+        "title": "1.0 out of 5 starsAwful",
+        "text": "It was hard to put together and cheap.",
+        "verified_purchase": false,
+        "media": []
+    },
+    {
+        "id": "R33HYTMSHD1Z9P",
+        "asin": "B08X2324ZL",
+        "review_data": "Reviewed in the United States on July 5, 2023",
+        "date": {
+            "date": "July 5, 2023",
+            "unix": 1688511600
+        },
+        "name": "Michael Mohr",
+        "rating": 5,
+        "title": "5.0 out of 5 starsGood Quality",
+        "text": "Easy to maintain",
+        "verified_purchase": false,
+        "media": []
+    }
+]

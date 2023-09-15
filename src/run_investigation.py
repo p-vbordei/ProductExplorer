@@ -61,12 +61,14 @@ def run_end_to_end_investigation(data):
         print(f"Error during data acquisition: {e}")
         return False
 
+    """
     try:
         run_products_investigation(investigationId)
         print('Products processing completed successfully')
     except Exception as e:
         print(f"Error during products processing: {e}")
         return False
+    """
 
     try:
         run_reviews_investigation(investigationId)

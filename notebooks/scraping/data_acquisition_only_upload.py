@@ -17,7 +17,7 @@ from firebase_admin import firestore
 import concurrent.futures
 
 # Firestore details
-cred_path = '/Users/vladbordei/Documents/Development/ProductExplorer/notebooks/productexplorerdata-firebase-adminsdk-ulb3d-465f23dff3.json'
+cred_path = '/Users/vladbordei/Documents/Development/ProductExplorer/src/firebase-key.json'
 
 # Initialize Firestore
 cred = credentials.Certificate(cred_path)
@@ -69,7 +69,7 @@ async def upload_reviews_to_firestore(filename):
         f = await aiofiles.open(os.path.join(rev_path, filename), 'r')
         data = await f.read()
         data = json.loads(data)
-        asin = data[0]['asin']['original']
+        asin = data[0]['asin']
 
         # Initialize Firestore batch
         batch = db.batch()
