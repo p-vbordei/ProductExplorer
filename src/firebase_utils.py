@@ -278,6 +278,49 @@ def write_reviews_to_firestore(cleanReviewsList, db):
     logging.info(f"Successfully saved/updated all reviews. Time taken: {elapsedTime} seconds")
 
 
+
+
+
+
+
+
+# ################
+# New
+
+def write_insights_to_firestore(investigationId, quantifiedDataId, db):
+    try:
+        batch = db.batch()
+        startTime = time.time()
+
+        # Iterate over each category in quantifiedDataId
+        for category, insights_list in quantifiedDataId.items():
+            for insight in insights_list:
+                # Ensure data types
+                insight['#'] = int(insight['#'])
+                insight['%'] = float(insight['%'])
+                insight['*'] = float(insight['*'])
+
+                # Create a unique document reference based on the label within the category
+                doc_ref = db.collection(u'reviewsInsights').document(investigationId).collection(category).document(insight['label'])
+                batch.set(doc_ref, insight)
+
+        batch.commit()
+        endTime = time.time()
+        elapsedTime = endTime - startTime
+        logging.info(f"Quantified data for {investigationId} successfully written to Firestore. Time taken: {elapsedTime} seconds")
+        return True
+    except Exception as e:
+        logging.error(f"Error writing quantified data for {investigationId} to Firestore: {e}")
+        return False
+
+
+
+# ################
+
+# Obsolete
+
+
+
 def save_cluster_info_to_firestore(attributeClustersWithPercentage, attributeClustersWithPercentageByAsin, investigationId, db):
     """
     Save the clusters to Firestore.
@@ -336,33 +379,6 @@ def retreive_attributeClustersWithPercentage_from_firestore(investigationId, db)
         logging.error(f"Error retrieving clusters from Firestore for investigation {investigationId}: {e}")
         return None
 
-
-
-
-def write_insights_to_firestore(investigationId, datapointsDict, db):
-    try:
-        batch = db.batch()
-
-        startTime = time.time()
-        for attribute, datapoints_list in datapointsDict.items():
-            # Ensure all numbers are either int or float
-            for datapoint in datapoints_list:
-                datapoint['observationCount'] = int(datapoint['observationCount'])
-                datapoint['totalNumberOfObservations'] = int(datapoint['totalNumberOfObservations'])
-                datapoint['percentageOfObservationsVsTotalNumberPerAttribute'] = float(datapoint['percentageOfObservationsVsTotalNumberPerAttribute'])
-                datapoint['percentageOfObservationsVsTotalNumberOfReviews'] = float(datapoint['percentageOfObservationsVsTotalNumberOfReviews'])
-
-            doc_ref = db.collection(u'reviewsInsights').document(investigationId).collection(u'attributeWithPercentage').document(attribute)
-            batch.set(doc_ref, {
-                u'clusters': datapoints_list
-            })
-
-        batch.commit()
-        endTime = time.time()
-        elapsedTime = endTime - startTime
-        logging.info(f"Data for {investigationId} successfully written to Firestore. Time taken: {elapsedTime} seconds")
-    except Exception as e:
-        logging.error(f"Error writing data for {investigationId} to Firestore: {e}")
 
 
 # ===================

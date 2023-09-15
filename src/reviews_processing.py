@@ -5,285 +5,441 @@ import asyncio
 from tqdm import tqdm
 import time
 import logging
+import pandas as pd
 logging.basicConfig(level=logging.INFO)
+import tiktoken
+import json
 
 try:
     from src import app
-    from src.reviews_data_processing_utils import process_datapoints, quantify_observations
-    from src.firebase_utils import initialize_firestore, get_clean_reviews , write_reviews_to_firestore, save_cluster_info_to_firestore, write_insights_to_firestore
-    from src.openai_utils import get_completion_list
-    from src.reviews_clustering import cluster_reviews, label_clusters
+    from src.reviews_data_processing_utils import generate_batches, add_uid_to_reviews, aggregate_all_categories, attach_tags_to_reviews, quantify_category_data
+    from src.firebase_utils import initialize_firestore, get_clean_reviews , write_reviews_to_firestore, write_insights_to_firestore
+    from src.openai_utils import get_completion_list_multifunction, chat_completion_request
     from src.investigations import update_investigation_status
 except ImportError:
-    from reviews_data_processing_utils import process_datapoints, quantify_observations
-    from firebase_utils import initialize_firestore, get_clean_reviews , write_reviews_to_firestore, save_cluster_info_to_firestore, write_insights_to_firestore
-    from openai_utils import get_completion_list
-    from reviews_clustering import cluster_reviews, label_clusters
+    from reviews_data_processing_utils import generate_batches, add_uid_to_reviews, aggregate_all_categories, attach_tags_to_reviews, quantify_category_data
+    from firebase_utils import initialize_firestore, get_clean_reviews , write_reviews_to_firestore, write_insights_to_firestore
+    from openai_utils import get_completion_list_multifunction, chat_completion_request
     from investigations import update_investigation_status
 
-
-####################################### PROCESS REVIEWS WITH GPT #######################################
+# %%
 
 
 def process_reviews_with_gpt(reviewsList, db):
+    """
+    Process reviews using GPT and extract insights.
+
+    Parameters:
+    - reviewsList (list): List of reviews to be processed.
+    - db: Firestore database instance.
+
+    Returns:
+    - list: Updated reviews list with extracted insights.
+    """
     try:
-        # Start the timer
-        start_time = time.time()
+        # Allocate short Ids to reviews
+        updatedReviewsList, uid_to_id_mapping = add_uid_to_reviews(reviewsList)
 
-        # Define review functions
-        reviewFunctions = [
-            {
-                "name": "reviewDataFunction",
-                "description": "product description",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "reviewSummary": {
-                            "type": "string",
-                            "description": "A brief summary of the review. Eg: Good product overall, but improvements can be made in battery life and noise levels."
-                        },
-                        "buyerMotivation": {
-                            "type": "string",
-                            "description": "Reasons why the buyer purchased the product. Eg: to replace an old product, to try out a new product, to give as a gift"
-                        },
-                        "customerExpectations": {
-                            "type": "string",
-                            "description": "Expectations the customer had before purchasing the product. Eg: to be able to use the product for a long time, to be able to use the product in a variety of situations, to be able to use the product for a specific purpose"
-                        },
-                        "howTheProductIsUsed": {
-                            "type": "string",
-                            "description": "Information about what the product is used for or about how the product is used. Eg: doodling, practicing letters/shapes, playing games"
-                        },
-                        "whereTheProductIsUsed": {
-                            "type": "string",
-                            "description": "Suggested locations or situations where the product can be used. Eg: car, restaurant, garden, public parks"
-                        },
-                        "userDescription": {
-                            "type": "string",
-                            "description": "Description of the user for the product. Eg: children, preschoolers, basketball players, mothers, office workers"
-                        },
-                        "packaging": {
-                            "type": "string",
-                            "description": "Description of the product's packaging. Eg: sturdy recyclable box, wrapped in plastic, great for gifting"
-                        },
-                        "season": {
-                            "type": "string",
-                            "description": "Eg: fall and winter"
-                        },
-                        "whenTheProductIsUsed": {
-                            "type": "string",
-                            "description": "Time of day or week of use. Eg: early in the morning"
-                        },
-                        "appraisal": {
-                            "type": "string",
-                            "description": "observations on price or value"
-                        },
-                        "quality": {
-                            "type": "string",
-                            "description": "Observations on the quality. Eg: poor quality, great quality"
-                        },
-                        "durability": {
-                            "type": "string",
-                            "description": "Observations on the durability. Eg: not durable, durable, very durable"
-                        },
-                        "easeOfUse": {
-                            "type": "string",
-                            "description": "Observations on the ease of use. Eg: not easy to use, easy to use"
-                        },
-                        "setupAndInstructions": {
-                            "type": "string",
-                            "description": "Observations on the setup. Eg: not easy to set up, easy to set up, easy to follow instructions, not clear instructions"
-                        },
-                        "noiseAndSmell": {
-                            "type": "string",
-                            "description": "Observations on the noise level or smell. Eg: too loud, quiet, squeaky, smells like roses, plastic smell"
-                        },
-                        "sizeAndFit": {
-                            "type": "string",
-                            "description": "Observations on the fit. Eg: too tight, too loose, fits well, too small, too big"
-                        },
-                        "dangerAppraisal": {
-                            "type": "string",
-                            "description": "Observations on the safety of the product. Eg: dangerous, hazardous, safe, can break and harm, safe for children"
-                        },
-                        "designAndAppearance": {
-                            "type": "string",
-                            "description": "Observations on the design and appearance. Eg: not attractive, attractive, love the design, love the appearance"
-                        },
-                        "partsAndComponents": {
-                            "type": "string",
-                            "description": "Observations on the parts and components. Eg: missing parts, all parts included, parts are easy to assemble"
-                        },
-                        "issues": {
-                            "type": "string",
-                            "description": "If specified. Actionable observations on product problems to be addressed. Thorough detailing [max 100 words]. Eg: the product started to rust after one year, although I was expecting it to last 5 years before rusting."
-                        },
-                    },
-                    "required": ["reviewSummary", "buyerMotivation", "customerExpectations", "howTheProductIsUsed", "whereTheProductIsUsed", "appraisal","userDescription", "packaging", "season", "whenTheProductIsUsed", "price", "quality", "durability", "easeOfUse", "setupAndInstructions", "noiseAndSmell", "colors", "sizeAndFit", "dangerAppraisal", "designAndAppearance", "partsAndComponents", "issues"]
-                },
-            }
-        ]
+        # Prepare Review Batches
+        reviewBatches = generate_batches(updatedReviewsList, max_tokens=1000)
 
-
-        functions = reviewFunctions
-        function_call = {"name": "reviewDataFunction"}
-
+        # Generate Content List for Batches
         contentList = []
-        for reviewDict in reviewsList:
-            try:
-                review = reviewDict['text']
-            except KeyError:
-                logging.error(f"KeyError: 'text' not found in dictionary at index {i}. Full dict: {reviewDict}")
-                continue
+        for batch in reviewBatches:
+            batch_review = f"\n\n <Review uIds>  will be followed by <Review Rating> and than by  `review text`:"
+            batch_review += "\n\n".join([f"<{review_id}>\n,<{review_rating}>\n,`{review_text}`" for review_id, review_rating, review_text in batch])
+            
             messages = [
-                {"role": "user", "content": f"REVIEW: ```{review}```"},
+                {"role": "user", "content": batch_review},
             ]
             contentList.append(messages)
-        logging.info("Content list prepared.")
 
+
+
+        marketFunctions = [
+                    {
+                        "name": "market",
+                        "description": "Naming follows the JTBD framework. Group reviews on topics for each type of job and be sure to that each label is described in two sentences. Extract associated review ids.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "useCase": {
+                                    "description": "Identifies the specific use case",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "label": {
+                                                "type": "string",
+                                            },
+                                            "uid": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "number"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "productComparison": {
+                                    "description": "Compare the product to competitors",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "label": {
+                                                "type": "string",
+                                            },
+                                            "uid": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "number"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "featureRequest": {
+                                    "description": "Identifies the requested features or enhancements",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "label": {
+                                                "type": "string",
+                                            },
+                                            "uid": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "number"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "painPoints": {
+                                    "description": "Identifies the different pain points, specific challenges or problems customers encountered",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "label": {
+                                                "type": "string",
+                                            },
+                                            "uid": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "number"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "usageFrequency": {
+                                    "description": "Identifies the  patterns of usage frequency discussed",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "label": {
+                                                "type": "string",
+                                            },
+                                            "uid": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "number"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "usageTime": {
+                                    "description": "Identifies when the product is used",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "label": {
+                                                "type": "string",
+                                            },
+                                            "uid": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "number"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "usageLocation": {
+                                    "description": "Identifies where the product is used",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "label": {
+                                                "type": "string",
+                                            },
+                                            "uid": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "number"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "customerDemographics": {
+                                    "description": "Identifies the different demographic segments",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "label": {
+                                                "type": "string",
+                                            },
+                                            "uid": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "number"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "functionalJob": {
+                                    "description": "Identifies main tasks or problems the product solves",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "label": {
+                                                "type": "string",
+                                            },
+                                            "uid": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "number"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "socialJob": {
+                                    "description": "Identifies how users want to be seen by others using the product",
+                                    "type": "array",
+                                    "items": {      
+                                        "type": "object",
+                                        "properties": {
+                                            "label": {
+                                                "type": "string",
+                                            },
+                                            "uid": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "number"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "emotionalJob": {
+                                    "description": "Identifies the feelings or states users aim to achieve with the product",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "label": {
+                                                "type": "string",
+                                            },
+                                            "description": {
+                                                "type": "string",
+                                            },
+                                            "uid": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "number"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "supportingJob": {
+                                    "description": "Identifies the tasks or activities that aid the main function of the product",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "label": {
+                                                "type": "string",
+                                            },
+                                            "uid": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "number"
+                                                }
+                                            }
+                                        } 
+                                }    }
+                            }
+                        }
+                    }
+                ]
+
+
+        # Define function sets and function calls
+        functionsList = [
+            marketFunctions
+        ]
+        functionsCallList = [
+            {"name": "market"}
+        ]
+
+        GPT_MODEL = 'gpt-3.5-turbo-16k'
+
+        # Get responses from GPT
         async def main():
-            responses = await get_completion_list(contentList, functions, function_call)
+            responses = await get_completion_list_multifunction(contentList, functionsList, functionsCallList, GPT_MODEL=GPT_MODEL)
             return responses
 
         responses = asyncio.run(main())
 
+
+        # Process the responses
         evalResponses = []
-        for i, item in tqdm(enumerate(responses), total=len(responses), desc="Processing reviews"):
-            data = item['function_call']['arguments']
-            data = data.replace('null', 'None')
-            evalData = eval(data)
-            evalResponses.append(evalData)
-            reviewsList[i]['insights'] = evalData
-            logging.debug(f"Processed response {i+1}/{len(responses)}.")
+        response_index = 0
+        for batch in reviewBatches:
+            for function in functionsCallList:
+                item = responses[response_index]
+                data = item['function_call']['arguments']
+                evalData = json.loads(data)
+                evalResponses.append(evalData)
+                response_index += 1
 
-        newCols = list(reviewsList[1]['insights'].keys())
+        # Aggregate the responses
+        aggregatedResponses = aggregate_all_categories(evalResponses)
 
-        for i, reviewDict in tqdm(enumerate(reviewsList), total=len(reviewsList), desc="Updating review dictionaries"):
-            for col in newCols:
-                try:
-                    reviewDict[col] = reviewDict['insights'][col]
-                except KeyError as e:
-                    logging.warning(f"KeyError: {e}")
-                    reviewDict[col] = None
-            reviewDict.pop('insights')
-            logging.debug(f"Updated review dictionary {i+1}/{len(reviewsList)}.")
 
-        write_reviews_to_firestore(reviewsList, db)
+        # I will write a function for GPT that will cluster into distinct tags the tags from aggregatedResponses and place uids where they are the same
 
-        # Stop the timer and print the elapsed time
-        end_time = time.time()
-        elapsed_time = end_time - start_time
-        logging.info(f"Total time taken for processing: {elapsed_time:.2f} seconds")
+        GPT_MODEL = 'gpt-3.5-turbo-16k'
 
-        return reviewsList
+        messages = [
+            {"role": "user", "content": f"Process the results from a function runing on multiple reviews batches. Group together uid's from simmilar labels. Keep only what is distinct. Take a deep breath and work on this problem step-by-step.\n {aggregatedResponses}"}
+        ]
+
+        # Send the request to the LLM and get the response
+        response =  chat_completion_request(
+            messages=messages,
+            functions=marketFunctions,
+            function_call={"name": "market"},
+            temperature=0.3,
+            model=GPT_MODEL
+        )
+
+        # Process the response and store in the dictionary
+
+        singleResponse = response.json()["choices"]
+
+        ##################
+ 
+        data = singleResponse[0]['message']['function_call']['arguments']
+        processedData = json.loads(data)
+
+
+        result = {}
+        for key, value_list in processedData.items():
+            for value in value_list:
+                label = value['label']
+                for uid in value['uid']:
+                    if uid in result:
+                        if key in result[uid]:
+                            result[uid][key].append(label)
+                        else:
+                            result[uid][key] = [label]
+                    else:
+                        result[uid] = {key: [label]}
+
+        # Sort the result dictionary by 'uid' keys
+        sortedResult = {k: result[k] for k in sorted(result)}
+
+        tagedReviews = attach_tags_to_reviews(updatedReviewsList, sortedResult)
+
+
+        # get the asin and review text for each uid
+        uid_to_asin = {review['uid']: review['asin'] for review in tagedReviews}
+        uid_to_text = {review['uid']: review['text'] for review in tagedReviews}
+        uid_to_raing = {review['uid']: review['rating'] for review in tagedReviews}
+
+        # Add asin to each uid
+        for key, value_list in processedData.items():
+            for item in value_list:
+                item['asin'] = [uid_to_asin[uid] for uid in item['uid']]
+
+        # Add rating to each uid
+        for key, value_list in processedData.items():
+            for item in value_list:
+                item['rating'] = [uid_to_raing[uid] for uid in item['uid']]
+
+        quantifiedData = quantify_category_data(processedData)
+
+        # Add the text from the reviews to each label
+        uid_to_text = {review['uid']: review['text'] for review in tagedReviews}
+
+        for key, value_list in quantifiedData.items():
+            for item in value_list:
+                item['voiceOfCustomer'] = [uid_to_text[uid] for uid in item['uid']]
+
+
+        # Add id to each uid
+        quantifiedDataId = quantifiedData.copy()
+        for key, value_list in quantifiedDataId.items():
+            for item in value_list:
+                item['id'] = [uid_to_id_mapping[uid] for uid in item['uid']]
+
+
+        return tagedReviews, quantifiedDataId
 
     except Exception as e:
         logging.error(f"Error in process_reviews_with_gpt: {e}")
-        return None  # Return None in case of error
-
-
-############################################ RUN ############################################
+        return None, None  # Return None in case of error
 
 # %%
 
 
-def run_reviews_investigation(investigationId):
-    try:
-        # Initialize Firestore
-        db = initialize_firestore()
-        logging.info("Initialized Firestore successfully.")
-    except Exception as e:
-        logging.error(f"Error initializing Firestore: {e}")
+
+
+def run_reviews_investigation(investigationId: str) -> None:
+    db = initialize_firestore()
+    if not db:
+        logging.error("Error initializing Firestore.")
+        return
+
+    if not update_investigation_status(investigationId, 'startedReviews', db):
+        logging.error(f"Error updating investigation status to 'startedReviews'.")
+        return
+
+    reviews = get_clean_reviews(investigationId, db)
+    if not reviews:
+        logging.error("Error getting clean reviews.")
+        return
+
+    tagedReviews, quantifiedDataId = process_reviews_with_gpt(reviews, db)
+    if not tagedReviews or not quantifiedDataId:
+        logging.error("Error processing reviews with GPT.")
         return
     
-    try:
-        update_investigation_status(investigationId, 'startedReviews', db)
-    except Exception as e:
-        logging.error(f"Error updating investigation status to 'startedReviews': {e}")
-        pass
-
-    try:
-        # Get clean reviews
-        reviews = get_clean_reviews(investigationId, db)
-        logging.info("Retrieved clean reviews successfully.")
-    except Exception as e:
-        logging.error(f"Error getting clean reviews: {e}")
-        return
-
-    try:
-        # Process reviews with GPT
-        cleanReviews = process_reviews_with_gpt(reviews, db)
-        logging.info("Processed reviews with GPT successfully.")
-    except Exception as e:
-        logging.error(f"Error processing reviews with GPT: {e}")
+    if not write_insights_to_firestore(investigationId, quantifiedDataId, db):
+        logging.error("Error writing quantified data to Firestore.")
         return
     
-    try:
-        update_investigation_status(investigationId, 'finishedProcessingReviewsWithGPT', db)
-    except Exception as e:
-        logging.error(f"Error updating investigation status to 'finishedProcessingReviewsWithGPT': {e}")
-        pass
-
-    try:
-        # Cluster reviews
-        cluster_df = cluster_reviews(cleanReviews)
-        logging.info("Clustered reviews successfully.")
-    except Exception as e:
-        logging.error(f"Error clustering reviews: {e}")
+    if not write_reviews_to_firestore(investigationId, tagedReviews, db):
+        logging.error("Error writing processed reviews to Firestore.")
         return
 
-    try:
-        # Label clusters
-        reviewsWithClusters = label_clusters(cluster_df)
-        logging.info("Labeled clusters successfully.")
-    except Exception as e:
-        logging.error(f"Error labeling clusters: {e}")
+    if not update_investigation_status(investigationId, 'finishedReviews', db):
+        logging.error(f"Error updating investigation status to 'finishedReviews'.")
         return
 
-    try:
-        # Quantify observations
-        attributeClustersWithPercentage, attributeClustersWithPercentageByAsin = quantify_observations(reviewsWithClusters, cleanReviews)
-        logging.info("Quantified observations successfully.")
-    except Exception as e:
-        logging.error(f"Error quantifying observations: {e}")
-        return
-
-    try:
-        # Save results to Firestore
-        save_cluster_info_to_firestore(attributeClustersWithPercentage, attributeClustersWithPercentageByAsin, investigationId, db)
-        logging.info("Saved cluster info to Firestore successfully.")
-    except Exception as e:
-        logging.error(f"Error saving cluster info to Firestore: {e}")
-        return
-
-    try:
-        # Process datapoints
-        datapoints = list(set(attributeClustersWithPercentage['attribute']))
-        datapointsDict = {}
-        for att in datapoints:
-            df = attributeClustersWithPercentage[attributeClustersWithPercentage['attribute'] == att]
-            datapoints_list = process_datapoints(df)
-            datapointsDict[att] = datapoints_list
-        logging.info("Processed datapoints successfully.")
-    except Exception as e:
-        logging.error(f"Error processing datapoints: {e}")
-        return
-
-    try:
-        # Write insights to Firestore
-        write_insights_to_firestore(investigationId, datapointsDict, db)
-        logging.info("Wrote insights to Firestore successfully.")
-    except Exception as e:
-        logging.error(f"Error writing insights to Firestore: {e}")
-        return
-    
-    try:
-        update_investigation_status(investigationId, 'finishedReviews', db)
-    except Exception as e:
-        logging.error(f"Error updating investigation status to 'finishedReviews': {e}")
-        pass
-    
     logging.info(f"Reviews investigation for {investigationId} completed successfully.")
 
-# ====================
-# %%

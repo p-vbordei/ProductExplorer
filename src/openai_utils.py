@@ -88,6 +88,10 @@ def chat_completion_request(messages, functions=None, function_call=None, temper
             headers=headers,
             json=json_data,
         )
+        try:
+            print(response.json()['usage'])
+        except:
+            pass
         return response
     except Exception as e:
         print("Unable to generate ChatCompletion response")
