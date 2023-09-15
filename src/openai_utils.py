@@ -14,6 +14,8 @@ nest_asyncio.apply()
 import logging
 logging.basicConfig(level=logging.INFO)
 
+from aiohttp import ContentTypeError, ClientResponseError
+
 embedding_model = "text-embedding-ada-002"
 embedding_encoding = "cl100k_base"
 max_tokens = 8000
@@ -71,7 +73,7 @@ class ProgressLog:
         return f"Done runs {self.done}/{self.total}."
 
 
-@retry(wait=wait_random_exponential(min=1, max=40), stop=stop_after_attempt(3))
+@retry(wait=wait_random_exponential(min=1, max=180), stop=stop_after_attempt(10))
 def chat_completion_request(messages, functions=None, function_call=None, temperature=0, model=GPT_MODEL):
     headers = {
         "Content-Type": "application/json",
@@ -92,6 +94,11 @@ def chat_completion_request(messages, functions=None, function_call=None, temper
             print(response.json()['usage'])
         except:
             pass
+
+        try:
+            print(response.json())
+        except:
+            pass
         return response
     except Exception as e:
         print("Unable to generate ChatCompletion response")
@@ -100,7 +107,9 @@ def chat_completion_request(messages, functions=None, function_call=None, temper
 
 
 
-@retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(20), before_sleep=print, retry_error_callback=lambda _: None)
+
+
+@retry(wait=wait_random_exponential(min=1, max=180), stop=stop_after_attempt(10), before_sleep=print, retry_error_callback=lambda _: None)
 async def get_completion(content, session, semaphore, progress_log, functions=None, function_call=None, GPT_MODEL=GPT_MODEL):
     async with semaphore:
         json_data = {
@@ -114,11 +123,49 @@ async def get_completion(content, session, semaphore, progress_log, functions=No
         if function_call is not None:
             json_data.update({"function_call": function_call})
 
-        async with session.post("https://api.openai.com/v1/chat/completions", headers=HEADERS, json=json_data) as resp:
-            response_json = await resp.json()
-            progress_log.increment()
-            print(progress_log)
-            return response_json["choices"][0]['message']
+        try:
+            async with session.post("https://api.openai.com/v1/chat/completions", headers=HEADERS, json=json_data) as resp:
+                resp.raise_for_status()  # This will raise an error for 4xx and 5xx responses
+                
+                try:
+                    response_json = await resp.json()
+                except ContentTypeError:
+                    logging.error("Failed to decode API response as JSON.")
+                    raise
+
+                if "error" in response_json:
+                    error_message = response_json["error"]["message"]
+                    logging.error(f"OpenAI API Error: {error_message}")
+                    raise ValueError(error_message)
+
+                try:
+                    print(response_json['usage'])
+                except KeyError:
+                    logging.warning("Usage data not found in the response.")
+                
+                print(response_json)
+                progress_log.increment()
+                print(progress_log)
+                return response_json["choices"][0]['message']
+
+        except ClientResponseError as e:
+            logging.error(f"HTTP Error {e.status}: {e.message}")
+            if e.status == 400:
+                raise ValueError("Bad Request: The API request was malformed.")
+            elif e.status == 401:
+                raise PermissionError("Unauthorized: Check your API key.")
+            elif e.status == 403:
+                raise PermissionError("Forbidden: You might have exceeded your rate limits or don't have permission.")
+            elif e.status == 404:
+                raise ValueError("Endpoint not found.")
+            elif e.status in [429, 502, 503, 504]:
+                logging.warning("Temporary API issue or rate limit hit. Retrying...")
+            else:
+                raise
+        except Exception as e:
+            logging.error(f"Unexpected error: {e}")
+            raise
+
 
 async def get_completion_list(content_list, functions=None, function_call=None, GPT_MODEL=GPT_MODEL):
     semaphore = asyncio.Semaphore(value=max_parallel_calls)

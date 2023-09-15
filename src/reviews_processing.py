@@ -41,7 +41,7 @@ def process_reviews_with_gpt(reviewsList, db):
         updatedReviewsList, uid_to_id_mapping = add_uid_to_reviews(reviewsList)
 
         # Prepare Review Batches
-        reviewBatches = generate_batches(updatedReviewsList, max_tokens=10000)
+        reviewBatches = generate_batches(updatedReviewsList, max_tokens=8000)
 
         # Generate Content List for Batches
         contentList = []

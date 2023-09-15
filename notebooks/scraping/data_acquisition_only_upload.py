@@ -61,7 +61,7 @@ loop.run_until_complete(upload_product_jsons())
 
 # %%
 
-rev_path = '/Users/vladbordei/Documents/Development/ProductExplorer/data/external/review_jsons'
+rev_path = '/Users/vladbordei/Documents/Development/ProductExplorer/data/external/MagneticBeadsBoards/reviews/'
 db = firestore.client()  # assuming db is defined earlier as your Firestore client
 
 async def upload_reviews_to_firestore(filename):
@@ -70,6 +70,7 @@ async def upload_reviews_to_firestore(filename):
         data = await f.read()
         data = json.loads(data)
         asin = data[0]['asin']
+        print(asin)
 
         # Initialize Firestore batch
         batch = db.batch()
