@@ -109,9 +109,12 @@ def chat_completion_request(messages, functions=None, function_call=None, temper
 
 
 
+
 @retry(wait=wait_random_exponential(min=1, max=180), stop=stop_after_attempt(10), before_sleep=print, retry_error_callback=lambda _: None)
 async def get_completion(content, session, semaphore, progress_log, functions=None, function_call=None, GPT_MODEL=GPT_MODEL):
     async with semaphore:
+        await asyncio.sleep(5.45)  # Introduce a 5.45-second delay between requests. This is to avoid hitting the RPM & TPM limits.
+        
         json_data = {
             "model": GPT_MODEL,
             "messages": content,
@@ -168,11 +171,14 @@ async def get_completion(content, session, semaphore, progress_log, functions=No
 
 
 async def get_completion_list(content_list, functions=None, function_call=None, GPT_MODEL=GPT_MODEL):
-    semaphore = asyncio.Semaphore(value=max_parallel_calls)
+    semaphore = asyncio.Semaphore(1)  # Allow only 1 request at a time to ensure you don't exceed the RPM
     progress_log = ProgressLog(len(content_list))
 
-    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(timeout)) as session:
+    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=600)) as session:
         return await asyncio.gather(*[get_completion(content, session, semaphore, progress_log, functions, function_call, GPT_MODEL) for content in content_list])
+
+
+
 
 async def get_completion_list_multifunction(content_list, functions_list, function_calls_list, GPT_MODEL=GPT_MODEL):
     semaphore = asyncio.Semaphore(value=max_parallel_calls)
