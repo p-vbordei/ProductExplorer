@@ -997,6 +997,423 @@ for batch in reviewBatches:
 aggregatedResponses = aggregate_all_categories(evalResponses)
 
 # %%
+
+
+##################
+
+useCaseFunction = [
+    {
+        "name": "useCaseFunction",
+        "description": "Naming follows the JTBD framework. Group reviews on topics for each type of job and be sure to that each label is described in two sentences. Extract associated review ids.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "useCase": {
+                    "description": "Identifies the specific use case",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string",
+                            },
+                            "uid": {
+                                "type": "array",
+                                "items": {
+                                    "type": "number"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+]
+
+productComparisonFunction = [
+    {
+        "name": "productComparisonFunction",
+        "description": "Naming follows the JTBD framework. Group reviews on topics for each type of job and be sure to that each label is described in two sentences. Extract associated review ids.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "productComparison": {
+                    "description": "Compare the product to competitors",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string",
+                            },
+                            "uid": {
+                                "type": "array",
+                                "items": {
+                                    "type": "number"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+]
+
+featureRequestFunction = [
+    {
+        "name": "featureRequestFunction",
+        "description": "Naming follows the JTBD framework. Group reviews on topics for each type of job and be sure to that each label is described in two sentences. Extract associated review ids.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "featureRequest": {
+                    "description": "Identifies the requested features or enhancements",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string",
+                            },
+                            "uid": {
+                                "type": "array",
+                                "items": {
+                                    "type": "number"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+]
+
+painPointsFunction = [
+    {
+        "name": "painPointsFunction",
+        "description": "Naming follows the JTBD framework. Group reviews on topics for each type of job and be sure to that each label is described in two sentences. Extract associated review ids.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "painPoints": {
+                    "description": "Identifies the different pain points, specific challenges or problems customers encountered",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string",
+                            },
+                            "uid": {
+                                "type": "array",
+                                "items": {
+                                    "type": "number"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+]
+
+usageFrequencyFunction = [
+    {
+        "name": "usageFrequencyFunction",
+        "description": "Naming follows the JTBD framework. Group reviews on topics for each type of job and be sure to that each label is described in two sentences. Extract associated review ids.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "usageFrequency": {
+                    "description": "Identifies the patterns of usage frequency discussed",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string",
+                            },
+                            "uid": {
+                                "type": "array",
+                                "items": {
+                                    "type": "number"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+]
+
+usageTimeFunction = [
+    {
+        "name": "usageTimeFunction",
+        "description": "Naming follows the JTBD framework. Group reviews on topics for each type of job and be sure to that each label is described in two sentences. Extract associated review ids.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "usageTime": {
+                    "description": "Identifies when the product is used",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string",
+                            },
+                            "uid": {
+                                "type": "array",
+                                "items": {
+                                    "type": "number"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+]
+
+usageLocationFunction = [
+    {
+        "name": "usageLocationFunction",
+        "description": "Naming follows the JTBD framework. Group reviews on topics for each type of job and be sure to that each label is described in two sentences. Extract associated review ids.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "usageLocation": {
+                    "description": "Identifies where the product is used",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string",
+                            },
+                            "uid": {
+                                "type": "array",
+                                "items": {
+                                    "type": "number"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+]
+
+customerDemographicsFunction = [
+    {
+        "name": "customerDemographicsFunction",
+        "description": "Naming follows the JTBD framework. Group reviews on topics for each type of job and be sure to that each label is described in two sentences. Extract associated review ids.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "customerDemographics": {
+                    "description": "Identifies the different demographic segments",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string",
+                            },
+                            "uid": {
+                                "type": "array",
+                                "items": {
+                                    "type": "number"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+]
+
+functionalJobFunction = [
+    {
+        "name": "functionalJobFunction",
+        "description": "Naming follows the JTBD framework. Group reviews on topics for each type of job and be sure to that each label is described in two sentences. Extract associated review ids.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "functionalJob": {
+                    "description": "Identifies main tasks or problems the product solves",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string",
+                            },
+                            "uid": {
+                                "type": "array",
+                                "items": {
+                                    "type": "number"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+]
+
+socialJobFunction = [
+    {
+        "name": "socialJobFunction",
+        "description": "Naming follows the JTBD framework. Group reviews on topics for each type of job and be sure to that each label is described in two sentences. Extract associated review ids.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "socialJob": {
+                    "description": "Identifies how users want to be seen by others using the product",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string",
+                            },
+                            "uid": {
+                                "type": "array",
+                                "items": {
+                                    "type": "number"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+]
+
+emotionalJobFunction = [
+    {
+        "name": "emotionalJobFunction",
+        "description": "Naming follows the JTBD framework. Group reviews on topics for each type of job and be sure to that each label is described in two sentences. Extract associated review ids.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "emotionalJob": {
+                    "description": "Identifies the feelings or states users aim to achieve with the product",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string",
+                            },
+                            "description": {
+                                "type": "string",
+                            },
+                            "uid": {
+                                "type": "array",
+                                "items": {
+                                    "type": "number"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+]
+
+supportingJobFunction = [
+    {
+        "name": "supportingJobFunction",
+        "description": "Naming follows the JTBD framework. Group reviews on topics for each type of job and be sure to that each label is described in two sentences. Extract associated review ids.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "supportingJob": {
+                    "description": "Identifies the tasks or activities that aid the main function of the product",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string",
+                            },
+                            "uid": {
+                                "type": "array",
+                                "items": {
+                                    "type": "number"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+]
+
+
+# %%
+
+functionMapping = {
+    "useCase": useCaseFunction,
+    "productComparison": productComparisonFunction,
+    "featureRequest": featureRequestFunction,
+    "painPoints": painPointsFunction,
+    "usageFrequency": usageFrequencyFunction,
+    "usageTime": usageTimeFunction,
+    "usageLocation": usageLocationFunction,
+    "customerDemographics": customerDemographicsFunction,
+    "functionalJob": functionalJobFunction,
+    "socialJob": socialJobFunction,
+    "emotionalJob": emotionalJobFunction,
+    "supportingJob": supportingJobFunction
+}
+
+# %%
+
+GPT_MODEL = 'gpt-3.5-turbo-16k'
+
+responses = []
+for key, function in functionMapping.items():
+    contentList = [
+        {"role": "user", "content": f"Process the results for key: {key}. Group together uid's from similar labels. Keep only what is distinct. Take a deep breath and work on this problem step-by-step.\n {aggregatedResponses[key]}"}
+    ]
+    print({"name": function[0]["name"]})
+    response = chat_completion_request(contentList, function, {"name": function[0]["name"]} ,temperature=0.3,model=GPT_MODEL)
+    responses.append(response)
+
+
+
+# %%
+
+# Process the Results
+processedResults = {}
+for idx, response in enumerate(responses):
+    key = list(aggregatedResponses.keys())[idx]
+    data = response['function_call']['arguments']
+    processedData = json.loads(data)
+    processedResults[key] = processedData
+
+print(processedResults)
+
+
+
+
+
+# %%
 # I will write a function for GPT that will cluster into distinct tags the tags from aggregatedResponses and place uids where they are the same
 
 GPT_MODEL = 'gpt-3.5-turbo-16k'

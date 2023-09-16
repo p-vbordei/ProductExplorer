@@ -171,7 +171,7 @@ async def get_completion(content, session, semaphore, progress_log, functions=No
 
 
 async def get_completion_list(content_list, functions=None, function_call=None, GPT_MODEL=GPT_MODEL):
-    semaphore = asyncio.Semaphore(1)  # Allow only 1 request at a time to ensure you don't exceed the RPM
+    semaphore = asyncio.Semaphore(3)  # Allow only 3 requests at a time to ensure you don't exceed the RPM
     progress_log = ProgressLog(len(content_list))
 
     async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=600)) as session:
