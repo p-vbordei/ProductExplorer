@@ -468,7 +468,7 @@ reviewsList = reviews
 updatedReviewsList, uid_to_id_mapping = add_uid_to_reviews(reviewsList)
 
 # Prepare Review Batches
-reviewBatches = generate_batches(updatedReviewsList, max_tokens=10000)
+reviewBatches = generate_batches(updatedReviewsList, max_tokens=8000)
 
 # Generate Content List for Batches
 contentList = []
@@ -713,6 +713,239 @@ marketFunctions = [
             }
         ]
 
+
+
+marketResponseHealFunction = [
+            {
+                "name": "formatEnforcementAndHeal",
+                "description": "Check for errors in the input data and corrects them, ensuring the format is as bellow.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "useCase": {
+                            "description": "Identifies the specific use case",
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "label": {
+                                        "type": "string",
+                                    },
+                                    "uid": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "number"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "productComparison": {
+                            "description": "Compare the product to competitors",
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "label": {
+                                        "type": "string",
+                                    },
+                                    "uid": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "number"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "featureRequest": {
+                            "description": "Identifies the requested features or enhancements",
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "label": {
+                                        "type": "string",
+                                    },
+                                    "uid": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "number"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "painPoints": {
+                            "description": "Identifies the different pain points, specific challenges or problems customers encountered",
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "label": {
+                                        "type": "string",
+                                    },
+                                    "uid": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "number"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "usageFrequency": {
+                            "description": "Identifies the  patterns of usage frequency discussed",
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "label": {
+                                        "type": "string",
+                                    },
+                                    "uid": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "number"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "usageTime": {
+                            "description": "Identifies when the product is used",
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "label": {
+                                        "type": "string",
+                                    },
+                                    "uid": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "number"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "usageLocation": {
+                            "description": "Identifies where the product is used",
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "label": {
+                                        "type": "string",
+                                    },
+                                    "uid": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "number"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "customerDemographics": {
+                            "description": "Identifies the different demographic segments",
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "label": {
+                                        "type": "string",
+                                    },
+                                    "uid": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "number"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "functionalJob": {
+                            "description": "Identifies main tasks or problems the product solves",
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "label": {
+                                        "type": "string",
+                                    },
+                                    "uid": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "number"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "socialJob": {
+                            "description": "Identifies how users want to be seen by others using the product",
+                            "type": "array",
+                            "items": {      
+                                "type": "object",
+                                "properties": {
+                                    "label": {
+                                        "type": "string",
+                                    },
+                                    "uid": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "number"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "emotionalJob": {
+                            "description": "Identifies the feelings or states users aim to achieve with the product",
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "label": {
+                                        "type": "string",
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                    },
+                                    "uid": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "number"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "supportingJob": {
+                            "description": "Identifies the tasks or activities that aid the main function of the product",
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "label": {
+                                        "type": "string",
+                                    },
+                                    "uid": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "number"
+                                        }
+                                    }
+                                } 
+                        }    }
+                    }
+                }
+            }
+        ]
+
+
 functions = marketFunctions
 functionCall = {"name": "market"}
 # %%
@@ -724,22 +957,46 @@ async def main():
     return responses
 
 responses = asyncio.run(main())
-
+# %%
 # Process the responses
 evalResponses = []
 response_index = 0
 for batch in reviewBatches:
+    print(response_index)
     item = responses[response_index]
     data = item['function_call']['arguments']
-    evalData = json.loads(data)
+
+    try:
+        evalData = json.loads(data)
+    except:
+        print(item)
+        print('Healing Function Activated at Json Loads for ', response_index, ' index')
+        
+        healingResponse =  chat_completion_request(
+            messages= [{"role":"user", "content": f"Check this ouptput data and heal or correct any errors observed:{data} Response to be evaluated should be inside ['function_call']['arguments']."}],
+            functions=marketResponseHealFunction,
+            function_call={"name": "formatEnforcementAndHeal"},
+            temperature=0,
+            model=GPT_MODEL
+            )
+        resp = healingResponse.json()['choices']
+        print(resp)
+        parsed_resp =  resp[0]['message']['function_call']['arguments']
+        try:
+           evalData = json.loads(parsed_resp)
+        except:
+           print(evalData) 
+           print(response_index)
+           print("passing")
+           pass
     evalResponses.append(evalData)
     response_index += 1
+# %%
 
 # Aggregate the responses
 aggregatedResponses = aggregate_all_categories(evalResponses)
 
 # %%
-
 # I will write a function for GPT that will cluster into distinct tags the tags from aggregatedResponses and place uids where they are the same
 
 GPT_MODEL = 'gpt-3.5-turbo-16k'
