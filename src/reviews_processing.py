@@ -9,6 +9,7 @@ import pandas as pd
 logging.basicConfig(level=logging.INFO)
 import tiktoken
 import json
+import os
 
 try:
     from src import app
