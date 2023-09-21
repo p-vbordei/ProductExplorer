@@ -13,12 +13,12 @@ import os
 
 try:
     from src import app
-    from src.reviews_data_processing_utils import generate_batches, add_uid_to_reviews, aggregate_all_categories, attach_tags_to_reviews, quantify_category_data
+    from src.reviews_data_processing_utils import generate_batches, add_uid_to_reviews, aggregate_all_categories,  quantify_category_data
     from src.firebase_utils import initialize_firestore, get_clean_reviews , write_reviews_to_firestore, write_insights_to_firestore
     from src.openai_utils import chat_completion_request, get_completion_list
     from src.investigations import update_investigation_status
 except ImportError:
-    from reviews_data_processing_utils import generate_batches, add_uid_to_reviews, aggregate_all_categories, attach_tags_to_reviews, quantify_category_data
+    from reviews_data_processing_utils import generate_batches, add_uid_to_reviews, aggregate_all_categories,  quantify_category_data
     from firebase_utils import initialize_firestore, get_clean_reviews , write_reviews_to_firestore, write_insights_to_firestore
     from openai_utils import chat_completion_request, get_completion_list
     from investigations import update_investigation_status
@@ -355,13 +355,21 @@ def process_reviews_with_gpt(reviewsList, db):
         # Sort the result dictionary by 'uid' keys
         sortedResult = {k: result[k] for k in sorted(result)}
 
-        tagedReviews = attach_tags_to_reviews(updatedReviewsList, sortedResult)
+        tagedReviews = updatedReviewsList.copy()
+
+        for review in tagedReviews:
+            # Get uid from the review
+            uid = review.get('uid')
+            # Fetch tags for the given uid from sortedResults
+            tags = sortedResult.get(uid, {})
+            # Add tags to the review
+            review['tags'] = tags
 
 
         # get the asin and review text for each uid
         uid_to_asin = {review['uid']: review['asin'] for review in tagedReviews}
         uid_to_text = {review['uid']: review['text'] for review in tagedReviews}
-        uid_to_raing = {review['uid']: review['rating'] for review in tagedReviews}
+        uid_to_rating = {review['uid']: review['rating'] for review in tagedReviews}
 
         # Add asin to each uid
         for key, value_list in processedData.items():
@@ -371,7 +379,7 @@ def process_reviews_with_gpt(reviewsList, db):
         # Add rating to each uid
         for key, value_list in processedData.items():
             for item in value_list:
-                item['rating'] = [uid_to_raing[uid] for uid in item['uid']]
+                item['rating'] = [uid_to_rating[uid] for uid in item['uid']]
 
         quantifiedData = quantify_category_data(processedData)
 

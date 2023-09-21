@@ -266,24 +266,29 @@ def quantify_category_data(inputData):
         
         for labelData in labels:
             labelObservations = len(labelData['uid'])
-            labelPercentage = (labelObservations / categoryTotalObservations) * 100
+            
+            # Check for zero total observations and calculate label percentage
+            labelPercentage = (labelObservations / categoryTotalObservations) * 100 if categoryTotalObservations != 0 else 0
             formattedLabelPercentage = int("{:.0f}".format(labelPercentage))
-
             
-            # Calculate average rating for label
-            averageRating = sum(labelData['rating']) / len(labelData['rating'])
-            formattedAverageRating = float("{:.1f}".format(averageRating))
-            
-            processedLabelData = {
-                'label': labelData['label'],
-                'uid': labelData['uid'],
-                'asin': list(set(labelData['asin'])),
-                '#': labelObservations,
-                '%': formattedLabelPercentage,
-                '*': formattedAverageRating
-            }
-            
-            processedLabels.append(processedLabelData)
+            # Check for zero length and calculate average rating for label
+            if len(labelData['rating']) != 0:
+                averageRating = sum(labelData['rating']) / len(labelData['rating'])
+                formattedAverageRating = float("{:.1f}".format(averageRating))
+                
+                processedLabelData = {
+                    'label': labelData['label'],
+                    'uid': labelData['uid'],
+                    'asin': list(set(labelData['asin'])),
+                    '#': labelObservations,
+                    '%': formattedLabelPercentage,
+                    '*': formattedAverageRating
+                }
+                
+                processedLabels.append(processedLabelData)
+            else:
+                # Skip if no ratings
+                continue
         
         processedData[categoryKey] = processedLabels
     
