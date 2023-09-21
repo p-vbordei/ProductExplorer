@@ -254,28 +254,7 @@ def aggregate_all_categories(data):
     return aggregated_results
 
 
-def attach_tags_to_reviews(updatedReviewsList, sortedResult):
-    """
-    This function adds tags from sortedResults to the reviews in updatedReviewsList based on the uid.
-    
-    Args:
-    - updatedReviewsList (list): A list of dictionaries containing reviews.
-    - sortedResults (dict): A dictionary with tags for each uid.
-    
-    Returns:
-    - list: A list of dictionaries with the combined information.
-    """
-    for review in updatedReviewsList:
-        # Get uid from the review
-        uid = review.get('uid')
-        
-        # Fetch tags for the given uid from sortedResults
-        tags = sortedResult.get(uid, {})
-        
-        # Add tags to the review
-        review['tags'] = tags
-    
-    return updatedReviewsList
+
 
 
 def quantify_category_data(inputData):
