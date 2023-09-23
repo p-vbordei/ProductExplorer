@@ -437,13 +437,6 @@ def run_reviews_investigation(investigationId: str) -> None:
 
 
 
-
-
-
-
-
-
-
 ##########
 # %%
 investigationId = 'AN3fCSPOJVDTf95xiKVA'

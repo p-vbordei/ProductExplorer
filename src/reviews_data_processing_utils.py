@@ -280,9 +280,9 @@ def quantify_category_data(inputData):
                     'label': labelData['label'],
                     'uid': labelData['uid'],
                     'asin': list(set(labelData['asin'])),
-                    '#': labelObservations,
-                    '%': formattedLabelPercentage,
-                    '*': formattedAverageRating
+                    'numberOfObservations"': labelObservations,
+                    'percentage': formattedLabelPercentage,
+                    'rating': formattedAverageRating
                 }
                 
                 processedLabels.append(processedLabelData)

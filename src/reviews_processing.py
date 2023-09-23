@@ -388,7 +388,7 @@ def process_reviews_with_gpt(reviewsList, db):
 
         for key, value_list in quantifiedData.items():
             for item in value_list:
-                item['voiceOfCustomer'] = [uid_to_text[uid] for uid in item['uid']]
+                item['customerVoice'] = [uid_to_text[uid] for uid in item['uid']]
 
 
         # Add id to each uid
@@ -443,3 +443,4 @@ def run_reviews_investigation(investigationId: str) -> None:
         return
 
     logging.info(f"Reviews investigation for {investigationId} completed successfully.")
+# %%

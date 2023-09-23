@@ -181,10 +181,10 @@ async def get_completion_list(content_list, functions=None, function_call=None, 
 
 
 async def get_completion_list_multifunction(content_list, functions_list, function_calls_list, GPT_MODEL=GPT_MODEL):
-    semaphore = asyncio.Semaphore(value=max_parallel_calls)
+    semaphore = asyncio.Semaphore(3)
     progress_log = ProgressLog(len(content_list) * len(functions_list))  # Adjust for multiple functions
 
-    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(timeout)) as session:
+    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=600)) as session:
         tasks = []
         for i in range(len(functions_list)):
             for content in content_list:

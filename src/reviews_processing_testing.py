@@ -15,12 +15,12 @@ try:
     from src import app
     from src.reviews_data_processing_utils import generate_batches, add_uid_to_reviews, aggregate_all_categories, quantify_category_data
     from src.firebase_utils import initialize_firestore, get_clean_reviews 
-    from src.openai_utils import chat_completion_request, get_completion_list
+    from src.openai_utils import chat_completion_request, get_completion_list, get_completion_list_multifunction
     from src.investigations import update_investigation_status
 except ImportError:
     from reviews_data_processing_utils import generate_batches, add_uid_to_reviews, aggregate_all_categories, quantify_category_data
     from firebase_utils import initialize_firestore, get_clean_reviews 
-    from openai_utils import chat_completion_request, get_completion_list
+    from openai_utils import chat_completion_request, get_completion_list, get_completion_list_multifunction
     from investigations import update_investigation_status
 
 # %%
@@ -38,8 +38,8 @@ if not update_investigation_status(investigationId, 'startedReviews', db):
 
 
 reviewsList = get_clean_reviews(investigationId, db)
-print('Processing ', len(reviews), ' reviews')
-if not reviews:
+print('Processing ', len(reviewsList), ' reviews')
+if not reviewsList:
     logging.error("Error getting clean reviews.")
 
 
@@ -63,12 +63,11 @@ for batch in reviewBatches:
     ]
     contentList.append(messages)
 # %%
-
-
+# DECLARE FUNCTIONS 
 marketFunctions = [
             {
                 "name": "market",
-                "description": "Naming follows the JTBD framework. Group reviews on topics for each type of job and be sure to that each label is described in two sentences. Extract associated review ids.",
+                "description": "Group reviews on topics for each type of job and be sure to that each label is described in two sentences. Extract associated review ids.",
                 "parameters": {
                     "type": "object",
                     "properties": {
@@ -216,14 +215,28 @@ marketFunctions = [
                                 }
                             }
                         },
+                                            }
+                }
+            }
+        ]
+#########################
+
+extractJobsFunctions = [
+            {
+                "name": "extractJobs",
+                "description": "Naming follows the JTBD framework. Group reviews on topics for each type of job. Extract associated review ids. "
+                "parameters": {
+                    "type": "object",
+                    "properties": {
                         "functionalJob": {
-                            "description": "Identifies main tasks or problems the product solves",
+                            "description": "Identifies main tasks or problems the product solves. ",
                             "type": "array",
                             "items": {
                                 "type": "object",
                                 "properties": {
-                                    "label": {
+                                    "JobStatement": {
                                         "type": "string",
+                                        "description: A job statement is a concise sentence that outlines what a user aims to achieve with the product. It starts with a verb, followed by the object of that verb, which is usually a noun. Additionally, the statement includes a contextual clarifier to specify the conditions or situations in which the job is performed. For example, 'listen to music while on the go' is a job statement where 'listen to music' is the core job and 'while on the go' is the contextual clarifier. Another example is 'get breakfast while commuting to work,' where 'get breakfast' is the job and 'while commuting to work' provides the context. Always adhere to this format for consistency."
                                     },
                                     "uid": {
                                         "type": "array",
@@ -240,7 +253,7 @@ marketFunctions = [
                             "items": {      
                                 "type": "object",
                                 "properties": {
-                                    "label": {
+                                    "JobStatement": {
                                         "type": "string",
                                     },
                                     "uid": {
@@ -258,7 +271,7 @@ marketFunctions = [
                             "items": {
                                 "type": "object",
                                 "properties": {
-                                    "label": {
+                                    "JobStatement": {
                                         "type": "string",
                                     },
                                     "description": {
@@ -279,7 +292,7 @@ marketFunctions = [
                             "items": {
                                 "type": "object",
                                 "properties": {
-                                    "label": {
+                                    "JobStatement": {
                                         "type": "string",
                                     },
                                     "uid": {
@@ -289,25 +302,51 @@ marketFunctions = [
                                         }
                                     }
                                 } 
-                        }    }
+                        }    },
+                        "desiredOutcomes": {
+                            "description": "This category captures the specific improvements that users desire when using the product. Each desired outcome is a statement that combines four elements: a direction of improvement (e.g., minimize, maximize), a performance metric (usually time or likelihood), an object of control (what specifically should be improved), and a contextual clarifier (the situation in which the improvement is desired).",
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "outcomeStatement": {
+                                        "type": "string",
+                                        "description": "This is a comprehensive statement that outlines what improvement is desired by the user. It combines a direction of improvement (like 'minimize' or 'maximize'), a performance metric (such as time taken or likelihood), the specific aspect that needs improvement (object of control), and the context in which this improvement is desired."
+                                    },
+                                    "JobStatements": {
+                                        "type": "array",
+                                        "items": { "type": "string" },
+                                        "description": "This is a list of Functional Jobs that are directly related to the desired outcome. These Functional Jobs serve as the basis for understanding why the outcome is important and in what context. Each entry in this array should correspond to a Job Statement defined in the 'functionalJob' category."
+                                    }
+                                }
+                            }
+                        },
                     }
                 }
             }
         ]
+#########################
+
+
+
 
 # %%
 # Run GPT Calls for the Market function on the batches
-functions = marketFunctions
-functionCall = {"name": "market"}
+
+# functionsList = [marketFunctions, extractJobsFunctions]
+# functionsCallList = [{"name": "market"}, {"name": "extractJobs"}]
+
+functionsList = [extractJobsFunctions]
+functionsCallList = [{"name": "extractJobs"}]
 GPT_MODEL = 'gpt-3.5-turbo-16k'
 
 # Get responses from GPT
 async def main():
-    responses = await get_completion_list(contentList, functions=functions, function_call=functionCall, GPT_MODEL=GPT_MODEL)
+    responses = await get_completion_list_multifunction(contentList, functions_list=functionsList, function_calls_list=functionsCallList, GPT_MODEL=GPT_MODEL)
     return responses
 
 responses = asyncio.run(main())
-
+#################################################
 # %%
 # Process the responses
 evalResponses = []
@@ -427,9 +466,9 @@ def quantify_category_data(inputData):
                     'label': labelData['label'],
                     'uid': labelData['uid'],
                     'asin': list(set(labelData['asin'])),
-                    '#': labelObservations,
-                    '%': formattedLabelPercentage,
-                    '*': formattedAverageRating
+                    'number': labelObservations,
+                    'percentage': formattedLabelPercentage,
+                    'rating': formattedAverageRating
                 }
                 
                 processedLabels.append(processedLabelData)
@@ -452,7 +491,7 @@ uid_to_text = {review['uid']: review['text'] for review in tagedReviews}
 
 for key, value_list in quantifiedData.items():
     for item in value_list:
-        item['voiceOfCustomer'] = [uid_to_text[uid] for uid in item['uid']]
+        item['customerVoice'] = [uid_to_text[uid] for uid in ite≠m['uid']]
 
 
 # Add id to each uid
