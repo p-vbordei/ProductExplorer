@@ -280,7 +280,7 @@ def quantify_category_data(inputData):
                     'label': labelData['label'],
                     'uid': labelData['uid'],
                     'asin': list(set(labelData['asin'])),
-                    'numberOfObservations"': labelObservations,
+                    'numberOfObservations': labelObservations,
                     'percentage': formattedLabelPercentage,
                     'rating': formattedAverageRating
                 }

@@ -1092,7 +1092,6 @@ for key, value_list in processedData.items():
 
 
 # %%
-
 quantifiedData = quantify_category_data(processedData)
 
 
@@ -1110,5 +1109,37 @@ quantifiedDataId = quantifiedData.copy()
 for key, value_list in quantifiedDataId.items():
     for item in value_list:
         item['id'] = [uid_to_id_mapping[uid] for uid in item['uid']]
+
+
+# %%
+# Prepare the Frontend dataset
+frontendOutput = {
+    key: [
+        {
+            k: entry[k] if k != 'uid' else entry[k][:5]
+            for k in ['label', 'numberOfObservations', 'percentage', 'rating', 'uid']
+        }
+        for entry in value
+    ]
+    for key, value in quantifiedData.items()
+}
+
+# Add the customer voice
+for key, value_list in frontendOutput.items():
+    for item in value_list:
+        item['customerVoice'] = [uid_to_text[uid] for uid in item['uid']]
+
+
+# Eliminate 'uid'
+frontendOutput = {
+    key: [
+        {
+            k: entry[k]
+            for k in ['label', 'numberOfObservations', 'percentage', 'rating', 'customerVoice']
+        }
+        for entry in value
+    ]
+    for key, value in frontendOutput.items()
+}
 
 # %%
