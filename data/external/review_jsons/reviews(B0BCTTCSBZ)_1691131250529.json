@@ -1,1 +1,157 @@
-[{"id":"R2NHEE9V0ZJQ5L","asin":{"original":"B0BCTTCSBZ","variant":"B0BCV5ZSW6"},"review_data":"Reviewed in the United States on July 9, 2023","date":{"date":"July 9, 2023","unix":1688857200},"name":"Virginia B","rating":5,"title":"5.0 out of 5 starsGreat for 80+ gardener.","review":"Like the size both in height, length, and width.I needed help in putting together and filling with soil.It takes a lot of bagged soil to fill.Would suggest filling bottom with limbs, grass, etc if time permits before adding bagged soil.It is nice not having to bend over to care for plants.It seems to be well made.It has been in use for about a month at the time of this review.It is 3 feet high.","verified_purchase":false,"media":["https://m.media-amazon.com/images/I/81VM078N6GL._SL1600_.jpg"]},{"id":"R1LMT3OAJ623KY","asin":{"original":"B0BCTTCSBZ","variant":"B0BCV5ZSW6"},"review_data":"Reviewed in the United States on July 6, 2023","date":{"date":"July 6, 2023","unix":1688598000},"name":"LIVN THE GOOD LIFE","rating":5,"title":"5.0 out of 5 starsI bought 3!","review":"Fabulous! Strong materials. Easy assembly. Well made. Beautiful additionto my garden.My neighbors want one now.","verified_purchase":false,"media":[]},{"id":"R3NSK2JOS0I2MO","asin":{"original":"B0BCTTCSBZ","variant":"B0BCV5ZSW6"},"review_data":"Reviewed in the United States on July 5, 2023","date":{"date":"July 5, 2023","unix":1688511600},"name":"KC Schmidt","rating":3,"title":"3.0 out of 5 starsToo much hardware!","review":"I like the finished product, but there was a lot of hardware putting it together.","verified_purchase":false,"media":[]},{"id":"R255J4874UO5AZ","asin":{"original":"B0BCTTCSBZ","variant":"B0BCV5ZSW6"},"review_data":"Reviewed in the United States on July 3, 2023","date":{"date":"July 3, 2023","unix":1688338800},"name":"Dana Andrews","rating":5,"title":"5.0 out of 5 starsSturdy and easy to assemble","review":"As described, study, heavy gauge corrugated steel, easy to assemble","verified_purchase":false,"media":[]},{"id":"R1L42O2TQBGFSU","asin":{"original":"B0BCTTCSBZ","variant":"B0BCV5ZSW6"},"review_data":"Reviewed in the United States on July 3, 2023","date":{"date":"July 3, 2023","unix":1688338800},"name":"Imari Hanserd","rating":5,"title":"5.0 out of 5 starsAwesome","review":"First time gardener, I love it!!! I was able to plant cauliflower , kale, spinach , broccoli , tomato, zucchini , and peppers","verified_purchase":false,"media":[]},{"id":"RZ841NJSHG758","asin":{"original":"B0BCTTCSBZ","variant":"B0BCTTCSBZ"},"review_data":"Reviewed in the United States on June 29, 2023","date":{"date":"June 29, 2023","unix":1687993200},"name":"AFD","rating":5,"title":"5.0 out of 5 starsTons of screws. Patience and a power screwdriver or drill will go a long way.","review":"Box comes with everything you need. The assembled product looks great and feels sturdy. A great value for the price. However, three key points: 1) The kit comes with four panels marked P1 and two end panels marked P2. They look the same but there's a slight size difference. If you don't put the P2s on the ends, the box will look off. 2) The kit has a small bag packed with screws and wingnuts. The bag is made of the thinnest plastic imaginable, a value engineering marvel no doubt, so the weight of the screws and nuts may tear it causing these bits to end up all over the the box. Beware when opening. 3) The screws are not the greatest quality, which is fine for this price point. Hand-screw the wingnuts on a couple of spins before tightening with any power tool or you will strip the threads right away.","verified_purchase":false,"media":[]},{"id":"ROPB8XB3FJWHQ","asin":{"original":"B0BCTTCSBZ","variant":"B0BCV5ZSW6"},"review_data":"Reviewed in the United States on June 27, 2023","date":{"date":"June 27, 2023","unix":1687820400},"name":"Anglwtchr5 5","rating":5,"title":"5.0 out of 5 starsGreat","review":"Love this nice and big","verified_purchase":false,"media":[]},{"id":"R3M72M2QJX0PRG","asin":{"original":"B0BCTTCSBZ","variant":"B0BCV5ZSW6"},"review_data":"Reviewed in the United States on June 26, 2023","date":{"date":"June 26, 2023","unix":1687734000},"name":"ChiTownBuyer","rating":4,"title":"4.0 out of 5 starsWas this a returned item","review":"Received garden bed today, it looks like it was used or a return item. Corners on a few panels were bent and they had a few scratches on them. Screws and wing nuts were in a torn bag, screws and wing nuts everywhere in the box. I had to count everyone, to make sure 70 items each were there. I wish the item was listed as used. Overall I will work with it, being a outdoor garden item, I shouldn't have to repair returned items.","verified_purchase":false,"media":[]},{"id":"R2GKK6LSQ47VVV","asin":{"original":"B0BCTTCSBZ","variant":"B0BCV5ZSW6"},"review_data":"Reviewed in the United States on June 24, 2023","date":{"date":"June 24, 2023","unix":1687561200},"name":"Jaye and Scott","rating":5,"title":"5.0 out of 5 starsThis is wing nut hell.","review":"There are sooooo many wing nuts. You will need a screw driver.Read the directions and be patient cuz it’ll take time to put it together.","verified_purchase":false,"media":[]},{"id":"R3GTBTWRWUUL1C","asin":{"original":"B0BCTTCSBZ","variant":"B0BCTTCSBZ"},"review_data":"Reviewed in the United States on June 24, 2023","date":{"date":"June 24, 2023","unix":1687561200},"name":"Teamleader 58","rating":5,"title":"5.0 out of 5 starsHome garden","review":"We ordered two and are very happy. Thinking of ordering two more.","verified_purchase":false,"media":[]}]
+[
+    {
+        "id": "R2NHEE9V0ZJQ5L",
+        "asin": "B0BCTTCSBZ",
+        "review_data": "Reviewed in the United States on July 9, 2023",
+        "date": {
+            "date": "July 9, 2023",
+            "unix": 1688857200
+        },
+        "name": "Virginia B",
+        "rating": 5,
+        "title": "5.0 out of 5 starsGreat for 80+ gardener.",
+        "text": "Like the size both in height, length, and width.I needed help in putting together and filling with soil.It takes a lot of bagged soil to fill.Would suggest filling bottom with limbs, grass, etc if time permits before adding bagged soil.It is nice not having to bend over to care for plants.It seems to be well made.It has been in use for about a month at the time of this review.It is 3 feet high.",
+        "verified_purchase": false,
+        "media": [
+            "https://m.media-amazon.com/images/I/81VM078N6GL._SL1600_.jpg"
+        ]
+    },
+    {
+        "id": "R1LMT3OAJ623KY",
+        "asin": "B0BCTTCSBZ",
+        "review_data": "Reviewed in the United States on July 6, 2023",
+        "date": {
+            "date": "July 6, 2023",
+            "unix": 1688598000
+        },
+        "name": "LIVN THE GOOD LIFE",
+        "rating": 5,
+        "title": "5.0 out of 5 starsI bought 3!",
+        "text": "Fabulous! Strong materials. Easy assembly. Well made. Beautiful additionto my garden.My neighbors want one now.",
+        "verified_purchase": false,
+        "media": []
+    },
+    {
+        "id": "R3NSK2JOS0I2MO",
+        "asin": "B0BCTTCSBZ",
+        "review_data": "Reviewed in the United States on July 5, 2023",
+        "date": {
+            "date": "July 5, 2023",
+            "unix": 1688511600
+        },
+        "name": "KC Schmidt",
+        "rating": 3,
+        "title": "3.0 out of 5 starsToo much hardware!",
+        "text": "I like the finished product, but there was a lot of hardware putting it together.",
+        "verified_purchase": false,
+        "media": []
+    },
+    {
+        "id": "R255J4874UO5AZ",
+        "asin": "B0BCTTCSBZ",
+        "review_data": "Reviewed in the United States on July 3, 2023",
+        "date": {
+            "date": "July 3, 2023",
+            "unix": 1688338800
+        },
+        "name": "Dana Andrews",
+        "rating": 5,
+        "title": "5.0 out of 5 starsSturdy and easy to assemble",
+        "text": "As described, study, heavy gauge corrugated steel, easy to assemble",
+        "verified_purchase": false,
+        "media": []
+    },
+    {
+        "id": "R1L42O2TQBGFSU",
+        "asin": "B0BCTTCSBZ",
+        "review_data": "Reviewed in the United States on July 3, 2023",
+        "date": {
+            "date": "July 3, 2023",
+            "unix": 1688338800
+        },
+        "name": "Imari Hanserd",
+        "rating": 5,
+        "title": "5.0 out of 5 starsAwesome",
+        "text": "First time gardener, I love it!!! I was able to plant cauliflower , kale, spinach , broccoli , tomato, zucchini , and peppers",
+        "verified_purchase": false,
+        "media": []
+    },
+    {
+        "id": "RZ841NJSHG758",
+        "asin": {
+            "original": "B0BCTTCSBZ",
+            "variant": "B0BCTTCSBZ"
+        },
+        "review_data": "Reviewed in the United States on June 29, 2023",
+        "date": {
+            "date": "June 29, 2023",
+            "unix": 1687993200
+        },
+        "name": "AFD",
+        "rating": 5,
+        "title": "5.0 out of 5 starsTons of screws. Patience and a power screwdriver or drill will go a long way.",
+        "text": "Box comes with everything you need. The assembled product looks great and feels sturdy. A great value for the price. However, three key points: 1) The kit comes with four panels marked P1 and two end panels marked P2. They look the same but there's a slight size difference. If you don't put the P2s on the ends, the box will look off. 2) The kit has a small bag packed with screws and wingnuts. The bag is made of the thinnest plastic imaginable, a value engineering marvel no doubt, so the weight of the screws and nuts may tear it causing these bits to end up all over the the box. Beware when opening. 3) The screws are not the greatest quality, which is fine for this price point. Hand-screw the wingnuts on a couple of spins before tightening with any power tool or you will strip the threads right away.",
+        "verified_purchase": false,
+        "media": []
+    },
+    {
+        "id": "ROPB8XB3FJWHQ",
+        "asin": "B0BCTTCSBZ",
+        "review_data": "Reviewed in the United States on June 27, 2023",
+        "date": {
+            "date": "June 27, 2023",
+            "unix": 1687820400
+        },
+        "name": "Anglwtchr5 5",
+        "rating": 5,
+        "title": "5.0 out of 5 starsGreat",
+        "text": "Love this nice and big",
+        "verified_purchase": false,
+        "media": []
+    },
+    {
+        "id": "R3M72M2QJX0PRG",
+        "asin": "B0BCTTCSBZ",
+        "review_data": "Reviewed in the United States on June 26, 2023",
+        "date": {
+            "date": "June 26, 2023",
+            "unix": 1687734000
+        },
+        "name": "ChiTownBuyer",
+        "rating": 4,
+        "title": "4.0 out of 5 starsWas this a returned item",
+        "text": "Received garden bed today, it looks like it was used or a return item. Corners on a few panels were bent and they had a few scratches on them. Screws and wing nuts were in a torn bag, screws and wing nuts everywhere in the box. I had to count everyone, to make sure 70 items each were there. I wish the item was listed as used. Overall I will work with it, being a outdoor garden item, I shouldn't have to repair returned items.",
+        "verified_purchase": false,
+        "media": []
+    },
+    {
+        "id": "R2GKK6LSQ47VVV",
+        "asin": "B0BCTTCSBZ",
+        "review_data": "Reviewed in the United States on June 24, 2023",
+        "date": {
+            "date": "June 24, 2023",
+            "unix": 1687561200
+        },
+        "name": "Jaye and Scott",
+        "rating": 5,
+        "title": "5.0 out of 5 starsThis is wing nut hell.",
+        "text": "There are sooooo many wing nuts. You will need a screw driver.Read the directions and be patient cuz it’ll take time to put it together.",
+        "verified_purchase": false,
+        "media": []
+    },
+    {
+        "id": "R3GTBTWRWUUL1C",
+        "asin": "B0BCTTCSBZ",
+        "review_data": "Reviewed in the United States on June 24, 2023",
+        "date": {
+            "date": "June 24, 2023",
+            "unix": 1687561200
+        },
+        "name": "Teamleader 58",
+        "rating": 5,
+        "title": "5.0 out of 5 starsHome garden",
+        "text": "We ordered two and are very happy. Thinking of ordering two more.",
+        "verified_purchase": false,
+        "media": []
+    }
+]

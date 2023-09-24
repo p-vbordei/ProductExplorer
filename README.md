@@ -32,9 +32,6 @@ Here is a brief overview of the architecture:
 - Processing Reviews: For each review, the assistant generates a response using the chat model. Each response has a series of 
 - Product Attribute Values are clustered toghtether based on simmilarity. Labels are generated for each cluster.
 - Quantification is done over the observed attribute values/ clusters. 
-- Problem Statements are identified and described for each of the clusters
-- Solutions for the Problem Statements are created and clustered. They are presented as solutions prepared by junior engineers.
-- Product Improvements are generated based on product understanding and previously presented solution clusters.
 
 
 ####### NOT YET IMPLEMENTED

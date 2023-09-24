@@ -2,6 +2,7 @@
 # Description: Utility functions for interacting with Firestore
 # firebase_utils.py
 
+import pandas as pd
 import os
 import json
 from collections import defaultdict
@@ -154,6 +155,30 @@ def save_product_details_to_firestore(db, investigationId, productData):
         logging.error(f"Error saving/updating investigation results with id {investigationId}: {e}", exc_info=True)
         return False
 
+def get_product_data_from_investigation(db, investigationId):
+    """
+    Retrieve product data from Firestore based on an investigation ID.
+
+    Parameters:
+    - db (object): Firestore database client.
+    - investigationId (str): The ID of the investigation.
+
+    Returns:
+    - dict: The product data retrieved.
+    - None: If there's an error or the investigation doesn't exist.
+    """
+
+    # Retrieve the product data from Firestore using the investigation ID
+    productDataRef = db.collection('productInsights').document(investigationId)
+    productData = productDataRef.get()
+
+    # Check if the document exists
+    if productData.exists:
+        return productData.to_dict()
+    else:
+        logging.warning(f"Investigation with id {investigationId} does not exist in 'productInsights'")
+        return None
+
 
 ########### REVIEWS #############
 
@@ -253,6 +278,49 @@ def write_reviews_to_firestore(cleanReviewsList, db):
     logging.info(f"Successfully saved/updated all reviews. Time taken: {elapsedTime} seconds")
 
 
+
+
+
+
+
+
+# ################
+# New
+
+def write_insights_to_firestore(investigationId, quantifiedDataId, db):
+    try:
+        batch = db.batch()
+        startTime = time.time()
+
+        # Iterate over each category in quantifiedDataId
+        for category, insights_list in quantifiedDataId.items():
+            for insight in insights_list:
+                # Ensure data types
+                insight['numberOfObservations'] = int(insight['numberOfObservations'])
+                insight['percentage'] = float(insight['percentage'])
+                insight['rating'] = float(insight['rating'])
+
+                # Create a unique document reference based on the label within the category
+                doc_ref = db.collection(u'reviewsInsights').document(investigationId).collection(category).document(insight['label'])
+                batch.set(doc_ref, insight)
+
+        batch.commit()
+        endTime = time.time()
+        elapsedTime = endTime - startTime
+        logging.info(f"Quantified data for {investigationId} successfully written to Firestore. Time taken: {elapsedTime} seconds")
+        return True
+    except Exception as e:
+        logging.error(f"Error writing quantified data for {investigationId} to Firestore: {e}")
+        return False
+
+
+
+# ################
+
+# Obsolete
+
+
+
 def save_cluster_info_to_firestore(attributeClustersWithPercentage, attributeClustersWithPercentageByAsin, investigationId, db):
     """
     Save the clusters to Firestore.
@@ -285,30 +353,32 @@ def save_cluster_info_to_firestore(attributeClustersWithPercentage, attributeClu
     except Exception as e:
         logging.error(f"Error saving/updating clusters to firestore for investigation {investigationId}: {e}")
 
-def write_insights_to_firestore(investigationId, datapointsDict, db):
+
+
+def retreive_attributeClustersWithPercentage_from_firestore(investigationId, db):
+    """
+    Retrieve the clusters from Firestore.
+
+    Parameters:
+    - investigationId (str): The ID of the investigation.
+
+    Returns:
+    - DataFrame: DataFrame containing attribute clusters with percentage information.
+    """
     try:
-        batch = db.batch()
-
-        startTime = time.time()
-        for attribute, datapoints_list in datapointsDict.items():
-            # Ensure all numbers are either int or float
-            for datapoint in datapoints_list:
-                datapoint['observationCount'] = int(datapoint['observationCount'])
-                datapoint['totalNumberOfObservations'] = int(datapoint['totalNumberOfObservations'])
-                datapoint['percentageOfObservationsVsTotalNumberPerAttribute'] = float(datapoint['percentageOfObservationsVsTotalNumberPerAttribute'])
-                datapoint['percentageOfObservationsVsTotalNumberOfReviews'] = float(datapoint['percentageOfObservationsVsTotalNumberOfReviews'])
-
-            doc_ref = db.collection(u'reviewsInsights').document(investigationId).collection(u'attributeWithPercentage').document(attribute)
-            batch.set(doc_ref, {
-                u'clusters': datapoints_list
-            })
-
-        batch.commit()
-        endTime = time.time()
-        elapsedTime = endTime - startTime
-        logging.info(f"Data for {investigationId} successfully written to Firestore. Time taken: {elapsedTime} seconds")
+        cluster_ref = db.collection(u'clusters').document(investigationId)
+        cluster = cluster_ref.get()
+        if cluster.exists:
+            clusters_dict = cluster.to_dict()
+            attributeClustersWithPercentage = pd.DataFrame(clusters_dict['attributeClustersWithPercentage'])
+            return attributeClustersWithPercentage
+        else:
+            logging.warning(f"No clusters found for investigation {investigationId}")
+            return None
     except Exception as e:
-        logging.error(f"Error writing data for {investigationId} to Firestore: {e}")
+        logging.error(f"Error retrieving clusters from Firestore for investigation {investigationId}: {e}")
+        return None
+
 
 
 # ===================

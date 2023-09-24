@@ -1,9 +1,11 @@
 ##################
 # app.yaml
 runtime: python310
+# env: flex
 instance_class: F4
-entrypoint: gunicorn -b :$PORT 'src.__init__:app' --timeout 300
+entrypoint: gunicorn -b :$PORT 'src.__init__:app' --timeout 600
 automatic_scaling:
+  # cool_down_period_sec: 600
   target_cpu_utilization: 0.8
   min_instances: 0
   max_instances: 5

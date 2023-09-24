@@ -12,7 +12,7 @@ try:
     from src.data_acquisition import execute_data_acquisition
     from src.products_processing import run_products_investigation
     from src.reviews_processing import run_reviews_investigation
-    from src.users import use_investigation
+    from src.users import use_investigation, has_investigations_available, update_investigation_status
 except ImportError:
     from firebase_utils import initialize_firestore
     from investigations import start_investigation
@@ -61,12 +61,14 @@ def run_end_to_end_investigation(data):
         print(f"Error during data acquisition: {e}")
         return False
 
+    """
     try:
         run_products_investigation(investigationId)
         print('Products processing completed successfully')
     except Exception as e:
         print(f"Error during products processing: {e}")
         return False
+    """
 
     try:
         run_reviews_investigation(investigationId)
@@ -89,8 +91,6 @@ def run_end_to_end_investigation(data):
         print(f"Error during using for user: {userId} ,investigation: {e}")
         return False
     return True
-
-
 
 #%%
 # ====================

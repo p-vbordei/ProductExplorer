@@ -1,5 +1,7 @@
 ###################### DATA ACQUISITION ######################
 # data_acquisition.py
+# https://rapidapi.com/eaidoo015-pj8dZiAnLJJ/api/youtube-scraper-2023/pricing
+# https://rapidapi.com/felixeschmittfes/api/amazonlive/pricing
 # %%
 
 import time
@@ -16,7 +18,7 @@ except ImportError:
         from .firebase_utils import initialize_firestore
 
 # Your ASINs
-asinList = ['B09XM29XGF', 'B09WR4BW2Y']
+# asinList = ['B09XM29XGF', 'B09WR4BW2Y']
 
 
 # Amazon Scraper details
@@ -104,10 +106,12 @@ def update_firestore(asin, details, reviews, db):
     print(f"Updating Firestore for {asin} took {time.time() - start} seconds.")
 
 async def process_asin(asin, db):
-    details = await get_product_details(asin)
+    
+    """details = await get_product_details(asin)
     if details is None:
         print(f"Skipping {asin} due to failed details fetch.")
-        return
+        return"""
+    
     reviews = await get_product_reviews(asin)
     if reviews is None or any(review is None for review in reviews):
         print(f"Skipping {asin} due to failed reviews fetch.")
