@@ -15,12 +15,12 @@ try:
     from src import app
     from src.reviews_data_processing_utils import generate_batches, add_uid_to_reviews, aggregate_all_categories,  quantify_category_data
     from src.firebase_utils import initialize_firestore, get_clean_reviews , write_reviews_to_firestore, write_insights_to_firestore
-    from src.openai_utils import chat_completion_request, get_completion_list
+    from src.openai_utils import chat_completion_request, get_completion_list_multifunction
     from src.investigations import update_investigation_status
 except ImportError:
     from reviews_data_processing_utils import generate_batches, add_uid_to_reviews, aggregate_all_categories,  quantify_category_data
     from firebase_utils import initialize_firestore, get_clean_reviews , write_reviews_to_firestore, write_insights_to_firestore
-    from openai_utils import chat_completion_request, get_completion_list
+    from openai_utils import chat_completion_request, get_completion_list_multifunction
     from investigations import update_investigation_status
 
 # %%
