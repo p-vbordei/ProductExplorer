@@ -1011,23 +1011,22 @@ for idx, response in enumerate(functionsResponses):
 
 # Rezultatul este o lista de dictionare in loc de un dictionar
 
-processedData = processedResults.copy()
 
 # %%
 # Creeaza un dictionar cu un array de dictionare fiecare
-DictWithList = {}
-for item in processedData:
+processedData = {}
+for item in processedResults:
     print(item)
     try:
         key = list(item.keys())[0]
         value = list(item.values())[0]
-        DictWithList[key] = value
+        processedData[key] = value
     except:
         try:
             new_item = item[0]
             key = list(new_item.keys())[0]
             value = list(new_item.values())[0]
-            DictWithList[key] = value
+            processedData[key] = value
         except:
             print("Error processing item.")
             print(item)
@@ -1039,7 +1038,7 @@ for item in processedData:
 # %%
 
 result = {}
-for key, value_list in DictWithList.items():
+for key, value_list in processedData.items():
     for value in value_list:
         label = value['label']
         for uid in value['uid']:
@@ -1103,7 +1102,7 @@ uid_to_text = {review['uid']: review['text'] for review in tagedReviews}
 
 for key, value_list in quantifiedData.items():
     for item in value_list:
-        item['customerVoice'] = [uid_to_text[uid] for uid in ite≠m['uid']]
+        item['customerVoice'] = [uid_to_text[uid] for uid in item['uid']]
 
 
 # Add id to each uid
