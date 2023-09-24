@@ -219,24 +219,22 @@ marketFunctions = [
                 }
             }
         ]
-#########################
 
 extractJobsFunctions = [
             {
                 "name": "extractJobs",
-                "description": "Naming follows the JTBD framework. Group reviews on topics for each type of job. Extract associated review ids. "
+                "description": "Naming follows the JTBD framework. Group reviews on job statements for each type of job. Extract associated review ids. Job statement structure = verb + object of the verb (noun) + contextual clarifier",
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "functionalJob": {
-                            "description": "Identifies main tasks or problems the product solves. ",
                             "type": "array",
                             "items": {
                                 "type": "object",
                                 "properties": {
                                     "JobStatement": {
                                         "type": "string",
-                                        "description: A job statement is a concise sentence that outlines what a user aims to achieve with the product. It starts with a verb, followed by the object of that verb, which is usually a noun. Additionally, the statement includes a contextual clarifier to specify the conditions or situations in which the job is performed. For example, 'listen to music while on the go' is a job statement where 'listen to music' is the core job and 'while on the go' is the contextual clarifier. Another example is 'get breakfast while commuting to work,' where 'get breakfast' is the job and 'while commuting to work' provides the context. Always adhere to this format for consistency."
+                                        "description": "",
                                     },
                                     "uid": {
                                         "type": "array",
@@ -248,7 +246,6 @@ extractJobsFunctions = [
                             }
                         },
                         "socialJob": {
-                            "description": "Identifies how users want to be seen by others using the product",
                             "type": "array",
                             "items": {      
                                 "type": "object",
@@ -266,15 +263,11 @@ extractJobsFunctions = [
                             }
                         },
                         "emotionalJob": {
-                            "description": "Identifies the feelings or states users aim to achieve with the product",
                             "type": "array",
                             "items": {
                                 "type": "object",
                                 "properties": {
                                     "JobStatement": {
-                                        "type": "string",
-                                    },
-                                    "description": {
                                         "type": "string",
                                     },
                                     "uid": {
@@ -287,7 +280,6 @@ extractJobsFunctions = [
                             }
                         },
                         "supportingJob": {
-                            "description": "Identifies the tasks or activities that aid the main function of the product",
                             "type": "array",
                             "items": {
                                 "type": "object",
@@ -301,42 +293,73 @@ extractJobsFunctions = [
                                             "type": "number"
                                         }
                                     }
-                                } 
-                        }    },
+                                }
+                            }
+                        },
                         "desiredOutcomes": {
-                            "description": "This category captures the specific improvements that users desire when using the product. Each desired outcome is a statement that combines four elements: a direction of improvement (e.g., minimize, maximize), a performance metric (usually time or likelihood), an object of control (what specifically should be improved), and a contextual clarifier (the situation in which the improvement is desired).",
-                            "type": "array",
-                            "items": {
                                 "type": "object",
                                 "properties": {
                                     "outcomeStatement": {
                                         "type": "string",
-                                        "description": "This is a comprehensive statement that outlines what improvement is desired by the user. It combines a direction of improvement (like 'minimize' or 'maximize'), a performance metric (such as time taken or likelihood), the specific aspect that needs improvement (object of control), and the context in which this improvement is desired."
-                                    },
-                                    "JobStatements": {
-                                        "type": "array",
-                                        "items": { "type": "string" },
-                                        "description": "This is a list of Functional Jobs that are directly related to the desired outcome. These Functional Jobs serve as the basis for understanding why the outcome is important and in what context. Each entry in this array should correspond to a Job Statement defined in the 'functionalJob' category."
                                     }
                                 }
-                            }
                         },
                     }
                 }
+                
+    }
+]
+# %%
+extractJobsFunctionsV2 = [
+    {
+        "name": "extractJobs",
+        "description": "Naming follows the JTBD framework. Group reviews on job statements for each type of job. Extract associated review ids. ",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "jobType": {
+                    "type": "array",
+                    "description": "An array of jobs of these types [functionalJob, socialJob, emotionalJob, supportingJob]",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "jobCategory": {
+                                "type": "string",
+                                "description": "The category of the job, e.g., functionalJob, socialJob, etc."
+                            },
+                            "jobs": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "jobStatement": {
+                                            "type": "string",
+                                            "description": "Job statement structure = verb + object of the verb (noun) + contextual clarifier"
+                                        },
+                                        "uid": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "number"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
-        ]
-#########################
-
-
+        }
+    }
+]
 
 
 # %%
 # Run GPT Calls for the Market function on the batches
 
-# functionsList = [marketFunctions, extractJobsFunctions]
-# functionsCallList = [{"name": "market"}, {"name": "extractJobs"}]
-
-functionsList = [extractJobsFunctions]
+#functionsList = [marketFunctions, extractJobsFunctions]
+#functionsCallList = [{"name": "market"}, {"name": "extractJobs"}]
+functionsList = [extractJobsFunctionsV2]
 functionsCallList = [{"name": "extractJobs"}]
 GPT_MODEL = 'gpt-3.5-turbo-16k'
 
@@ -367,7 +390,7 @@ aggregatedResponses = aggregate_all_categories(evalResponses)
 GPT_MODEL = 'gpt-3.5-turbo-16k'
 
 messages = [
-    {"role": "user", "content": f"Process the results from a function runing on multiple reviews batches. Group together uid's from simmilar labels. Keep only what is distinct. Take a deep breath and work on this problem step-by-step.\n {aggregatedResponses}"}
+    {"role": "user", "content": f"Process the results from a function runing on multiple reviews batches. Group together uid's from simmilar labels. Keep only what is distinct. Take a deep breath and work on this problem step-by-step. \n {aggregatedResponses}."}
 ]
 
 # Send the request to the LLM and get the response
@@ -380,7 +403,6 @@ response =  chat_completion_request(
 )
 # %%
 # Process the response and store in the dictionary
-
 singleResponse = response.json()["choices"]
 
 ##################

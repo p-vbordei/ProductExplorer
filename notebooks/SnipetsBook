@@ -1469,3 +1469,135 @@ except Exception as e:
 
 ############
 
+extractJobsFunctions = [
+            {
+                "name": "extractJobs",
+                "description": "Naming follows the JTBD framework. Group reviews on job statements for each type of job. Extract associated review ids. Job statement structure = verb + object of the verb (noun) + contextual clarifier",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "functionalJob": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "JobStatement": {
+                                        "type": "string",
+                                        "description": "",
+                                    },
+                                    "uid": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "number"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "socialJob": {
+                            "type": "array",
+                            "items": {      
+                                "type": "object",
+                                "properties": {
+                                    "JobStatement": {
+                                        "type": "string",
+                                    },
+                                    "uid": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "number"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "emotionalJob": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "JobStatement": {
+                                        "type": "string",
+                                    },
+                                    "uid": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "number"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "supportingJob": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "JobStatement": {
+                                        "type": "string",
+                                    },
+                                    "uid": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "number"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "desiredOutcomes": {
+                                "type": "object",
+                                "properties": {
+                                    "outcomeStatement": {
+                                        "type": "string",
+                                    }
+                                }
+                        },
+                    }
+                }
+                
+    }
+]
+# %%
+extractJobsFunctionsV2 = [
+    {
+        "name": "extractJobs",
+        "description": "Naming follows the JTBD framework. Group reviews on job statements for each type of job. Extract associated review ids. ",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "jobType": {
+                    "type": "array",
+                    "description": "An array of jobs of these types [functionalJob, socialJob, emotionalJob, supportingJob]",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "jobCategory": {
+                                "type": "string",
+                                "description": "The category of the job, e.g., functionalJob, socialJob, etc."
+                            },
+                            "jobs": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "jobStatement": {
+                                            "type": "string",
+                                            "description": "Job statement structure = verb + object of the verb (noun) + contextual clarifier"
+                                        },
+                                        "uid": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "number"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+]
