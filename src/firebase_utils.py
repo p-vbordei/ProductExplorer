@@ -296,9 +296,9 @@ def write_insights_to_firestore(investigationId, quantifiedDataId, db):
         for category, insights_list in quantifiedDataId.items():
             for insight in insights_list:
                 # Ensure data types
-                insight['#'] = int(insight['#'])
-                insight['%'] = float(insight['%'])
-                insight['*'] = float(insight['*'])
+                insight['numberOfObservations'] = int(insight['numberOfObservations'])
+                insight['percentage'] = float(insight['percentage'])
+                insight['rating'] = float(insight['rating'])
 
                 # Create a unique document reference based on the label within the category
                 doc_ref = db.collection(u'reviewsInsights').document(investigationId).collection(category).document(insight['label'])
