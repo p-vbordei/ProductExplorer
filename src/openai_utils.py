@@ -118,7 +118,7 @@ async def get_completion(content, session, semaphore, progress_log, functions=No
         json_data = {
             "model": GPT_MODEL,
             "messages": content,
-            "temperature": 0
+            "temperature": 0.2
         }
         
         if functions is not None:
