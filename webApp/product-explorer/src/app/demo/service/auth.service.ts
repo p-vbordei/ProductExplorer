@@ -16,6 +16,7 @@ export class AuthService {
   }
 
   get userId(): string | null {
+    // return "XgneABVFF3MrwekpsjpHIlOhdnB3"
     if (this.auth.currentUser) {
       return this.auth.currentUser.uid;
     }
