@@ -31,8 +31,7 @@
    
                         <th>Name</th>
                         <th>ASINs</th>
-                        <th pSortableColumn="startTimestamp">Started <p-sortIcon field="startTimestamp"></p-sortIcon></th>
-                        <th pSortableColumn="finishedTimestamp">Finished <p-sortIcon field="finishedTimestamp"></p-sortIcon></th>
+                        <th pSortableColumn="investigationDate">Started <p-sortIcon field="investigationDate"></p-sortIcon></th>
                         <th>Status</th>
                     </tr>
                 </ng-template>
@@ -44,8 +43,7 @@
                             </a>
                         </td>
                         <td>{{rowData.asins}}</td>
-                        <td>{{rowData.startTimestamp | date:'medium'}}</td>
-                        <td>{{rowData.finishedTimestamp | date:'medium'}}</td>
+                        <td>{{rowData.investigationDate | date:'medium'}}</td>
                         <td><span [class]="'customer-badge status-' + rowData.status">{{rowData.status}}</span></td>
                     </tr>
                 </ng-template>

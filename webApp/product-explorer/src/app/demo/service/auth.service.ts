@@ -14,6 +14,13 @@ export class AuthService {
   get isLoggedIn(): boolean {
     return !!this.auth.currentUser;
   }
+
+  get userId(): string | null {
+    if (this.auth.currentUser) {
+      return this.auth.currentUser.uid;
+    }
+    return null;
+  }
   
   // Sign up with email and password
   async signUp(email: string, password: string): Promise<void> {
