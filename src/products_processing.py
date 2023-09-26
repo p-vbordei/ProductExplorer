@@ -22,7 +22,7 @@ GPT_MODEL = "gpt-3.5-turbo"
 ################################## PROCESS INDIVIDUAL PRODUCTS #########################################
 # %%
 
-def process_products(investigationId, GPT_MODEL, db):
+def process_products(userId, investigationId, GPT_MODEL, db):
     """
     Processes products based on the given investigationId.
     
@@ -37,7 +37,7 @@ def process_products(investigationId, GPT_MODEL, db):
 
     try:
         # Fetch products
-        products = get_investigation_and_product_details(investigationId, db)
+        products = get_investigation_and_product_details(userId, investigationId, db)
     except Exception as e:
         logging.error(f"Error fetching product details for investigation {investigationId}: {e}")
         return []
@@ -650,7 +650,7 @@ def process_product_description(products, GPT_MODEL):
 
 # %%
 
-def run_products_investigation(investigationId):
+def run_products_investigation(userId, investigationId):
     try:
         db = initialize_firestore()
     except Exception as e:
@@ -658,13 +658,13 @@ def run_products_investigation(investigationId):
         return
 
     try:
-        update_investigation_status(investigationId, "startedProducts", db)
+        update_investigation_status(userId, investigationId, "startedProducts", db)
     except Exception as e:
         logging.error(f"Error updating investigation status to 'startedProducts': {e}")
         return
 
     try:
-        newProductsList = process_products(investigationId, GPT_MODEL, db)
+        newProductsList = process_products(userId, investigationId, GPT_MODEL, db)
     except Exception as e:
         logging.error(f"Error processing products: {e}")
         return
@@ -676,7 +676,7 @@ def run_products_investigation(investigationId):
         return
 
     try:
-        update_investigation_status(investigationId, "finishedIndividualProducts", db)
+        update_investigation_status(userId, investigationId, "finishedIndividualProducts", db)
     except Exception as e:
         logging.error(f"Error updating investigation status to 'finishedIndividualProducts': {e}")
         return
@@ -688,13 +688,13 @@ def run_products_investigation(investigationId):
         return
 
     try:
-        save_product_details_to_firestore(db, investigationId, finalProductsData)
+        save_product_details_to_firestore(db, userId, investigationId, finalProductsData)
     except Exception as e:
         logging.error(f"Error saving final product details to Firestore: {e}")
         return
 
     try:
-        update_investigation_status(investigationId, 'finishedProducts', db)
+        update_investigation_status(userId, investigationId, 'finishedProducts', db)
     except Exception as e:
         logging.error(f"Error updating investigation status to 'finishedProducts': {e}")
         return

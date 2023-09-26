@@ -30,8 +30,9 @@ def api_start_investigation():
     data = request.json
     userId = data.get('userId')
     asinList = data.get('asinList')
+    name = data.get('name')
     
-    if not userId or not asinList:
+    if not userId or not asinList or not name:
         return jsonify({"error": "userIDs and asinList are required"}), 400
 
     try:
@@ -85,6 +86,7 @@ def api_run_products_investigation():
     """
     data = request.json
     investigationId = data.get('investigationId')
+    userId = data.get('userId')
     
     if not investigationId:
         logging.error("Missing investigationId for products investigation")
@@ -92,7 +94,7 @@ def api_run_products_investigation():
 
     try:
         logging.info(f"Starting products investigation for ID: {investigationId}")
-        run_products_investigation(investigationId)
+        run_products_investigation(userId, investigationId)
         logging.info(f"Completed products investigation for ID: {investigationId}")
         return jsonify({"message": "Investigation completed successfully"}), 200
     except Exception as e:
@@ -109,6 +111,7 @@ def api_run_reviews_investigation():
     """
     data = request.json
     investigationId = data.get('investigationId')
+    userId = data.get('userId')
     
     if not investigationId:
         logging.error("Missing investigationId")
@@ -116,7 +119,7 @@ def api_run_reviews_investigation():
 
     try:
         logging.info(f"Starting reviews investigation for ID: {investigationId}")
-        run_reviews_investigation(investigationId)
+        run_reviews_investigation(userId, investigationId)
         logging.info(f"Completed reviews investigation for ID: {investigationId}")
         return jsonify({"message": "Reviews investigation completed successfully"}), 200
     except Exception as e:
@@ -135,9 +138,10 @@ def api_run_end_to_end_investigation():
         data = request.json
         userId = data.get('userId')
         asinList = data.get('asinList')
+        name = data.get('name')
 
-        if not userId or not asinList:
-            return jsonify({"error": "userId and asinList are required"}), 400
+        if not userId or not asinList or not name:
+            return jsonify({"error": "userId and asinList and name are required"}), 400
 
         result = run_end_to_end_investigation(data)
 

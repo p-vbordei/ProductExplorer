@@ -48,11 +48,12 @@ def run_end_to_end_investigation(data):
     if not asinList:
         print("No ASINs found for the investigation.")
         return False
-    try:
-        has_investigations_available(userId, db)
-    except Exception as e:
-        print(f"Error checking user {userId} for available investigations: {e}")
-        return False
+    
+    """    try:
+            has_investigations_available(userId, db)
+        except Exception as e:
+            print(f"Error checking user {userId} for available investigations: {e}")
+            return False"""
 
     try:
         execute_data_acquisition(asinList)
@@ -71,14 +72,14 @@ def run_end_to_end_investigation(data):
     """
 
     try:
-        run_reviews_investigation(investigationId)
+        run_reviews_investigation(userId, investigationId)
         print('Reviews processing completed successfully')
     except Exception as e:
         print(f"Error during reviews processing: {e}")
         return False
     
     try:
-        update_investigation_status(investigationId, "finished", db)
+        update_investigation_status(userId, investigationId, "finished", db)
         print('Investigation completed successfully')
     except Exception as e:
         print(f"Error during updating investigation status: {e}")

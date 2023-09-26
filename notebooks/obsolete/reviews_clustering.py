@@ -17,6 +17,68 @@ try:
 except ImportError:
     from openai_utils import get_completion_list, process_dataframe_async_embedding
 
+
+def save_cluster_info_to_firestore(userId,attributeClustersWithPercentage, attributeClustersWithPercentageByAsin, investigationId, db):
+    """
+    Save the clusters to Firestore.
+    
+    Parameters:
+    - attributeClustersWithPercentage (DataFrame): DataFrame containing attribute clusters with percentage information.
+    - attributeClustersWithPercentageByAsin (DataFrame): DataFrame containing attribute clusters with percentage information by ASIN.
+    - investigationId (str): The ID of the investigation.
+    """
+    try:
+        # Create a dictionary with the cluster information
+        clusters_dict = {
+            'attributeClustersWithPercentage': attributeClustersWithPercentage.to_dict(orient='records'),
+            'attributeClustersWithPercentageByAsin': attributeClustersWithPercentageByAsin.to_dict(orient='records'),
+        }
+
+        startTime = time.time()
+
+        cluster_ref = db.collection(u'clusters').document(userId).collection('investigationCollections').document(investigationId)
+        cluster = cluster_ref.get()
+        if cluster.exists:
+            cluster_ref.update(clusters_dict)
+        else:
+            cluster_ref.set(clusters_dict)
+
+        endTime = time.time()
+        elapsedTime = endTime - startTime
+
+        logging.info(f"Successfully saved/updated clusters to firestore. Time taken: {elapsedTime} seconds")
+    except Exception as e:
+        logging.error(f"Error saving/updating clusters to firestore for investigation {investigationId}: {e}")
+
+
+
+def retreive_attributeClustersWithPercentage_from_firestore(userId, investigationId, db):
+    """
+    Retrieve the clusters from Firestore.
+
+    Parameters:
+    - investigationId (str): The ID of the investigation.
+
+    Returns:
+    - DataFrame: DataFrame containing attribute clusters with percentage information.
+    """
+    try:
+        cluster_ref = db.collection(u'clusters').document(userId).collection('investigationCollections').document(investigationId)
+        cluster = cluster_ref.get()
+        if cluster.exists:
+            clusters_dict = cluster.to_dict()
+            attributeClustersWithPercentage = pd.DataFrame(clusters_dict['attributeClustersWithPercentage'])
+            return attributeClustersWithPercentage
+        else:
+            logging.warning(f"No clusters found for investigation {investigationId}")
+            return None
+    except Exception as e:
+        logging.error(f"Error retrieving clusters from Firestore for investigation {investigationId}: {e}")
+        return None
+
+
+
+
 def cluster_reviews(clean_reviews_list):
     try:
         # Convert reviews list to DataFrame

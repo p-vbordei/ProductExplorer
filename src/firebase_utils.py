@@ -1,7 +1,7 @@
 #######################
 # Description: Utility functions for interacting with Firestore
 # firebase_utils.py
-
+# %%
 import pandas as pd
 import os
 import json
@@ -21,6 +21,7 @@ try:
 except ImportError:
     from investigations import get_asins_from_investigation, update_investigation_status
 
+# %%
 
 def get_secret(secret_name):
     client = secretmanager.SecretManagerServiceClient()
@@ -102,11 +103,11 @@ def get_product_details_from_asin(asin, db):
         logging.warning(f'No product details found for ASIN {asin}')
         return None
 
-def get_investigation_and_product_details(investigationId, db):
+def get_investigation_and_product_details(userId, investigationId, db):
     try:
-        asinList = get_asins_from_investigation(investigationId, db)
+        asinList = get_asins_from_investigation(userId, investigationId, db)
     except Exception as e:
-        logging.error(f"Error getting ASINs for investigation {investigationId}: {e}")
+        logging.error(f"Error getting ASINs for userId: {userId} and investigation: {investigationId}: {e}")
         return []
 
     products = []
@@ -133,7 +134,7 @@ def update_firestore_individual_products(newProductsList, db):
         except Exception as e:
             logging.error(f"Error updating document {product['asin']}: {e}")
 
-def save_product_details_to_firestore(db, investigationId, productData):
+def save_product_details_to_firestore(db, userId, investigationId, productData):
     """
     Save or update product data to Firestore.
 
@@ -146,7 +147,7 @@ def save_product_details_to_firestore(db, investigationId, productData):
     - bool: True if successful, False otherwise.
     """
     
-    doc_ref = db.collection('productInsights').document(investigationId)
+    doc_ref = db.collection('productInsights').document(userId).collection('investigationCollections').document(investigationId)
     try:
         doc_ref.set(productData, merge=True)  # Use set() with merge=True to update or create a new document
         logging.info(f"Successfully saved/updated investigation results with id {investigationId}")
@@ -155,7 +156,7 @@ def save_product_details_to_firestore(db, investigationId, productData):
         logging.error(f"Error saving/updating investigation results with id {investigationId}: {e}", exc_info=True)
         return False
 
-def get_product_data_from_investigation(db, investigationId):
+def get_product_data_from_investigation(db, userId, investigationId):
     """
     Retrieve product data from Firestore based on an investigation ID.
 
@@ -169,7 +170,7 @@ def get_product_data_from_investigation(db, investigationId):
     """
 
     # Retrieve the product data from Firestore using the investigation ID
-    productDataRef = db.collection('productInsights').document(investigationId)
+    productDataRef = db.collection('productInsights').document(userId).collection('investigationCollections').document(investigationId)
     productData = productDataRef.get()
 
     # Check if the document exists
@@ -207,9 +208,9 @@ def get_reviews_from_asin(asin, db):
         logging.warning(f'No product reviews found for ASIN {asin}')
         return None
 
-def get_investigation_and_reviews(investigationId, db):
+def get_investigation_and_reviews(userId, investigationId, db):
     try:
-        asinList = get_asins_from_investigation(investigationId, db)
+        asinList = get_asins_from_investigation(userId, investigationId, db)
     except Exception as e:
         logging.error(f"Error getting ASINs for investigation {investigationId}: {e}")
         return []
@@ -228,15 +229,15 @@ def get_investigation_and_reviews(investigationId, db):
 
     return reviewsList
 
-def get_clean_reviews(investigationId, db):
+def get_clean_reviews(userId, investigationId, db):
     """Retrieve and clean reviews."""
     try:
-        update_investigation_status(investigationId, "startedReviews", db)
+        update_investigation_status(userId, investigationId, "startedReviews", db)
     except Exception as e:
         logging.error(f"Error updating investigation status for {investigationId}: {e}")
 
     try:
-        reviews_download = get_investigation_and_reviews(investigationId, db)
+        reviews_download = get_investigation_and_reviews(userId, investigationId, db)
         flattened_reviews = [item for sublist in reviews_download for item in sublist]
     except Exception as e:
         logging.error(f"Error flattening reviews for investigation {investigationId}: {e}")
@@ -287,23 +288,43 @@ def write_reviews_to_firestore(cleanReviewsList, db):
 # ################
 # New
 
-def write_insights_to_firestore(investigationId, quantifiedDataId, db):
+import logging
+import time
+
+def write_insights_to_firestore(userId, investigationId, quantifiedDataId, db):
     try:
+        # Initialize batch and start time
         batch = db.batch()
         startTime = time.time()
 
         # Iterate over each category in quantifiedDataId
         for category, insights_list in quantifiedDataId.items():
+            # Initialize counter for each category
+            counter = 0
+
             for insight in insights_list:
                 # Ensure data types
                 insight['numberOfObservations'] = int(insight['numberOfObservations'])
                 insight['percentage'] = float(insight['percentage'])
                 insight['rating'] = float(insight['rating'])
 
-                # Create a unique document reference based on the label within the category
-                doc_ref = db.collection(u'reviewsInsights').document(investigationId).collection(category).document(insight['label'])
+                # Use counter as the document ID
+                document_id = str(counter)
+
+                # Create a unique document reference based on the counter within the category
+                try:
+                    doc_ref = db.collection(u'reviewsInsights').document(userId).collection('investigationCollections').document(investigationId).collection(category).document(document_id)
+                except ValueError as e:
+                    logging.error(f"An error occurred: {e}")
+                    continue  # Skip this iteration and continue with the next one
+
+                # Add to batch
                 batch.set(doc_ref, insight)
 
+                # Increment counter
+                counter += 1
+
+        # Commit the batch
         batch.commit()
         endTime = time.time()
         elapsedTime = endTime - startTime
@@ -314,71 +335,38 @@ def write_insights_to_firestore(investigationId, quantifiedDataId, db):
         return False
 
 
+# %%
 
-# ################
-
-# Obsolete
-
-
-
-def save_cluster_info_to_firestore(attributeClustersWithPercentage, attributeClustersWithPercentageByAsin, investigationId, db):
+def count_reviews_for_asins(asin_list, db):
     """
-    Save the clusters to Firestore.
-    
-    Parameters:
-    - attributeClustersWithPercentage (DataFrame): DataFrame containing attribute clusters with percentage information.
-    - attributeClustersWithPercentageByAsin (DataFrame): DataFrame containing attribute clusters with percentage information by ASIN.
-    - investigationId (str): The ID of the investigation.
-    """
-    try:
-        # Create a dictionary with the cluster information
-        clusters_dict = {
-            'attributeClustersWithPercentage': attributeClustersWithPercentage.to_dict(orient='records'),
-            'attributeClustersWithPercentageByAsin': attributeClustersWithPercentageByAsin.to_dict(orient='records'),
-        }
-
-        startTime = time.time()
-
-        cluster_ref = db.collection(u'clusters').document(investigationId)
-        cluster = cluster_ref.get()
-        if cluster.exists:
-            cluster_ref.update(clusters_dict)
-        else:
-            cluster_ref.set(clusters_dict)
-
-        endTime = time.time()
-        elapsedTime = endTime - startTime
-
-        logging.info(f"Successfully saved/updated clusters to firestore. Time taken: {elapsedTime} seconds")
-    except Exception as e:
-        logging.error(f"Error saving/updating clusters to firestore for investigation {investigationId}: {e}")
-
-
-
-def retreive_attributeClustersWithPercentage_from_firestore(investigationId, db):
-    """
-    Retrieve the clusters from Firestore.
+    Count the number of reviews for each ASIN in the given list.
 
     Parameters:
-    - investigationId (str): The ID of the investigation.
+    - asin_list (list): List of ASINs to count reviews for.
+    - db (object): Firestore database client.
 
     Returns:
-    - DataFrame: DataFrame containing attribute clusters with percentage information.
+    - dict: Dictionary with ASINs as keys and the number of reviews as values.
     """
-    try:
-        cluster_ref = db.collection(u'clusters').document(investigationId)
-        cluster = cluster_ref.get()
-        if cluster.exists:
-            clusters_dict = cluster.to_dict()
-            attributeClustersWithPercentage = pd.DataFrame(clusters_dict['attributeClustersWithPercentage'])
-            return attributeClustersWithPercentage
-        else:
-            logging.warning(f"No clusters found for investigation {investigationId}")
-            return None
-    except Exception as e:
-        logging.error(f"Error retrieving clusters from Firestore for investigation {investigationId}: {e}")
-        return None
+    review_count_dict = {}  # Initialize a dictionary to store the count of reviews for each ASIN
 
+    for asin in asin_list:
+        try:
+            # Query the Firestore to get the reviews collection for the given ASIN
+            reviews_ref = db.collection('products').document(asin).collection('reviews')
+            reviews = reviews_ref.stream()
+
+            # Count the number of reviews
+            review_count = sum(1 for _ in reviews)
+
+            # Store the count in the dictionary
+            review_count_dict[asin] = review_count
+
+        except Exception as e:
+            logging.error(f"Error counting reviews for ASIN {asin}: {e}")
+            review_count_dict[asin] = 0  # Set count as 0 if an error occurs
+
+    return review_count_dict
 
 
 # ===================

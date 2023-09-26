@@ -9,11 +9,12 @@ def start_investigation(data, db):
     try:
         userId = data.get('userId')
         asinList = data.get('asinList')
+        name = data.get('name')
 
         if not userId or not asinList:
             raise ValueError("userId and asinList are required fields.")
 
-        investigation_ref = db.collection('investigations').document()
+        investigation_ref = db.collection('investigations').document(userId).collection('investigationCollections').document()
         investigationId = investigation_ref.id
 
         investigation_data = {
@@ -21,15 +22,16 @@ def start_investigation(data, db):
             'userId': userId,
             'asinList': asinList,
             'status': 'started',
-            'startTimestamp': 'Pending Firestore Timestamp',
+            'investigationDate': 'Pending Firestore Timestamp',
         }
 
         investigation_ref.set({
             'id': investigationId,
             'userId': userId,
             'asinList': asinList,
+            'name': name,
             'status': 'started',
-            'startTimestamp': firestore.SERVER_TIMESTAMP,
+            'investigationDate': firestore.SERVER_TIMESTAMP,
         })
         return investigation_data
     except KeyError:
@@ -38,10 +40,10 @@ def start_investigation(data, db):
         print(f"Error starting investigation: {e}")
         return None
 
-def get_investigation(investigationId, db):
+def get_investigation(userId, investigationId,db):
     """Retrieve investigation data by its ID."""
     try:
-        investigation_ref = db.collection('investigations').document(investigationId).get()
+        investigation_ref = db.collection('investigations').document(userId).collection('investigationCollections').document(investigationId).get()
         if investigation_ref.exists:
             data = investigation_ref.to_dict()
             if 'startTimestamp' in data and data['startTimestamp'] == firestore.SERVER_TIMESTAMP:
@@ -53,13 +55,13 @@ def get_investigation(investigationId, db):
         print(f"Error fetching investigation {investigationId}: {e}")
         return None
 
-def complete_investigation(investigationId, results, db):
+def complete_investigation(userId, investigationId, results, db):
     """Mark an investigation as completed and store its results."""
     if not results:
         raise ValueError("Results are required to complete the investigation.")
 
     try:
-        investigation_ref = db.collection('investigations').document(investigationId)
+        investigation_ref = db.collection('investigations').document(userId).collection('investigationCollections').document(investigationId)
         investigation_ref.update({
             'status': 'completed',
             'results': results,
@@ -70,11 +72,11 @@ def complete_investigation(investigationId, results, db):
         print(f"Error completing investigation {investigationId}: {e}")
         return False
 
-def update_investigation_status(investigationId, newStatus, db):
+def update_investigation_status(userId, investigationId,  newStatus, db):
     if not newStatus:
         raise ValueError("New status is required to update the investigation.")
 
-    investigation_ref = db.collection('investigations').document(investigationId)
+    investigation_ref = db.collection('investigations').document(userId).collection('investigationCollections').document(investigationId)
     investigation = investigation_ref.get()
     if investigation.exists:
         investigation_ref.update({
@@ -85,8 +87,8 @@ def update_investigation_status(investigationId, newStatus, db):
     else:
         raise ValueError(f"Investigation with ID {investigationId} does not exist.")
 
-def get_asins_from_investigation(investigationId, db):
-    investigation_ref = db.collection('investigations').document(investigationId)
+def get_asins_from_investigation(userId, investigationId,  db):
+    investigation_ref = db.collection('investigations').document(userId).collection('investigationCollections').document(investigationId)
     investigation = investigation_ref.get()
 
     if investigation.exists:

@@ -13,7 +13,7 @@ import nest_asyncio
 nest_asyncio.apply()
 import logging
 logging.basicConfig(level=logging.INFO)
-
+import traceback
 from aiohttp import ContentTypeError, ClientResponseError
 
 embedding_model = "text-embedding-ada-002"
@@ -110,7 +110,7 @@ def chat_completion_request(messages, functions=None, function_call=None, temper
 
 
 
-@retry(wait=wait_random_exponential(min=1, max=180), stop=stop_after_attempt(10), before_sleep=print, retry_error_callback=lambda _: None)
+@retry(wait=wait_random_exponential(min=1, max=180), stop=stop_after_attempt(10), before_sleep=print, retry_error_callback=lambda retry_state: print(f"Attempt {retry_state.attempt_number} failed. Error: {retry_state.outcome.result()}"))
 async def get_completion(content, session, semaphore, progress_log, functions=None, function_call=None, GPT_MODEL=GPT_MODEL):
     async with semaphore:
         await asyncio.sleep(5.45)  # Introduce a 5.45-second delay between requests. This is to avoid hitting the RPM & TPM limits.
@@ -118,7 +118,7 @@ async def get_completion(content, session, semaphore, progress_log, functions=No
         json_data = {
             "model": GPT_MODEL,
             "messages": content,
-            "temperature": 0.2
+            "temperature": 0
         }
         
         if functions is not None:
@@ -167,24 +167,25 @@ async def get_completion(content, session, semaphore, progress_log, functions=No
                 raise
         except Exception as e:
             logging.error(f"Unexpected error: {e}")
+            traceback.print_exc()
             raise
 
 
 async def get_completion_list(content_list, functions=None, function_call=None, GPT_MODEL=GPT_MODEL):
-    semaphore = asyncio.Semaphore(3)  # Allow only 3 requests at a time to ensure you don't exceed the RPM
+    semaphore = asyncio.Semaphore(6)  # Allow only 3 requests at a time to ensure you don't exceed the RPM
     progress_log = ProgressLog(len(content_list))
 
-    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=600)) as session:
+    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=300)) as session:
         return await asyncio.gather(*[get_completion(content, session, semaphore, progress_log, functions, function_call, GPT_MODEL) for content in content_list])
 
 
 
 
 async def get_completion_list_multifunction(content_list, functions_list, function_calls_list, GPT_MODEL=GPT_MODEL):
-    semaphore = asyncio.Semaphore(3)
+    semaphore = asyncio.Semaphore(6)
     progress_log = ProgressLog(len(content_list) * len(functions_list))  # Adjust for multiple functions
 
-    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=600)) as session:
+    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=300)) as session:
         tasks = []
         for i in range(len(functions_list)):
             for content in content_list:

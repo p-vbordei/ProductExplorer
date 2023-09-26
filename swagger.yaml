@@ -172,19 +172,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - userId
-                - asinList
-              properties:
-                userId:
-                  type: string
-                  description: The ID of the user.
-                asinList:
-                  type: array
-                  items:
-                    type: string
-                  description: List of ASINs for the investigation.
+              $ref: '#/components/schemas/InvestigationStart'
       responses:
         '200':
           description: End-to-end investigation completed successfully.
@@ -507,6 +495,7 @@ components:
       required:
         - userId
         - asinList
+        - name
       properties:
         userId:
           type: string
@@ -516,6 +505,9 @@ components:
           items:
             type: string
           description: List of ASINs for the investigation.
+        name:
+          type: string
+          description: The name of the investigation.
 
     InvestigationResponse:
       type: object
@@ -561,11 +553,15 @@ components:
       type: object
       required:
         - investigationId
+        - userId
       properties:
         investigationId:
           type: string
           description: The ID of the investigation to be processed.
-
+        userId:
+          type: string
+          description: The ID of the user to be processed.
+          
     ReviewsInvestigationResponse:
       type: object
       properties:

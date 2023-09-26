@@ -70,75 +70,6 @@ def process_datapoints(df):
         return datapoints_list
 
 
-
-############################################ QUANTIFY OBSERVATIONS ############################################
-
-
-def quantify_observations(reviewsWithClusters, cleanReviews):
-    try:
-        """Quantify observations at both the investigation and ASIN levels."""
-        
-        logging.info(f"Columns in reviewsWithClusters: {reviewsWithClusters.columns}")
-        logging.info(f"Columns in cleanReviews DataFrame: {pd.DataFrame(cleanReviews).columns}")
-        
-        # Merge DataFrames
-        df_with_clusters = reviewsWithClusters.merge(pd.DataFrame(cleanReviews), on=['id', 'asin'])
-
-        logging.info(f"Columns in merged DataFrame: {df_with_clusters.columns}")
-        logging.info(f"Number of NaN values in 'asin' column: {df_with_clusters['asin'].isna().sum()}")
-        logging.info(f"Data type of 'asin' column: {df_with_clusters['asin'].dtype}")
-        
-        agg_result = df_with_clusters.groupby(['attribute', 'clusterLabel']).agg({
-            'rating': lambda x: list(x),
-            'id': lambda x: list(x),
-            'asin': lambda x: list(x),
-            }).reset_index()
-
-        count_result = df_with_clusters.groupby(['attribute', 'clusterLabel']).size().reset_index(name='observationCount')
-        attributeClustersWithPercentage = pd.merge(agg_result, count_result, on=['attribute', 'clusterLabel'])
-
-        m = [np.mean([int(r) for r in e]) for e in attributeClustersWithPercentage['rating']]
-        k = [int(round(e, 0)) for e in m]
-        attributeClustersWithPercentage['rating_avg'] = k
-
-        total_observations_per_attribute = df_with_clusters.groupby('attribute').size()
-        attributeClustersWithPercentage = attributeClustersWithPercentage.set_index('attribute')
-        attributeClustersWithPercentage['percentageOfObservationsVsTotalNumberPerAttribute'] = attributeClustersWithPercentage['observationCount'] / total_observations_per_attribute * 100
-        attributeClustersWithPercentage = attributeClustersWithPercentage.reset_index()
-
-        number_of_reviews = reviewsWithClusters['id'].unique().shape[0]
-        attributeClustersWithPercentage['percentageOfObservationsVsTotalNumberOfReviews'] = attributeClustersWithPercentage['observationCount'] / number_of_reviews * 100
-
-        # Quantify observations at the ASIN level
-        agg_result_asin = df_with_clusters.groupby(['attribute', 'clusterLabel', 'asin']).agg({
-            'rating': lambda x: list(x),
-            'id': lambda x: list(x),
-        }).reset_index()
-
-        count_result_asin = df_with_clusters.groupby(['attribute', 'clusterLabel', 'asin']).size().reset_index(name='observationCount')
-        attributeClustersWithPercentageByAsin = pd.merge(agg_result_asin, count_result_asin, on=['attribute', 'clusterLabel', 'asin'])
-
-        m_asin = [np.mean([int(r) for r in e]) for e in attributeClustersWithPercentageByAsin['rating']]
-        k_asin = [int(round(e, 0)) for e in m_asin]
-        attributeClustersWithPercentageByAsin['rating_avg'] = k_asin
-
-        df_with_clusters['totalObservationsPerAttributeAsin'] = df_with_clusters.groupby(['attribute', 'asin'])['asin'].transform('count')
-        attributeClustersWithPercentageByAsin['percentageOfObservationsVsTotalNumberPerAttribute'] = attributeClustersWithPercentageByAsin['observationCount'] / df_with_clusters['totalObservationsPerAttributeAsin'] * 100
-        attributeClustersWithPercentageByAsin['percentageOfObservationsVsTotalNumberOfReviews'] = attributeClustersWithPercentageByAsin['observationCount'] / number_of_reviews * 100
-
-        return attributeClustersWithPercentage, attributeClustersWithPercentageByAsin
-
-    except Exception as e:
-        logging.error(f"Error in quantify_observations: {e}")
-        return None, None  # Return None in case of error
-
-
-
-# =====================
-
-
-
-
 def transform_rating_to_star_format(rating):
     """
     Transforms a numerical or textual rating to a star format.
@@ -293,3 +224,6 @@ def quantify_category_data(inputData):
         processedData[categoryKey] = processedLabels
     
     return processedData
+
+
+# =====================
