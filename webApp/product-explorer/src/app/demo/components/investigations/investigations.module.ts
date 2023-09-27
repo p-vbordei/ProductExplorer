@@ -13,6 +13,10 @@ import { InputTextareaModule } from "primeng/inputtextarea";
 import { InvestigationsComponent } from './investigations.component';
 import { InvestigationsRoutingModule } from './investigations-routing.module';
 import { InputTextModule } from "primeng/inputtext";
+import { ReactiveFormsModule } from '@angular/forms';
+import { MessageService } from 'primeng/api';
+import { ToastModule } from 'primeng/toast';
+
 
 @NgModule({
   imports: [
@@ -28,8 +32,11 @@ import { InputTextModule } from "primeng/inputtext";
     TagModule,
     InvestigationsRoutingModule,
     InputTextareaModule,
-    InputTextModule
+    InputTextModule,
+    ReactiveFormsModule,
+    ToastModule
 ],
-declarations: [InvestigationsComponent]
+declarations: [InvestigationsComponent],
+providers: [MessageService]
 })
 export class InvestigationsModule { }

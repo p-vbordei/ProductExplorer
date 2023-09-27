@@ -1,37 +1,48 @@
 <div class="grid">
+    <p-toast></p-toast>
     <div class="col-12">
-		<div class="card">
-			<h5>Create investigation</h5>
-			<div class="p-fluid p-formgrid grid">
-				<div class="field col-12 md:col-6">
-					<label htmlFor="name">Name</label>
-					<input pInputText id="name" type="text" />
-				</div>
-				<div class="field col-12 md:col-6">
-                    <label htmlFor="asins">ASINs</label>
-                    <input pInputText id="asins" type="text" />
-                    <small>Paste ASIN codes here, separated by comma or space.</small>
-				</div>
-			</div>
-            <div class="flex flex-wrap justify-content-end">
-                <p-button styleClass="p-button">
-                    <span class="ml-6 mr-6 font-bold">Submit</span>
-                </p-button>
-			</div>
-		</div>
-	</div>
+        <form [formGroup]="newInvestigationForm" (ngSubmit)="onSubmit()">
+            <div class="card">
+                <h5>Create investigation</h5>
+                <div class="p-fluid p-formgrid grid">
+                    <div class="field col-12 md:col-6">
+                        <label for="name">Name</label>
+                        <input pInputText id="name" type="text" formControlName="name" />
+                        <small
+                            *ngIf="newInvestigationForm.controls['name'].invalid && newInvestigationForm.controls['name'].touched">Name
+                            is required.</small>
+                    </div>
+                    <div class="field col-12 md:col-6">
+                        <label for="asins">ASINs</label>
+                        <input pInputText id="asins" type="text" formControlName="asins" />
+                        <small
+                        *ngIf="newInvestigationForm.controls['asins'].invalid && newInvestigationForm.controls['asins'].touched"
+                        >ASINs
+                            are required.</small>
+                        <small>Paste ASIN codes here, separated by comma or space.</small>
+                    </div>
+                </div>
+                <div class="flex flex-wrap justify-content-end">
+                    <p-button styleClass="p-button" type="submit">
+                        <span class="ml-6 mr-6 font-bold">Submit</span>
+                    </p-button>
+                </div>
+            </div>
+        </form>
+    </div>
 
 
     <div class="col-12">
         <div class="card">
             <h5>Investigations</h5>
-            <p-table #dt  [value]="investiations" [tableStyle]="{ 'min-width': '50rem' }">
+            <p-table #dt [value]="investiations" [tableStyle]="{ 'min-width': '50rem' }">
                 <ng-template pTemplate="header" let-columns>
                     <tr>
-   
+
                         <th>Name</th>
                         <th>ASINs</th>
-                        <th pSortableColumn="investigationDate">Started <p-sortIcon field="investigationDate"></p-sortIcon></th>
+                        <th pSortableColumn="investigationDate">Started <p-sortIcon
+                                field="investigationDate"></p-sortIcon></th>
                         <th>Status</th>
                     </tr>
                 </ng-template>
@@ -53,4 +64,3 @@
 
 
 </div>
-

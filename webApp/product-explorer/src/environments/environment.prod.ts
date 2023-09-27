@@ -7,5 +7,6 @@ export const environment = {
     authDomain: 'productexplorerdata.firebaseapp.com',
     messagingSenderId: '641900184903',
   },
+  beUrl: 'https://productexplorerdata.uc.r.appspot.com',
   production: true
 };
