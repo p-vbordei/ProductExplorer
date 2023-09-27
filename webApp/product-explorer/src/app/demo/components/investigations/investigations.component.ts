@@ -14,9 +14,8 @@ import { MessageService } from 'primeng/api';
 export class InvestigationsComponent implements OnInit, OnDestroy {
 
     investiations!: any;
-    subscription!: Subscription;
     newInvestigationForm: FormGroup;
-
+    private subscriptions = new Subscription();
 
     constructor(
         private fb: FormBuilder, 
@@ -35,7 +34,7 @@ export class InvestigationsComponent implements OnInit, OnDestroy {
 
 
     initTables() {
-      this.subscription = this.investigationsService.getInvestigationCollections().subscribe((data: any) => {     
+        const tableSub = this.investigationsService.getInvestigationCollections().subscribe((data: any) => {     
         this.investiations = data.map((entry: any) => {
             const res = {
                 name: entry.name,
@@ -48,12 +47,13 @@ export class InvestigationsComponent implements OnInit, OnDestroy {
                 return res;
             }); 
       });
+      this.subscriptions.add(tableSub);
     }
 
     onSubmit(): void {
       if (this.newInvestigationForm.valid) {
           const formData = this.newInvestigationForm.value;
-          this.subscription = this.investigationsService.postRunEndToEndInvestigation(formData.asins, formData.name).pipe(
+          const submitSub = this.investigationsService.postRunEndToEndInvestigation(formData.asins, formData.name).pipe(
               catchError((error) => {
                   this.messageService.add({severity:'error', summary: 'Error', detail: error.message});
                   return of(null); // Return a benign observable
@@ -65,15 +65,14 @@ export class InvestigationsComponent implements OnInit, OnDestroy {
                   }
               }
           });
+          this.subscriptions.add(submitSub);
       } else {
           this.messageService.add({severity:'warn', summary: 'Warning', detail: 'Please fill in all required fields.'});
       }
   }
 
     ngOnDestroy() {
-        if (this.subscription) {
-            this.subscription.unsubscribe();
-        }
+        this.subscriptions.unsubscribe();
     }
 
 }

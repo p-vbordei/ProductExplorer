@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Firestore, collection, collectionData, getDocs  } from '@angular/fire/firestore';
+import { Firestore, collection, collectionData, getDocs, onSnapshot  } from '@angular/fire/firestore';
 import { Observable, from, throwError} from 'rxjs';
 import { map } from 'rxjs/operators';
 import { AuthService } from './auth.service';
@@ -20,17 +20,20 @@ export class InvestigationsService {
     const userId = this.authService.userId;
     const investigationCollectionsRef = collection(this.firestore, 'investigations', userId, 'investigationCollections');
     
-    // Convert the Promise returned by getDocs to an Observable using RxJS's from function
-    return from(getDocs(investigationCollectionsRef)).pipe(
-      map(snapshot => {
+    // Return an Observable that listens for real-time changes
+    return new Observable(observer => {
+      const unsubscribe = onSnapshot(investigationCollectionsRef, snapshot => {
         const investigations = [];
         snapshot.forEach(doc => {
           investigations.push({ id: doc.id, ...doc.data() });
         });
-
-        return investigations;
-      })
-    );
+        observer.next(investigations);
+      }, 
+      error => observer.error(error));
+  
+      // Return the unsubscribe function, which will be called when the consumer of this observable unsubscribes.
+      return unsubscribe;
+    });
   }
 
   postRunEndToEndInvestigation(asinString: string, name: string) {
