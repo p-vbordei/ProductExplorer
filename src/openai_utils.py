@@ -16,6 +16,7 @@ logging.basicConfig(level=logging.INFO)
 import traceback
 from aiohttp import ContentTypeError, ClientResponseError
 
+
 embedding_model = "text-embedding-ada-002"
 embedding_encoding = "cl100k_base"
 max_tokens = 8000
@@ -110,78 +111,86 @@ def chat_completion_request(messages, functions=None, function_call=None, temper
 
 
 
-@retry(wait=wait_random_exponential(min=1, max=180), stop=stop_after_attempt(10), before_sleep=print, retry_error_callback=lambda retry_state: print(f"Attempt {retry_state.attempt_number} failed. Error: {retry_state.outcome.result()}"))
-async def get_completion(content, session, semaphore, progress_log, functions=None, function_call=None, GPT_MODEL=GPT_MODEL):
+
+
+@retry(wait=wait_random_exponential(min=1, max=180), stop=stop_after_attempt(10), 
+       before_sleep=lambda retry_state: print(f"Sleeping for {retry_state.next_action} seconds"), 
+       retry_error_callback=lambda retry_state: print(f"Attempt {retry_state.attempt_number} failed. Error: {retry_state.outcome.result()}"))
+async def get_completion(content, session, semaphore, progress_log, functions=None, function_call=None, GPT_MODEL=GPT_MODEL, TEMPERATURE=0):
     async with semaphore:
-        await asyncio.sleep(5.45)  # Introduce a 5.45-second delay between requests. This is to avoid hitting the RPM & TPM limits.
-        
+        await asyncio.sleep(3)  # Introduce a 5.45-second delay between requests to avoid hitting the RPM & TPM limits.
+
+        # 1. Prepare request payload
         json_data = {
             "model": GPT_MODEL,
             "messages": content,
-            "temperature": 0
+            "temperature": TEMPERATURE
         }
-        
+
+        # 2. Optionally update payload with additional fields
         if functions is not None:
             json_data.update({"functions": functions})
         if function_call is not None:
             json_data.update({"function_call": function_call})
 
         try:
+            # 3. Make API request
             async with session.post("https://api.openai.com/v1/chat/completions", headers=HEADERS, json=json_data) as resp:
-                resp.raise_for_status()  # This will raise an error for 4xx and 5xx responses
+                resp.raise_for_status()
                 
                 try:
                     response_json = await resp.json()
                 except ContentTypeError:
                     logging.error("Failed to decode API response as JSON.")
-                    raise
+                    raise  # This exception will trigger a retry if within the retry count
 
+                # 4. Check for API-specific errors in the response
                 if "error" in response_json:
                     error_message = response_json["error"]["message"]
                     logging.error(f"OpenAI API Error: {error_message}")
                     raise ValueError(error_message)
 
+                # 5. Print usage data if available
                 try:
                     print(response_json['usage'])
                 except KeyError:
                     logging.warning("Usage data not found in the response.")
-                
-                print(response_json)
+
+                # 6. Increment progress and print log
                 progress_log.increment()
                 print(progress_log)
+
+                # 7. Return the message from the API response
                 return response_json["choices"][0]['message']
 
         except ClientResponseError as e:
             logging.error(f"HTTP Error {e.status}: {e.message}")
-            if e.status == 400:
-                raise ValueError("Bad Request: The API request was malformed.")
-            elif e.status == 401:
-                raise PermissionError("Unauthorized: Check your API key.")
-            elif e.status == 403:
-                raise PermissionError("Forbidden: You might have exceeded your rate limits or don't have permission.")
-            elif e.status == 404:
-                raise ValueError("Endpoint not found.")
+            if e.status in [400, 401, 403, 404]:
+                raise  # These are not retriable errors, so re-raise them immediately
             elif e.status in [429, 502, 503, 504]:
                 logging.warning("Temporary API issue or rate limit hit. Retrying...")
+                raise  # This exception will trigger a retry if within the retry count
             else:
-                raise
+                raise  # For other errors, re-raise them immediately
+
         except Exception as e:
             logging.error(f"Unexpected error: {e}")
             traceback.print_exc()
-            raise
+            raise  # This exception will trigger a retry if within the retry count
 
 
-async def get_completion_list(content_list, functions=None, function_call=None, GPT_MODEL=GPT_MODEL):
+
+async def get_completion_list(content_list, functions=None, function_call=None, GPT_MODEL=GPT_MODEL, TEMPERATURE=0):
     semaphore = asyncio.Semaphore(6)  # Allow only 3 requests at a time to ensure you don't exceed the RPM
     progress_log = ProgressLog(len(content_list))
 
     async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=300)) as session:
-        return await asyncio.gather(*[get_completion(content, session, semaphore, progress_log, functions, function_call, GPT_MODEL) for content in content_list])
+        return await asyncio.gather(*[get_completion(content, session, semaphore, progress_log, functions, function_call, GPT_MODEL, TEMPERATURE) for content in content_list])
 
 
 
 
-async def get_completion_list_multifunction(content_list, functions_list, function_calls_list, GPT_MODEL=GPT_MODEL):
+async def get_completion_list_multifunction(content_list, functions_list, function_calls_list, GPT_MODEL=GPT_MODEL, TEMPERATURE = 0):
     semaphore = asyncio.Semaphore(6)
     progress_log = ProgressLog(len(content_list) * len(functions_list))  # Adjust for multiple functions
 
@@ -189,7 +198,7 @@ async def get_completion_list_multifunction(content_list, functions_list, functi
         tasks = []
         for i in range(len(functions_list)):
             for content in content_list:
-                tasks.append(get_completion(content, session, semaphore, progress_log, functions_list[i], function_calls_list[i], GPT_MODEL))
+                tasks.append(get_completion(content, session, semaphore, progress_log, functions_list[i], function_calls_list[i], GPT_MODEL, TEMPERATURE))
         return await asyncio.gather(*tasks)
 
 
