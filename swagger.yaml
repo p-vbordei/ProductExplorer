@@ -176,48 +176,6 @@ paths:
 
 components:
   schemas:
-    UserCreate:
-      type: object
-      required:
-        - name
-        - email
-      properties:
-        name:
-          type: string
-          description: The full name of the user.
-          example: "John Doe"
-        email:
-          type: string
-          format: email
-          description: The email address of the user. It should be unique and valid.
-          example: "john.doe@example.com"
-
-    UserResponse:
-      type: object
-      properties:
-        userId:
-          type: string
-          description: The auto-generated ID of the newly created user.
-          example: "abc123xyz"
-    
-    UserDetails:
-      type: object
-      properties:
-        id:
-          type: string
-          description: The ID of the user.
-          example: "abc123xyz"
-        name:
-          type: string
-          description: The full name of the user.
-          example: "John Doe"
-        email:
-          type: string
-          format: email
-          description: The email address of the user.
-          example: "john.doe@example.com"
-
-
     InvestigationStart:
       type: object
       required:
@@ -259,23 +217,6 @@ components:
           type: string
           format: date-time
           description: The timestamp when the investigation was initiated.
-
-    ProductsInvestigationStart:
-      type: object
-      required:
-        - investigationId
-      properties:
-        investigationId:
-          type: string
-          description: The ID of the investigation to be processed.
-
-    ProductsInvestigationResponse:
-      type: object
-      properties:
-        message:
-          type: string
-          description: A message indicating the status of the product investigation.
-          example: "Product investigation completed successfully."
 
     ReviewsInvestigationStart:
       type: object
