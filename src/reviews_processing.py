@@ -7,20 +7,26 @@ import time
 import logging
 import pandas as pd
 logging.basicConfig(level=logging.INFO)
-import tiktoken
 import json
+
+import aiohttp
 import os
+import tiktoken
+import nest_asyncio
+nest_asyncio.apply()
+
+
 
 try:
     from src import app
-    from src.reviews_data_processing_utils import generate_batches, add_uid_to_reviews, aggregate_all_categories,  quantify_category_data
+    from src.reviews_data_processing_utils import generate_batches, add_uid_to_reviews, aggregate_all_categories,  quantify_category_data, export_functions_for_reviews
     from src.firebase_utils import initialize_firestore, get_clean_reviews , write_reviews_to_firestore, write_insights_to_firestore
-    from src.openai_utils import chat_completion_request, get_completion_list_multifunction
+    from src.openai_utils import chat_completion_request, get_completion_list_multifunction, ProgressLog, get_completion
     from src.investigations import update_investigation_status
 except ImportError:
-    from reviews_data_processing_utils import generate_batches, add_uid_to_reviews, aggregate_all_categories,  quantify_category_data
+    from reviews_data_processing_utils import generate_batches, add_uid_to_reviews, aggregate_all_categories,  quantify_category_data, export_functions_for_reviews
     from firebase_utils import initialize_firestore, get_clean_reviews , write_reviews_to_firestore, write_insights_to_firestore
-    from openai_utils import chat_completion_request, get_completion_list_multifunction
+    from openai_utils import chat_completion_request, get_completion_list_multifunction, ProgressLog, get_completion
     from investigations import update_investigation_status
 
 # %%
@@ -44,6 +50,9 @@ def process_reviews_with_gpt(reviewsList, db):
         # Prepare Review Batches
         reviewBatches = generate_batches(updatedReviewsList, max_tokens=6000)
 
+
+
+        # %%
         # Generate Content List for Batches
         contentList = []
         for batch in reviewBatches:
@@ -56,494 +65,7 @@ def process_reviews_with_gpt(reviewsList, db):
             contentList.append(messages)
         # %%
         # DECLARE FUNCTIONS 
-        marketFunctions = [
-                    {
-                        "name": "market",
-                        "description": "Group reviews on topics for each type of job and be sure to that each label is described in two sentences. Extract associated review ids. Let's think step by step. Start by writing down all the different detailing sentences. After that, write down the uids where the detailing sentence is mentioned.",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {
-                                "useCase": {
-                                    "description": "Identifies the specific use case. ,",
-                                    "type": "array",
-                                    "items": {
-                                        "type": "object",
-                                        "properties": {
-                                            "detailingSentence": {
-                                                "type": "string",
-                                            },
-                                            "uid": {
-                                                "type": "array",
-                                                "items": {
-                                                    "type": "number"
-                                                },
-                                                "description": "Strict. Only the uid of those reviews that are associated with this label."
-                                            }
-                                        }
-                                    }
-                                },
-                                "productComparison": {
-                                    "description": "Compare the product to competitors",
-                                    "type": "array",
-                                    "items": {
-                                        "type": "object",
-                                        "properties": {
-                                            "detailingSentence": {
-                                                "type": "string",
-                                            },
-                                            "uid": {
-                                                "type": "array",
-                                                "items": {
-                                                    "type": "number"
-                                                },
-                                                "description": "Strict. Only the uid of those reviews that are associated with this label."
-                                            }
-                                        }
-                                    }
-                                },
-                                "featureRequest": {
-                                    "description": "Identifies the requested features or enhancements",
-                                    "type": "array",
-                                    "items": {
-                                        "type": "object",
-                                        "properties": {
-                                            "detailingSentence": {
-                                                "type": "string",
-                                            },
-                                            "uid": {
-                                                "type": "array",
-                                                "items": {
-                                                    "type": "number"
-                                                },
-                                                "description": "Strict. Only the uid of those reviews that are associated with this label."
-                                            }
-                                        }
-                                    }
-                                },
-                                "painPoints": {
-                                    "description": "Identifies the different pain points, specific challenges or problems customers encountered",
-                                    "type": "array",
-                                    "items": {
-                                        "type": "object",
-                                        "properties": {
-                                            "detailingSentence": {
-                                                "type": "string",
-                                            },
-                                            "uid": {
-                                                "type": "array",
-                                                "items": {
-                                                    "type": "number"
-                                                },
-                                                "description": "Strict. Only the uid of those reviews that are associated with this label."
-                                            }
-                                        }
-                                    }
-                                },
-                                "usageFrequency": {
-                                    "description": "Identifies the  patterns of usage frequency discussed",
-                                    "type": "array",
-                                    "items": {
-                                        "type": "object",
-                                        "properties": {
-                                            "detailingSentence": {
-                                                "type": "string",
-                                            },
-                                            "uid": {
-                                                "type": "array",
-                                                "items": {
-                                                    "type": "number"
-                                                },
-                                                "description": "Strict. Only the uid of those reviews that are associated with this label."
-                                            }
-                                        }
-                                    }
-                                },
-                                "usageTime": {
-                                    "description": "Identifies when the product is used",
-                                    "type": "array",
-                                    "items": {
-                                        "type": "object",
-                                        "properties": {
-                                            "detailingSentence": {
-                                                "type": "string",
-                                            },
-                                            "uid": {
-                                                "type": "array",
-                                                "items": {
-                                                    "type": "number"
-                                                },
-                                                "description": "Strict. Only the uid of those reviews that are associated with this label."
-                                            }
-                                        }
-                                    }
-                                },
-                                "usageLocation": {
-                                    "description": "Identifies where the product is used",
-                                    "type": "array",
-                                    "items": {
-                                        "type": "object",
-                                        "properties": {
-                                            "detailingSentence": {
-                                                "type": "string",
-                                            },
-                                            "uid": {
-                                                "type": "array",
-                                                "items": {
-                                                    "type": "number"
-                                                },
-                                                "description": "Strict. Only the uid of those reviews that are associated with this label."
-                                            }
-                                        }
-                                    }
-                                },
-                                "customerDemographics": {
-                                    "description": "Identifies the different demographic segments",
-                                    "type": "array",
-                                    "items": {
-                                        "type": "object",
-                                        "properties": {
-                                            "detailingSentence": {
-                                                "type": "string",
-                                            },
-                                            "uid": {
-                                                "type": "array",
-                                                "items": {
-                                                    "type": "number"
-                                                },
-                                                "description": "Strict. Only the uid of those reviews that are associated with this label."
-                                            }
-                                        }
-                                    }
-                                },
-                                                    }
-                        }
-                    }
-                ]
-
-        extractJobsFunctions = [
-                    {
-                        "name": "extractJobs",
-                        "description": "Naming follows the JTBD framework. Group reviews on job statements for each type of job. Extract associated review ids. Job statement structure = verb + object of the verb (noun) + contextual clarifier. Let's think step by step. Start by writing down all the different objective (job) statements. After that, write down the uids where the jobs are mentioned.",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {
-                                        "functionalJob": {
-                                            "description": "Identifies main tasks or problems the product solves. Example:'Help develop fine motor skills and hand-eye coordination', 'uid': [11, 27]} ",
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object",
-                                                "properties": {
-                                                    "objectiveStatement": {
-                                                        "type": "string",
-                                                    },
-                                                    "uid": {
-                                                        "type": "array",
-                                                        "items": {
-                                                            "type": "number"
-                                                        },
-                                                        "description": "Strict. Only the uid of those reviews that are associated with this label."
-                                                    }
-                                                }
-                                            }
-                                        },
-                                        "socialJob": {
-                                            "description": "Identifies how users want to be seen by others using the product. Example: 'Provide a shared activity for siblings or friends', 'uid': [37, 97]",
-                                            "type": "array",
-                                            "items": {      
-                                                "type": "object",
-                                                "properties": {
-                                                    "objectiveStatement": {
-                                                        "type": "string",
-                                                    },
-                                                    "uid": {
-                                                        "type": "array",
-                                                        "items": {
-                                                            "type": "number"
-                                                        },
-                                                        "description": "Strict. Only the uid of those reviews that are associated with this label."
-                                                    }
-                                                }
-                                            }
-                                        },
-                                        "emotionalJob": {
-                                            "description": "Identifies the feelings or states users aim to achieve with the product. Example: 'Provide a sense of accomplishment and pride for children', 'uid': [37, 97]",
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object",
-                                                "properties": {
-                                                    "objectiveStatement": {
-                                                        "type": "string",
-                                                    },
-                                                    "uid": {
-                                                        "type": "array",
-                                                        "items": {
-                                                            "type": "number"
-                                                        },
-                                                        "description": "Strict. Only the uid of those reviews that are associated with this label."
-                                                    }
-                                                }
-                                            }
-                                        },
-                                        "supportingJob": {
-                                            "description": "Identifies the tasks or activities that aid the main function of the product. Example: 'Help children develop cognitive skills such as counting, color matching, and pattern recognition', 'uid': [3, 14, 102]",
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object",
-                                                "properties": {
-                                                    "objectiveStatement": {
-                                                        "type": "string",
-                                                    },
-                                                    "uid": {
-                                                        "type": "array",
-                                                        "items": {
-                                                            "type": "number"
-                                                        },
-                                                        "description": "Strict. Only the uid of those reviews that are associated with this label."
-                                                    }
-                                                }
-                                            }
-                                        },
-                            }
-                        }
-                        
-            }
-        ]
-
-
-
-
-        marketResponseHealFunction = [
-            {
-                "name": "formatEnforcementAndHeal",
-                "description": "Check for errors in the input data and corrects them, ensuring the format is as bellow.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "useCase": {
-                            "description": "Identifies the specific use case",
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "detailingSentence": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "productComparison": {
-                            "description": "Compare the product to competitors",
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "detailingSentence": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "featureRequest": {
-                            "description": "Identifies the requested features or enhancements",
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "detailingSentence": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "painPoints": {
-                            "description": "Identifies the different pain points, specific challenges or problems customers encountered",
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "detailingSentence": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "usageFrequency": {
-                            "description": "Identifies the  patterns of usage frequency discussed",
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "detailingSentence": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "usageTime": {
-                            "description": "Identifies when the product is used",
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "detailingSentence": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "usageLocation": {
-                            "description": "Identifies where the product is used",
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "detailingSentence": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "customerDemographics": {
-                            "description": "Identifies the different demographic segments",
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "detailingSentence": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "functionalJob": {
-                            "description": "Identifies main tasks or problems the product solves",
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "objectiveStatement": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "socialJob": {
-                            "description": "Identifies how users want to be seen by others using the product",
-                            "type": "array",
-                            "items": {      
-                                "type": "object",
-                                "properties": {
-                                    "objectiveStatement": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "emotionalJob": {
-                            "description": "Identifies the feelings or states users aim to achieve with the product",
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "objectiveStatement": {
-                                        "type": "string",
-                                    },
-                                    "description": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "supportingJob": {
-                            "description": "Identifies the tasks or activities that aid the main function of the product",
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "objectiveStatement": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                } 
-                        }    }
-                    }
-                }
-            }
-        ]
-
-
-        # %%
+        marketFunctions,  extractJobsFunctions, marketResponseHealFunction, useCaseFunction, productComparisonFunction, featureRequestFunction, painPointsFunction, usageFrequencyFunction, usageTimeFunction, usageLocationFunction, customerDemographicsFunction, functionalJobFunction, socialJobFunction, emotionalJobFunction, supportingJobFunction = export_functions_for_reviews()
 
 
 
@@ -555,11 +77,11 @@ def process_reviews_with_gpt(reviewsList, db):
         GPT_MODEL = 'gpt-3.5-turbo-16k'
 
         # Get responses from GPT
-        async def main():
+        async def main_for_data_extraction():
             responses = await get_completion_list_multifunction(contentList, functions_list=functionsList, function_calls_list=functionsCallList, GPT_MODEL=GPT_MODEL)
             return responses
 
-        responses = asyncio.run(main())
+        responses = asyncio.run(main_for_data_extraction())
         #################################################
         # %%
         # Process the responses
@@ -582,370 +104,7 @@ def process_reviews_with_gpt(reviewsList, db):
 
         # %%
 
-        ##################
 
-        useCaseFunction = [
-            {
-                "name": "useCaseFunction",
-                "description": "Naming follows the JTBD framework. Group reviews on topics for each type of job and be sure to that each label is described in two sentences. Extract associated review ids. Let's think step by step.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "useCase": {
-                            "description": "Identifies the specific use case",
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "detailingSentence": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        ]
-
-        productComparisonFunction = [
-            {
-                "name": "productComparisonFunction",
-                "description": "Naming follows the JTBD framework. Group reviews on topics for each type of job and be sure to that each label is described in two sentences. Extract associated review ids.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "productComparison": {
-                            "description": "Compare the product to competitors",
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "detailingSentence": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        ]
-
-        featureRequestFunction = [
-            {
-                "name": "featureRequestFunction",
-                "description": "Naming follows the JTBD framework. Group reviews on topics for each type of job and be sure to that each label is described in two sentences. Extract associated review ids.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "featureRequest": {
-                            "description": "Identifies the requested features or enhancements",
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "detailingSentence": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        ]
-
-        painPointsFunction = [
-            {
-                "name": "painPointsFunction",
-                "description": "Naming follows the JTBD framework. Group reviews on topics for each type of job and be sure to that each label is described in two sentences. Extract associated review ids.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "painPoints": {
-                            "description": "Identifies the different pain points, specific challenges or problems customers encountered",
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "detailingSentence": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        ]
-
-        usageFrequencyFunction = [
-            {
-                "name": "usageFrequencyFunction",
-                "description": "Naming follows the JTBD framework. Group reviews on topics for each type of job and be sure to that each label is described in two sentences. Extract associated review ids.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "usageFrequency": {
-                            "description": "Identifies the patterns of usage frequency discussed",
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "detailingSentence": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        ]
-
-        usageTimeFunction = [
-            {
-                "name": "usageTimeFunction",
-                "description": "Naming follows the JTBD framework. Group reviews on topics for each type of job and be sure to that each label is described in two sentences. Extract associated review ids.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "usageTime": {
-                            "description": "Identifies when the product is used",
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "detailingSentence": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        ]
-
-        usageLocationFunction = [
-            {
-                "name": "usageLocationFunction",
-                "description": "Naming follows the JTBD framework. Group reviews on topics for each type of job and be sure to that each label is described in two sentences. Extract associated review ids.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "usageLocation": {
-                            "description": "Identifies where the product is used",
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "detailingSentence": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        ]
-
-        customerDemographicsFunction = [
-            {
-                "name": "customerDemographicsFunction",
-                "description": "Naming follows the JTBD framework. Group reviews on topics for each type of job and be sure to that each label is described in two sentences. Extract associated review ids.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "customerDemographics": {
-                            "description": "Identifies the different demographic segments",
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "detailingSentence": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        ]
-
-        functionalJobFunction = [
-            {
-                "name": "functionalJobFunction",
-                "description": "Naming follows the JTBD framework. Group reviews on topics for each type of job and be sure to that each label is described in two sentences. Extract associated review ids.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "functionalJob": {
-                            "description": "Identifies main tasks or problems the product solves",
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "objectiveStatement": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        ]
-
-        socialJobFunction = [
-            {
-                "name": "socialJobFunction",
-                "description": "Naming follows the JTBD framework. Group reviews on topics for each type of job and be sure to that each label is described in two sentences. Extract associated review ids.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "socialJob": {
-                            "description": "Identifies how users want to be seen by others using the product",
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "objectiveStatement": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        ]
-
-        emotionalJobFunction = [
-            {
-                "name": "emotionalJobFunction",
-                "description": "Naming follows the JTBD framework. Group reviews on topics for each type of job and be sure to that each label is described in two sentences. Extract associated review ids.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "emotionalJob": {
-                            "description": "Identifies the feelings or states users aim to achieve with the product",
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "objectiveStatement": {
-                                        "type": "string",
-                                    },
-                                    "description": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        ]
-
-        supportingJobFunction = [
-            {
-                "name": "supportingJobFunction",
-                "description": "Naming follows the JTBD framework. Group reviews on topics for each type of job and be sure to that each label is described in two sentences. Extract associated review ids.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "supportingJob": {
-                            "description": "Identifies the tasks or activities that aid the main function of the product",
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "objectiveStatement": {
-                                        "type": "string",
-                                    },
-                                    "uid": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "number"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        ]
 
 
         # %%
@@ -967,51 +126,71 @@ def process_reviews_with_gpt(reviewsList, db):
 
         # %%
 
-        GPT_MODEL = 'gpt-3.5-turbo-16k'
 
-        functionsResponses = []
-        for key, function in functionMapping.items():
-            if key in aggregatedResponses:
-                contentList = [
-                    {"role": "user", "content": f"Process the results for key: {key}. Group together uid's from similar labels. Keep only what is distinct. Take a deep breath and work on this problem step-by-step. Limit the number of UIds if you need to in order to reach the token limit with no errors.\n {aggregatedResponses[key]}"}
-                ]
-                print({"name": function[0]["name"]})
-                response = chat_completion_request(contentList, function, {"name": function[0]["name"]} ,temperature=0.5,model=GPT_MODEL)
-                functionsResponses.append(response)
-            else:
-                pass
 
+        # %%
 
 
 
         # %%
+        GPT_MODEL = 'gpt-3.5-turbo-16k'
+        async def main_for_data_aggregation():
+            
+            semaphore = asyncio.Semaphore(10)  # Adjust as needed
+            async with aiohttp.ClientSession() as session:
+                functionsResponses = []
+                for key, function in functionMapping.items():
+                    if key in aggregatedResponses:
+                        contentList = [
+                            {"role": "user", "content": f"You are the most awesome product researcher. Please process the results for key: {key}.  \n Aggregated observations are here: {aggregatedResponses[key]}"}
+                        ]
+                        print({"name": function[0]["name"]})
+
+                        # Replace with the async call
+                        progress_log = ProgressLog(len(contentList))
+                        response = await get_completion(contentList, session, semaphore, progress_log, functions=function, function_call={"name": function[0]["name"]}, TEMPERATURE=0.3)
+                        
+                        functionsResponses.append(response)
+
+            return functionsResponses
+
+        functionsResponses = asyncio.run(main_for_data_aggregation())
+
+        # %%
         # Processes Results
         processedResults = []
-        for idx, response in enumerate(functionsResponses):
-            key = list(aggregatedResponses.keys())[idx]
-            resp = response.json()['choices']
-            data = resp[0]['message']['function_call']['arguments']
+        for index in range(len(functionsResponses)):
             try:
-                evalData = json.loads(data)
-            except:
-                healingResponse = chat_completion_request(
-                    messages=[{"role": "user", "content": f"Check this output data and heal or correct any errors observed: {data}. Response to be evaluated should be inside ['function_call']['arguments']."}],
-                    functions=marketResponseHealFunction,
-                    function_call={"name": "formatEnforcementAndHeal"},
-                    temperature=0,
-                    model=GPT_MODEL
-                )
-                resp = healingResponse.json()['choices']
-                parsed_resp = resp[0]['message']['function_call']['arguments']
+                print(index)
+                item = functionsResponses[index]
+                data = item['function_call']['arguments']
+                # Try to parse the response data
                 try:
-                    evalData = json.loads(parsed_resp)
+                    evalData = json.loads(data)
                 except:
-                    evalData = {"error": "Unable to process the data"}
-            processedResults.append(evalData)
+                    healingResponse = chat_completion_request(
+                        messages=[{"role": "user", "content": f"Check this output data and heal or correct any errors observed: {data}. Response to be evaluated should be inside ['function_call']['arguments']."}],
+                        functions=marketResponseHealFunction,
+                        function_call={"name": "formatEnforcementAndHeal"},
+                        temperature=0,
+                        model=GPT_MODEL,
+                        TEMPERATURE = 0,
+                    )
+                    resp = healingResponse.json()['choices']
+                    parsed_resp = resp[0]['message']['function_call']['arguments']
+                    try:
+                        evalData = json.loads(parsed_resp)
+                    except:
+                        print(f"Error processing response including healing action for batch {index}.")
+                        pass
+                processedResults.append(evalData)
+            except:
+                print(f"Error processing response for batch {index}.")
+                pass
 
+        # %%
 
         def filter_uids(processedResults, uid_to_id_mapping):
-            # 1. Create an empty list to store the filtered results
             filteredResults = []
 
             for result_dict in processedResults:
@@ -1029,8 +208,47 @@ def process_reviews_with_gpt(reviewsList, db):
                     new_dict[key] = new_value_list
                 filteredResults.append(new_dict)
             return filteredResults
-        
+
+
+
         filteredResults = filter_uids(processedResults, uid_to_id_mapping)
+
+        # %%
+
+        # Initialize an empty list to hold the new filtered results
+        newFilteredResults = []
+
+        # Loop through each dictionary in the original filteredResults list
+        for result_dict in filteredResults:
+            # Create a new dictionary to store the de-duplicated lists for each key
+            new_dict = {}
+            
+            for key, value_list in result_dict.items():
+                # Initialize a set to keep track of seen items
+                seen = set()
+                
+                # Initialize a list to keep the unique items
+                unique_list = []
+                
+                for item in value_list:
+                    # Serialize the dictionary to a string to make it hashable
+                    item_str = json.dumps(item, sort_keys=True)
+                    
+                    # Add item to unique_list if not seen before
+                    if item_str not in seen:
+                        unique_list.append(item)
+                        seen.add(item_str)
+                
+                # Update the list for the current key with the de-duplicated list
+                new_dict[key] = unique_list
+            
+            # Add the new dictionary with all de-duplicated lists to the new filtered list
+            newFilteredResults.append(new_dict)
+
+
+        # Update filteredResults with the de-duplicated results
+        filteredResults = newFilteredResults
+
 
         ##################
         # %%
@@ -1063,8 +281,9 @@ def process_reviews_with_gpt(reviewsList, db):
                 print(f"Unexpected error: {e}")
                 print(item)
 
-        
-        # Redenumeste cheile in 'label;
+        # %%
+
+        # Redenumeste cheile in 'header;
         updatedOuterData = {}
         for outer_key, inner_list in processedData.items():
             updatedInnerList = []
@@ -1072,7 +291,7 @@ def process_reviews_with_gpt(reviewsList, db):
                 updatedInnerDict = {}
 
                 for key, value in inner_dict.items():
-                    if key == 'detailingSentence' or key == 'objectiveStatement':
+                    if key == 'headerOfCategory (7 words)' or key == 'objectiveStatement' or key == 'headerOfCategory':
                         new_key = 'label'
                     else:
                         new_key = key
@@ -1091,7 +310,7 @@ def process_reviews_with_gpt(reviewsList, db):
             try:
                 for value in value_list:
                     try:
-                        label = value['detailingSentence']
+                        label = value['headerOfCategory (7 words)']
                     except:
                         try:
                             label = value['objectiveStatement']
@@ -1154,6 +373,7 @@ def process_reviews_with_gpt(reviewsList, db):
                 item['rating'] = [int(uid_to_rating[uid]) for uid in item['uid']]
 
 
+
         # %%
         print("Quantifying data")
         try:
@@ -1165,8 +385,8 @@ def process_reviews_with_gpt(reviewsList, db):
 
 
         # %%
-        # Add the text from the reviews to each label
-        print("Adding text to each label")
+        # Add the text from the reviews to each header
+        print("Adding text to each header")
         uid_to_text = {review['uid']: review['text'] for review in tagedReviews}
 
         for key, value_list in quantifiedData.items():
@@ -1189,7 +409,7 @@ def process_reviews_with_gpt(reviewsList, db):
                 key: [
                     {
                         k: entry[k] if k != 'uid' else entry[k][:5]
-                        for k in ['label', 'numberOfObservations', 'percentage', 'rating', 'uid']
+                        for k in ['label', 'numberOfObservations', 'percentage', 'rating', 'uid', 'negativeRatingsCount','positiveRatingsCount']
                     }
                     for entry in value
                 ]
@@ -1216,7 +436,7 @@ def process_reviews_with_gpt(reviewsList, db):
                 key: [
                     {
                         k: entry[k]
-                        for k in ['label', 'numberOfObservations', 'percentage', 'rating', 'customerVoice']
+                        for k in ['label', 'numberOfObservations', 'percentage', 'rating', 'customerVoice', 'negativeRatingsCount','positiveRatingsCount' ]
                     }
                     for entry in value
                 ]

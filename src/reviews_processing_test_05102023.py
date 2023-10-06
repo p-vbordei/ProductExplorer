@@ -50,7 +50,6 @@ if not reviews:
 
 # %%
 
-
 reviewsList = reviews.copy()
 # Allocate short Ids to reviews
 updatedReviewsList, uid_to_id_mapping = add_uid_to_reviews(reviewsList)
@@ -74,9 +73,6 @@ for batch in reviewBatches:
 # %%
 # DECLARE FUNCTIONS 
 marketFunctions,  extractJobsFunctions, marketResponseHealFunction, useCaseFunction, productComparisonFunction, featureRequestFunction, painPointsFunction, usageFrequencyFunction, usageTimeFunction, usageLocationFunction, customerDemographicsFunction, functionalJobFunction, socialJobFunction, emotionalJobFunction, supportingJobFunction = export_functions_for_reviews()
-
-
-# %%
 
 
 
@@ -420,7 +416,7 @@ try:
         key: [
             {
                 k: entry[k] if k != 'uid' else entry[k][:5]
-                for k in ['label', 'numberOfObservations', 'percentage', 'rating', 'uid']
+                for k in ['label', 'numberOfObservations', 'percentage', 'rating', 'uid', 'negativeRatingsCount','positiveRatingsCount']
             }
             for entry in value
         ]
@@ -447,7 +443,7 @@ try:
         key: [
             {
                 k: entry[k]
-                for k in ['label', 'numberOfObservations', 'percentage', 'rating', 'customerVoice']
+                for k in ['label', 'numberOfObservations', 'percentage', 'rating', 'customerVoice', 'negativeRatingsCount','positiveRatingsCount' ]
             }
             for entry in value
         ]

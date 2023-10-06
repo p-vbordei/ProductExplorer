@@ -198,11 +198,15 @@ def quantify_category_data(inputData):
         for labelData in labels:
             labelObservations = len(labelData['uid'])
             
-            # Check for zero total observations and calculate label percentage
+            # Calculate label percentage
             labelPercentage = (labelObservations / categoryTotalObservations) * 100 if categoryTotalObservations != 0 else 0
             formattedLabelPercentage = int("{:.0f}".format(labelPercentage))
             
-            # Check for zero length and calculate average rating for label
+            # Count ratings 1-3 and 4-5
+            ratings_1_2_3_count = sum(1 for rating in labelData['rating'] if rating >= 1 and rating <= 3)
+            ratings_4_5_count = sum(1 for rating in labelData['rating'] if rating >= 4 and rating <= 5)
+            
+            # Calculate average rating
             if len(labelData['rating']) != 0:
                 averageRating = sum(labelData['rating']) / len(labelData['rating'])
                 formattedAverageRating = float("{:.1f}".format(averageRating))
@@ -213,7 +217,9 @@ def quantify_category_data(inputData):
                     'asin': list(set(labelData['asin'])),
                     'numberOfObservations': labelObservations,
                     'percentage': formattedLabelPercentage,
-                    'rating': formattedAverageRating
+                    'rating': formattedAverageRating,
+                    'negativeRatingsCount': ratings_1_2_3_count,
+                    'positiveRatingsCount': ratings_4_5_count
                 }
                 
                 processedLabels.append(processedLabelData)
