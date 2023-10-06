@@ -10,11 +10,8 @@ logging.basicConfig(level=logging.INFO)
 from src import app, connex_app
 from src.investigations import start_investigation
 from src.data_acquisition import execute_data_acquisition
-from src.products_processing import run_products_investigation
 from src.reviews_processing import run_reviews_investigation
 from src.run_investigation import run_end_to_end_investigation
-from src.users import (create_user, get_user, subscribe_user, log_payment, 
-                       subscribe_user_to_package, has_investigations_available)
 from src.firebase_utils import initialize_firestore
 # %%
 logging.info("This is an info message.")
@@ -80,29 +77,6 @@ def api_run_data_acquisition():
 
 
 
-def api_run_products_investigation():
-    """
-    Initiates a product investigation based on the provided investigation ID and credential path.
-    """
-    data = request.json
-    investigationId = data.get('investigationId')
-    userId = data.get('userId')
-    
-    if not investigationId:
-        logging.error("Missing investigationId for products investigation")
-        return jsonify({"error": "investigationId is required"}), 400
-
-    try:
-        logging.info(f"Starting products investigation for ID: {investigationId}")
-        run_products_investigation(userId, investigationId)
-        logging.info(f"Completed products investigation for ID: {investigationId}")
-        return jsonify({"message": "Investigation completed successfully"}), 200
-    except Exception as e:
-        logging.error(f"Failed to complete products investigation for ID: {investigationId}. Error: {str(e)}")
-        return jsonify({"error": str(e)}), 500
-
-
-
 import logging
 
 def api_run_reviews_investigation():
@@ -159,98 +133,6 @@ def api_run_end_to_end_investigation():
         return jsonify({"error": str(e)}), 500
 
 
-def api_create_user(db = db):
-    data = request.json
-    try:
-        userId = create_user(data, db)
-        logging.info(f"User created successfully with userId: {userId}")
-        return jsonify({"userId": userId}), 201
-    except Exception as e:
-        logging.error(f"Error in api_create_user: {e}")
-        return jsonify({"error": str(e)}), 500
-
-def api_get_user(db = db):
-    userId = request.args.get('userId')
-    if not userId:
-        logging.warning("userId is required for api_get_user")
-        return jsonify({"error": "userId is required"}), 400
-    user_data = get_user(userId, db)
-    if user_data:
-        logging.info(f"User data retrieved successfully for userId: {userId}")
-        return jsonify(user_data), 200
-    else:
-        logging.warning(f"User not found for userId: {userId}")
-        return jsonify({"error": "User not found"}), 404
-
-def api_subscribe_user(db = db):
-    data = request.json
-    userId = data.get('userId')
-    package = data.get('package')
-    if not userId or not package:
-        logging.warning("userId and package are required for api_subscribe_user")
-        return jsonify({"error": "userId and package are required"}), 400
-    try:
-        subscription_data = subscribe_user(userId, package, db)
-        logging.info(f"User subscribed successfully with data: {subscription_data}")
-        return jsonify(subscription_data), 201
-    except Exception as e:
-        logging.error(f"Error in api_subscribe_user: {e}")
-        return jsonify({"error": str(e)}), 500
-
-def api_log_payment(db = db):
-    data = request.json
-    try:
-        payment_id = log_payment(data, db)
-        logging.info(f"Payment logged successfully with paymentId: {payment_id}")
-        return jsonify({"paymentId": payment_id}), 201
-    except Exception as e:
-        logging.error(f"Error in api_log_payment: {e}")
-        return jsonify({"error": str(e)}), 500
-
-
-def api_subscribe_user_to_package(db = db):
-    data = request.json
-    userId = data.get('userId')
-    package = data.get('package')
-    start_date = data.get('startDate')
-    payment_intent_id = data.get('paymentIntentId')
-    
-    if not all([userId, package, start_date, payment_intent_id]):
-        logging.warning("All fields are required for api_subscribe_user_to_package")
-        return jsonify({"error": "All fields are required"}), 400
-    
-    try:
-        subscribe_user_to_package(userId, package, start_date, payment_intent_id, db)
-        logging.info(f"User {userId} subscribed successfully to package {package} starting from {start_date} with payment intent ID {payment_intent_id}")
-        return jsonify({"message": "Subscription successful"}), 200
-    except Exception as e:
-        logging.error(f"Error in api_subscribe_user_to_package: {e}")
-        return jsonify({"error": str(e)}), 500
-
-
-def api_has_investigations_available(db=db):
-    """
-    Checks if the user has remaining investigations available.
-    """
-    userId = request.args.get('userId')  # Get the userId from the request parameters
-    
-    if not userId:
-        logging.warning("userId is required for api_has_investigations_available")
-        return jsonify({"error": "userId is required"}), 400
-    
-    try:
-        result = has_investigations_available(userId, db)  # Call the function from users.py
-        
-        if result:
-            logging.info(f"User {userId} has investigations available.")
-            return jsonify({"message": "User has investigations available", "available": True}), 200
-        else:
-            logging.info(f"User {userId} does not have investigations available.")
-            return jsonify({"message": "User does not have investigations available", "available": False}), 200
-    
-    except Exception as e:
-        logging.error(f"Error in api_has_investigations_available: {e}")
-        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":

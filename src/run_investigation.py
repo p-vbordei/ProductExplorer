@@ -10,16 +10,14 @@ try:
     from src.firebase_utils import initialize_firestore
     from src.investigations import start_investigation
     from src.data_acquisition import execute_data_acquisition
-    from src.products_processing import run_products_investigation
     from src.reviews_processing import run_reviews_investigation
-    from src.users import use_investigation, has_investigations_available, update_investigation_status
+    from src.users import use_investigation, update_investigation_status
 except ImportError:
     from firebase_utils import initialize_firestore
     from investigations import start_investigation
     from data_acquisition import execute_data_acquisition
-    from products_processing import run_products_investigation
     from reviews_processing import run_reviews_investigation
-    from users import use_investigation, has_investigations_available, update_investigation_status
+    from users import use_investigation,  update_investigation_status
 
 
 # %%
@@ -53,7 +51,8 @@ def run_end_to_end_investigation(data):
             has_investigations_available(userId, db)
         except Exception as e:
             print(f"Error checking user {userId} for available investigations: {e}")
-            return False"""
+            return False
+    """
 
     try:
         execute_data_acquisition(asinList)
@@ -62,14 +61,6 @@ def run_end_to_end_investigation(data):
         print(f"Error during data acquisition: {e}")
         return False
 
-    """
-    try:
-        run_products_investigation(investigationId)
-        print('Products processing completed successfully')
-    except Exception as e:
-        print(f"Error during products processing: {e}")
-        return False
-    """
 
     try:
         run_reviews_investigation(userId, investigationId)
@@ -85,6 +76,7 @@ def run_end_to_end_investigation(data):
         print(f"Error during updating investigation status: {e}")
         return False
 
+    """
     try:
         use_investigation(userId, db)
         print(f'Used Investigation from user: {userId}')
@@ -92,6 +84,6 @@ def run_end_to_end_investigation(data):
         print(f"Error during using for user: {userId} ,investigation: {e}")
         return False
     return True
-
+    """
 #%%
 # ====================
