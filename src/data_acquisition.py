@@ -13,9 +13,15 @@ from google.cloud import pubsub_v1
 logging.basicConfig(level=logging.INFO)
 
 try:
-    from src.firebase_utils import initialize_firestore
+    from src.firebase_utils import initialize_firestore, initialize_gae
 except (ImportError, ModuleNotFoundError):
-    from firebase_utils import initialize_firestore
+    from firebase_utils import initialize_firestore, initialize_gae
+
+if not FIREBASE_KEY:
+    from dotenv import load_dotenv
+    load_dotenv()
+    FIREBASE_KEY = os.getenv('FIREBASE_KEY')
+
 
 headers = {
     "X-RapidAPI-Key": "YOUR_API_KEY",

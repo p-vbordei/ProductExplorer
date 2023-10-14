@@ -22,3 +22,7 @@ __pycache__/
 /docker
 /models
 /notebooks
+
+
+src/firebase-key.json
+src/gae-key.json

@@ -78,6 +78,20 @@ def initialize_firestore():
     return db
 
 
+def initialize_gae():
+    GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+    
+    # Initialize Firebase
+    if os.environ.get('GAE_ENV', '').startswith('standard'):
+        if not firebase_admin._apps:
+            firebase_admin.initialize_app()
+    else:
+        cred = credentials.Certificate(GOOGLE_APPLICATION_CREDENTIALS)
+        if not firebase_admin._apps:
+            firebase_admin.initialize_app(cred)
+
+    # Initialize Google Cloud Services
+    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = GOOGLE_APPLICATION_CREDENTIALS
 
 
 ########### PRODUCTS #############

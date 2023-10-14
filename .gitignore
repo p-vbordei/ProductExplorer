@@ -98,5 +98,5 @@ src/assets/demo/styles/badges.css
 #Docker Compose for now
 docker/
 
-notebooks/productexplorerdata-firebase-adminsdk-ulb3d-465f23dff3.json
-
+src/firebase-key.json
+src/gae-key.json
