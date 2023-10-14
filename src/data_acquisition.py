@@ -7,6 +7,8 @@ import time
 import asyncio
 import aiohttp
 import nest_asyncio
+import logging 
+logging.basicConfig(level=logging.INFO)
 
 # Importing Firestore initialize function
 try:
@@ -17,15 +19,14 @@ except (ImportError, ModuleNotFoundError):
 # API details
 product_url = "https://amazonlive.p.rapidapi.com/product"
 reviews_url = "https://amazonlive.p.rapidapi.com/reviews"
-
 headers = {
     "X-RapidAPI-Key": "YOUR_API_KEY",
     "X-RapidAPI-Host": "amazonlive.p.rapidapi.com"
 }
 
-# Variable to hold API rate (requests per second)
-api_rate = 1  # Change this to 5 or 100 as needed ( requests per second)
-sleep_time = 1 / api_rate  # Calculate sleep time based on rate
+# API rate settings
+api_rate = 1  
+sleep_time = 1 / api_rate  
 
 async def fetch_reviews(session, page_var, asin, retries=3):
     params = {
@@ -36,17 +37,21 @@ async def fetch_reviews(session, page_var, asin, retries=3):
         "sort_by_recent": "false",
         "only_verified": "true"
     }
-    sleep_time = 1 / api_rate  # Calculate sleep time based on rate
     for _ in range(retries):
-        async with session.get(reviews_url, headers=headers, params=params) as response:
-            if response.status == 429:
-                await asyncio.sleep(sleep_time)  # Sleep based on API rate
-                continue
-            elif response.status != 200:
-                print(f"Failed for {asin} page {page_var}. HTTP: {response.status}")
-                return None
-            return await response.json()
-    print(f"Failed for {asin} page {page_var} after {retries} retries.")
+        try:
+            async with session.get(reviews_url, headers=headers, params=params) as response:
+                if response.status == 429:
+                    logging.warning(f"Rate limit hit for {asin} page {page_var}. Sleeping.")
+                    await asyncio.sleep(sleep_time)
+                    continue
+                elif response.status != 200:
+                    logging.error(f"Failed for {asin} page {page_var}. HTTP: {response.status}")
+                    return None
+                return await response.json()
+        except Exception as e:
+            logging.exception(f"Error fetching reviews for {asin} page {page_var}: {e}")
+            return None
+    logging.error(f"Failed for {asin} page {page_var} after {retries} retries.")
     return None
 
 # (The rest of your code remains unchanged)
@@ -77,26 +82,29 @@ def update_firestore_reviews(asin, reviews, db):
     print(f"Updated Firestore for {asin} in {time.time() - start} seconds.")
 
 async def process_asin(asin, db):
-    await asyncio.sleep(sleep_time)  # Respect the API rate limit
-    reviews = await get_product_reviews(asin)
-    update_firestore_reviews(asin, reviews, db)
+    try:
+        await asyncio.sleep(sleep_time)
+        reviews = await get_product_reviews(asin)
+        update_firestore_reviews(asin, reviews, db)
+    except Exception as e:
+        logging.exception(f"Error processing ASIN {asin}: {e}")
 
 async def run_data_acquisition(asinList):
     try:
         db = initialize_firestore()
-        tasks = []
-        for i, asin in enumerate(asinList):
-            if i != 0 and i % api_rate == 0:
-                await asyncio.sleep(1)  # Pause after every 'api_rate' number of requests
-            task = asyncio.ensure_future(process_asin(asin, db))
-            tasks.append(task)
+        tasks = [process_asin(asin, db) for asin in asinList]
         await asyncio.gather(*tasks)
+        logging.info("Data acquisition complete.")
         return True
     except Exception as e:
-        print(f"Error: {e}")
+        logging.exception(f"Error in run_data_acquisition: {e}")
         return False
 
 def execute_data_acquisition(asinList):
-    nest_asyncio.apply()
-    return asyncio.run(run_data_acquisition(asinList))
+    try:
+        nest_asyncio.apply()
+        return asyncio.run(run_data_acquisition(asinList))
+    except Exception as e:
+        logging.exception(f"Error in execute_data_acquisition: {e}")
+        return False
 # =========================
