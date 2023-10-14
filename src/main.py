@@ -77,8 +77,6 @@ def api_run_data_acquisition():
 
 
 
-import logging
-
 def api_run_reviews_investigation():
     """
     Initiates a reviews investigation based on the provided investigation ID and credential path.
@@ -131,7 +129,6 @@ def api_run_end_to_end_investigation():
     except Exception as e:
         logging.error(f"Error in api_run_end_to_end_investigation: {e}")  # Log the error
         return jsonify({"error": str(e)}), 500
-
 
 
 
