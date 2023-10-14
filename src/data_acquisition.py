@@ -18,11 +18,13 @@ except (ImportError, ModuleNotFoundError):
 product_url = "https://amazonlive.p.rapidapi.com/product"
 reviews_url = "https://amazonlive.p.rapidapi.com/reviews"
 
-# Store API keys in a secure manner, not in the code
 headers = {
     "X-RapidAPI-Key": "YOUR_API_KEY",
     "X-RapidAPI-Host": "amazonlive.p.rapidapi.com"
 }
+
+# Variable to hold API rate (requests per second)
+api_rate = 1  # Change this to 5 or 100 as needed ( requests per second)
 
 async def fetch_reviews(session, page_var, asin, retries=3):
     params = {
@@ -33,10 +35,11 @@ async def fetch_reviews(session, page_var, asin, retries=3):
         "sort_by_recent": "false",
         "only_verified": "true"
     }
+    sleep_time = 1 / api_rate  # Calculate sleep time based on rate
     for _ in range(retries):
         async with session.get(reviews_url, headers=headers, params=params) as response:
             if response.status == 429:
-                await asyncio.sleep(2)
+                await asyncio.sleep(sleep_time)  # Sleep based on API rate
                 continue
             elif response.status != 200:
                 print(f"Failed for {asin} page {page_var}. HTTP: {response.status}")
@@ -44,6 +47,9 @@ async def fetch_reviews(session, page_var, asin, retries=3):
             return await response.json()
     print(f"Failed for {asin} page {page_var} after {retries} retries.")
     return None
+
+# (The rest of your code remains unchanged)
+
 
 async def get_product_reviews(asin):
     start = time.time()
