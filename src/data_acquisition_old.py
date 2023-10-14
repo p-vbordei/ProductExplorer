@@ -7,40 +7,34 @@ import time
 import asyncio
 import aiohttp
 import nest_asyncio
-import logging
-import json
-from google.cloud import pubsub_v1
+import logging 
 logging.basicConfig(level=logging.INFO)
 
+# Importing Firestore initialize function
 try:
     from src.firebase_utils import initialize_firestore
 except (ImportError, ModuleNotFoundError):
     from firebase_utils import initialize_firestore
 
+# API details
+product_url = "https://amazonlive.p.rapidapi.com/product"
+reviews_url = "https://amazonlive.p.rapidapi.com/reviews"
 headers = {
     "X-RapidAPI-Key": "YOUR_API_KEY",
     "X-RapidAPI-Host": "amazonlive.p.rapidapi.com"
 }
-reviews_url = "https://amazonlive.p.rapidapi.com/reviews"
-api_rate = 1
-sleep_time = 1 / api_rate
+
+# API rate settings
+api_rate = 1  
+sleep_time = 1 / api_rate  
 
 
-project_id = "productexplorerdata"
-topic_id = "asin-data-acquisition"
-subscription_id = "asin-data-subscription"
+from google.cloud import pubsub_v1
 
-publisher = pubsub_v1.PublisherClient()
-topic_path = publisher.topic_path(project_id, topic_id)
-subscriber = pubsub_v1.SubscriberClient()
-subscription_path = subscriber.subscription_path(project_id, subscription_id)
-
-
-def publish_to_pubsub(asin):
-    data = json.dumps({"asin": asin})
-    data = data.encode("utf-8")
-    future = publisher.publish(topic_path, data)
-    print(f"Published message for {asin}")
+def initialize_pubsub():
+    publisher = pubsub_v1.PublisherClient()
+    topic_path = publisher.topic_path('your_project_id', 'your_topic_name')
+    return publisher, topic_path
 
 
 async def fetch_reviews(session, page_var, asin, retries=3):
@@ -70,7 +64,9 @@ async def fetch_reviews(session, page_var, asin, retries=3):
     return None
 
 
+
 async def get_product_reviews(asin):
+    start = time.time()
     async with aiohttp.ClientSession() as session:
         pages = ["1", "2"]
         tasks = [fetch_reviews(session, page_var, asin) for page_var in pages]
@@ -93,28 +89,13 @@ def update_firestore_reviews(asin, reviews, db):
     batch.commit()
     print(f"Updated Firestore for {asin} in {time.time() - start} seconds.")
 
-
 async def process_asin(asin, db):
     try:
         await asyncio.sleep(sleep_time)
-        publish_to_pubsub(asin)
-    except Exception as e:
-        logging.exception(f"Error processing ASIN {asin}: {e}")
-
-
-async def fetch_data_for_asin(message):
-    asin_data = json.loads(message.data.decode("utf-8"))
-    asin = asin_data.get("asin", None)
-    if asin:
-        db = initialize_firestore()
         reviews = await get_product_reviews(asin)
         update_firestore_reviews(asin, reviews, db)
-
-
-def callback(message):
-    asyncio.run(fetch_data_for_asin(message))
-    message.ack()
-
+    except Exception as e:
+        logging.exception(f"Error processing ASIN {asin}: {e}")
 
 async def run_data_acquisition(asinList):
     try:
@@ -127,37 +108,11 @@ async def run_data_acquisition(asinList):
         logging.exception(f"Error in run_data_acquisition: {e}")
         return False
 
-
 def execute_data_acquisition(asinList):
     try:
-        # Initialize the event loop
         nest_asyncio.apply()
-        
-        # Run the data acquisition tasks for the given ASINs
-        acquisition_status = asyncio.run(run_data_acquisition(asinList))
-        
-        if not acquisition_status:
-            logging.error("Data acquisition failed.")
-            return False
-
-        # Set up the Pub/Sub subscription and start listening for messages
-        print(f"Listening for messages on {subscription_path}..\n")
-        
-        try:
-            streaming_pull_future = subscriber.subscribe(subscription_path, callback=callback)
-            streaming_pull_future.result()
-        except KeyboardInterrupt:
-            streaming_pull_future.cancel()
-            streaming_pull_future.result()
-        except Exception as e:
-            logging.exception(f"Error setting up subscription: {e}")
-            return False
-        
-        return True
-
+        return asyncio.run(run_data_acquisition(asinList))
     except Exception as e:
         logging.exception(f"Error in execute_data_acquisition: {e}")
         return False
-
-# %%
 # =========================

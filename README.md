@@ -310,3 +310,15 @@ gcloud config set project productexplorerdata
 gcloud app deploy
 
 https://productexplorerdata.uc.r.appspot.com/ui
+
+
+
+
+# Google Pub/Sub
+
+gcloud pubsub topics create asin-data-acquisition --project=productexplorerdata
+gcloud pubsub subscriptions create asin-data-subscription  --topic=asin-data-acquisition --project=productexplorerdata
+project_id = "productexplorerdata"
+topic_id = "asin-data-acquisition"
+subscription_id = "asin-data-subscription"
+
