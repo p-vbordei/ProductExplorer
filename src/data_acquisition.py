@@ -25,6 +25,7 @@ headers = {
 
 # Variable to hold API rate (requests per second)
 api_rate = 1  # Change this to 5 or 100 as needed ( requests per second)
+sleep_time = 1 / api_rate  # Calculate sleep time based on rate
 
 async def fetch_reviews(session, page_var, asin, retries=3):
     params = {
@@ -76,13 +77,19 @@ def update_firestore_reviews(asin, reviews, db):
     print(f"Updated Firestore for {asin} in {time.time() - start} seconds.")
 
 async def process_asin(asin, db):
+    await asyncio.sleep(sleep_time)  # Respect the API rate limit
     reviews = await get_product_reviews(asin)
     update_firestore_reviews(asin, reviews, db)
 
 async def run_data_acquisition(asinList):
     try:
         db = initialize_firestore()
-        tasks = [process_asin(asin, db) for asin in asinList]
+        tasks = []
+        for i, asin in enumerate(asinList):
+            if i != 0 and i % api_rate == 0:
+                await asyncio.sleep(1)  # Pause after every 'api_rate' number of requests
+            task = asyncio.ensure_future(process_asin(asin, db))
+            tasks.append(task)
         await asyncio.gather(*tasks)
         return True
     except Exception as e:
