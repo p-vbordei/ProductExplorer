@@ -29,10 +29,10 @@ except ImportError:
     from openai_utils import chat_completion_request, get_completion_list_multifunction, ProgressLog, get_completion
     from investigations import update_investigation_status
 
-# %%
 
 
-def process_reviews_with_gpt(reviewsList, db):
+
+def process_reviews_with_gpt(reviewsList):
     """
     Process reviews using GPT and extract insights.
 
@@ -43,6 +43,7 @@ def process_reviews_with_gpt(reviewsList, db):
     Returns:
     - list: Updated reviews list with extracted insights.
     """
+
     try:
         # Allocate short Ids to reviews
         updatedReviewsList, uid_to_id_mapping = add_uid_to_reviews(reviewsList)
@@ -52,7 +53,7 @@ def process_reviews_with_gpt(reviewsList, db):
 
 
 
-        # %%
+        
         # Generate Content List for Batches
         contentList = []
         for batch in reviewBatches:
@@ -63,13 +64,13 @@ def process_reviews_with_gpt(reviewsList, db):
                 {"role": "user", "content": batch_review},
             ]
             contentList.append(messages)
-        # %%
+        
         # DECLARE FUNCTIONS 
         marketFunctions,  extractJobsFunctions, marketResponseHealFunction, useCaseFunction, productComparisonFunction, featureRequestFunction, painPointsFunction, usageFrequencyFunction, usageTimeFunction, usageLocationFunction, customerDemographicsFunction, functionalJobFunction, socialJobFunction, emotionalJobFunction, supportingJobFunction = export_functions_for_reviews()
 
 
 
-        # %%
+        
         # Run GPT Calls for the Market function on the batches
 
         functionsList = [marketFunctions, extractJobsFunctions]
@@ -83,7 +84,7 @@ def process_reviews_with_gpt(reviewsList, db):
 
         responses = asyncio.run(main_for_data_extraction())
         #################################################
-        # %%
+        
         # Process the responses
         evalResponses = []
         # Iterage through responses
@@ -102,12 +103,8 @@ def process_reviews_with_gpt(reviewsList, db):
         # Aggregate the responses
         aggregatedResponses = aggregate_all_categories(evalResponses)
 
-        # %%
 
-
-
-
-        # %%
+        
 
         functionMapping = {
             "useCase": useCaseFunction,
@@ -124,15 +121,15 @@ def process_reviews_with_gpt(reviewsList, db):
             "supportingJob": supportingJobFunction
         }
 
-        # %%
+        
 
 
 
-        # %%
+        
 
 
 
-        # %%
+        
         GPT_MODEL = 'gpt-3.5-turbo-16k'
         async def main_for_data_aggregation():
             
@@ -156,7 +153,7 @@ def process_reviews_with_gpt(reviewsList, db):
 
         functionsResponses = asyncio.run(main_for_data_aggregation())
 
-        # %%
+        
         # Processes Results
         processedResults = []
         for index in range(len(functionsResponses)):
@@ -188,7 +185,7 @@ def process_reviews_with_gpt(reviewsList, db):
                 print(f"Error processing response for batch {index}.")
                 pass
 
-        # %%
+        
 
         def filter_uids(processedResults, uid_to_id_mapping):
             filteredResults = []
@@ -213,7 +210,7 @@ def process_reviews_with_gpt(reviewsList, db):
 
         filteredResults = filter_uids(processedResults, uid_to_id_mapping)
 
-        # %%
+        
 
         # Initialize an empty list to hold the new filtered results
         newFilteredResults = []
@@ -251,12 +248,12 @@ def process_reviews_with_gpt(reviewsList, db):
 
 
         ##################
-        # %%
+        
 
         # Rezultatul este o lista de dictionare in loc de un dictionar
 
 
-        # %%
+        
         # Creeaza un dictionar cu un array de dictionare fiecare
         print("changing dict structure")
         processedData = {}
@@ -281,7 +278,7 @@ def process_reviews_with_gpt(reviewsList, db):
                 print(f"Unexpected error: {e}")
                 print(item)
 
-        # %%
+        
 
         # Redenumeste cheile in 'header;
         updatedOuterData = {}
@@ -303,7 +300,7 @@ def process_reviews_with_gpt(reviewsList, db):
 
 
         ###############
-        # %%
+        
         print("changing dict structure for reviews comprehension")
         result = {}
         for key, value_list in processedData.items():
@@ -336,7 +333,7 @@ def process_reviews_with_gpt(reviewsList, db):
 
 
 
-        # %%
+        
         print("Adding tags to reviews")
         tagedReviews = updatedReviewsList.copy()
 
@@ -349,7 +346,7 @@ def process_reviews_with_gpt(reviewsList, db):
             review['tags'] = tags
 
 
-        # %%
+        
 
         # get the asin and review text for each uid
         uid_to_asin = {review['uid']: review['asin'] for review in tagedReviews}
@@ -357,7 +354,7 @@ def process_reviews_with_gpt(reviewsList, db):
         uid_to_rating = {review['uid']: review['rating'] for review in tagedReviews}
 
 
-        # %%
+        
         # Add asin to each uid
         print("Adding asin to each uid")
         for key, value_list in processedData.items():
@@ -365,7 +362,7 @@ def process_reviews_with_gpt(reviewsList, db):
                 item['asin'] = [uid_to_asin[uid] for uid in item['uid']]
 
 
-        # %%
+        
 
         # Add rating to each uid
         for key, value_list in processedData.items():
@@ -374,7 +371,7 @@ def process_reviews_with_gpt(reviewsList, db):
 
 
 
-        # %%
+        
         print("Quantifying data")
         try:
             quantifiedData = quantify_category_data(processedData)
@@ -384,7 +381,7 @@ def process_reviews_with_gpt(reviewsList, db):
 
 
 
-        # %%
+        
         # Add the text from the reviews to each header
         print("Adding text to each header")
         uid_to_text = {review['uid']: review['text'] for review in tagedReviews}
@@ -402,7 +399,7 @@ def process_reviews_with_gpt(reviewsList, db):
                 item['id'] = [uid_to_id_mapping[uid] for uid in item['uid']]
 
 
-        # %%
+        
         # Prepare the Frontend dataset
         try:
             frontendOutput = {
@@ -464,9 +461,9 @@ def process_reviews_with_gpt(reviewsList, db):
         logging.error(f"Error in process_reviews_with_gpt: {e}")
         return None, None  # Return None in case of error
 
+
+
 # %%
-
-
 
 
 def run_reviews_investigation(userId: str, investigationId: str) -> None:
@@ -485,7 +482,7 @@ def run_reviews_investigation(userId: str, investigationId: str) -> None:
         logging.error("Error getting clean reviews.")
         return
 
-    tagedReviews, frontendOutput = process_reviews_with_gpt(reviews, db)
+    tagedReviews, frontendOutput = process_reviews_with_gpt(reviews)
     if not tagedReviews or not frontendOutput:
         logging.error("Error processing reviews with GPT.")
         return
@@ -505,4 +502,5 @@ def run_reviews_investigation(userId: str, investigationId: str) -> None:
         return
 
     logging.info(f"Reviews investigation for UserId: {userId} and InvestigationId: {investigationId} completed successfully.")
+
 # %%

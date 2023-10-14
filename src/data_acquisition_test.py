@@ -86,4 +86,6 @@ async def run_data_acquisition(asinList):
 def execute_data_acquisition(asinList):
     nest_asyncio.apply()
     return asyncio.run(run_data_acquisition(asinList))
-# =========================
+
+# %%
+# Test the code
