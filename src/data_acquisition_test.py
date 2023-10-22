@@ -53,6 +53,21 @@ async def get_product_reviews(asin):
         results = await asyncio.gather(*tasks)
         print(f"Fetched for {asin} in {time.time() - start} seconds.")
         return results
+    
+async def process_asin(asin, db):
+    """Process an individual ASIN."""
+    try:
+        # Fetch product reviews
+        reviews = await get_product_reviews(asin)
+        
+        # Update Firestore with the reviews
+        await update_firestore_reviews(asin, reviews, db)
+        
+        logging.info(f"Successfully processed {asin}")
+        
+    except Exception as e:
+        logging.error(f"Failed to process {asin}: {e}")
+
 
 def update_firestore_reviews(asin, reviews, db):
     if reviews is None or any(r is None for r in reviews):

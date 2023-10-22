@@ -1,55 +1,67 @@
 ###################### DATA ACQUISITION ######################
 # data_acquisition.py
-# https://rapidapi.com/eaidoo015-pj8dZiAnLJJ/api/youtube-scraper-2023/pricing
-# https://rapidapi.com/felixeschmittfes/api/amazonlive/pricing
 # %%
-import time
 import asyncio
 import aiohttp
-import nest_asyncio
 import logging
 import json
 from google.cloud import pubsub_v1
+
+# Initialize logging
 logging.basicConfig(level=logging.INFO)
 
+# Import custom modules
 try:
     from src.firebase_utils import initialize_firestore, initialize_gae
 except (ImportError, ModuleNotFoundError):
     from firebase_utils import initialize_firestore, initialize_gae
 
-if not FIREBASE_KEY:
-    from dotenv import load_dotenv
-    load_dotenv()
-    FIREBASE_KEY = os.getenv('FIREBASE_KEY')
+def initialize_config():
+    """Initialize configurations"""
+    global headers, reviews_url, api_rate, sleep_time
+    global project_id, topic_id, subscription_id, publisher, topic_path, subscriber, subscription_path
+    
+    # API Configuration
+    headers = {"X-RapidAPI-Key": "YOUR_API_KEY", "X-RapidAPI-Host": "amazonlive.p.rapidapi.com"}
+    reviews_url = "https://amazonlive.p.rapidapi.com/reviews"
+    api_rate = 1
+    sleep_time = 1 / api_rate
 
+    # Pub/Sub Configuration
+    project_id = "productexplorerdata"
+    topic_id = "asin-data-acquisition"
+    subscription_id = "asin-data-subscription"
+    publisher = pubsub_v1.PublisherClient()
+    topic_path = publisher.topic_path(project_id, topic_id)
+    subscriber = pubsub_v1.SubscriberClient()
+    subscription_path = subscriber.subscription_path(project_id, subscription_id)
 
-headers = {
-    "X-RapidAPI-Key": "YOUR_API_KEY",
-    "X-RapidAPI-Host": "amazonlive.p.rapidapi.com"
-}
-reviews_url = "https://amazonlive.p.rapidapi.com/reviews"
-api_rate = 1
-sleep_time = 1 / api_rate
+async def publish_to_pubsub(asin):
+    """Publish ASIN to Pub/Sub asynchronously."""
+    data = json.dumps({"asin": asin}).encode("utf-8")
+    await loop.run_in_executor(None, publisher.publish, topic_path, data)
+    logging.info(f"Published message for {asin}")
 
-
-project_id = "productexplorerdata"
-topic_id = "asin-data-acquisition"
-subscription_id = "asin-data-subscription"
-
-publisher = pubsub_v1.PublisherClient()
-topic_path = publisher.topic_path(project_id, topic_id)
-subscriber = pubsub_v1.SubscriberClient()
-subscription_path = subscriber.subscription_path(project_id, subscription_id)
-
-
-def publish_to_pubsub(asin):
-    data = json.dumps({"asin": asin})
-    data = data.encode("utf-8")
-    future = publisher.publish(topic_path, data)
-    print(f"Published message for {asin}")
+async def process_asin(asin, db):
+    """Process an individual ASIN."""
+    try:
+        # Fetch product reviews
+        reviews = await get_product_reviews(asin)
+        
+        # Update Firestore with the reviews
+        await update_firestore_reviews(asin, reviews, db)
+        
+        logging.info(f"Successfully processed {asin}")
+        
+    except Exception as e:
+        logging.error(f"Failed to process {asin}: {e}")
 
 
 async def fetch_reviews(session, page_var, asin, retries=3):
+    """Fetch product reviews asynchronously."""
+    # Initialize Google App Engine
+    initialize_gae()
+
     params = {
         "asin": asin,
         "location": "us",
@@ -58,112 +70,107 @@ async def fetch_reviews(session, page_var, asin, retries=3):
         "sort_by_recent": "false",
         "only_verified": "true"
     }
-    for _ in range(retries):
+    for retry in range(retries):
         try:
             async with session.get(reviews_url, headers=headers, params=params) as response:
                 if response.status == 429:
-                    logging.warning(f"Rate limit hit for {asin} page {page_var}. Sleeping.")
+                    logging.warning(f"Rate limit reached for {asin} page {page_var}. Retrying.")
                     await asyncio.sleep(sleep_time)
                     continue
-                elif response.status != 200:
-                    logging.error(f"Failed for {asin} page {page_var}. HTTP: {response.status}")
+                elif response.status == 200:
+                    return await response.json()
+                else:
+                    logging.error(f"Failed to fetch for {asin} page {page_var}. HTTP status: {response.status}")
                     return None
-                return await response.json()
         except Exception as e:
-            logging.exception(f"Error fetching reviews for {asin} page {page_var}: {e}")
+            logging.error(f"Fetch failed for {asin} page {page_var}. Error: {e}")
             return None
-    logging.error(f"Failed for {asin} page {page_var} after {retries} retries.")
+
+    logging.error(f"Fetch failed for {asin} page {page_var} after {retries} retries.")
     return None
 
-
 async def get_product_reviews(asin):
+    """Get product reviews for a given ASIN."""
     async with aiohttp.ClientSession() as session:
+        # Create tasks for each page you want to scrape
         pages = ["1", "2"]
-        tasks = [fetch_reviews(session, page_var, asin) for page_var in pages]
-        results = await asyncio.gather(*tasks)
-        print(f"Fetched for {asin} in {time.time() - start} seconds.")
-        return results
+        tasks = [fetch_reviews(session, page, asin) for page in pages]
+        return await asyncio.gather(*tasks)
 
-def update_firestore_reviews(asin, reviews, db):
-    if reviews is None or any(r is None for r in reviews):
-        print(f"Skipping Firestore for {asin}. Missing data.")
+async def update_firestore_reviews(asin, reviews, db):
+    """Update Firestore with fetched reviews asynchronously."""
+    if not all(reviews):
+        logging.warning(f"Skipping Firestore update for {asin} due to missing data.")
         return
-    start = time.time()
-    doc_ref = db.collection('products').document(asin)
     batch = db.batch()
+    doc_ref = db.collection('products').document(asin)
     for review_page in reviews:
         for review in review_page.get('reviews', []):
-            review_id = review['id']
-            review_ref = doc_ref.collection('reviews').document(review_id)
+            review_ref = doc_ref.collection('reviews').document(review['id'])
             batch.set(review_ref, review)
     batch.commit()
-    print(f"Updated Firestore for {asin} in {time.time() - start} seconds.")
-
-
-async def process_asin(asin, db):
-    try:
-        await asyncio.sleep(sleep_time)
-        publish_to_pubsub(asin)
-    except Exception as e:
-        logging.exception(f"Error processing ASIN {asin}: {e}")
-
+    logging.info(f"Firestore updated for {asin}")
 
 async def fetch_data_for_asin(message):
+    """Fetch data for an ASIN based on a Pub/Sub message."""
     asin_data = json.loads(message.data.decode("utf-8"))
-    asin = asin_data.get("asin", None)
+    asin = asin_data.get("asin")
     if asin:
         db = initialize_firestore()
         reviews = await get_product_reviews(asin)
-        update_firestore_reviews(asin, reviews, db)
-
-
-def callback(message):
-    asyncio.run(fetch_data_for_asin(message))
+        await update_firestore_reviews(asin, reviews, db)
     message.ack()
 
+async def callback(message):
+    """Callback function for Pub/Sub subscription."""
+    await fetch_data_for_asin(message)
 
-async def run_data_acquisition(asinList):
+async def run_data_acquisition(asin_list):
+    # Check if asin_list is a single ASIN string and not a list
+    if isinstance(asin_list, str) and len(asin_list) == 10 and asin_list.startswith("B"):
+        asin_list = [asin_list]
+
     try:
         db = initialize_firestore()
-        tasks = [process_asin(asin, db) for asin in asinList]
+        tasks = [process_asin(asin, db) for asin in asin_list]
         await asyncio.gather(*tasks)
-        logging.info("Data acquisition complete.")
         return True
     except Exception as e:
-        logging.exception(f"Error in run_data_acquisition: {e}")
+        print(f"Error: {e}")
         return False
 
 
-def execute_data_acquisition(asinList):
+def execute_data_acquisition(asin_list):
+    """Execute data acquisition process."""
     try:
-        # Initialize the event loop
-        nest_asyncio.apply()
-        
-        # Run the data acquisition tasks for the given ASINs
-        acquisition_status = asyncio.run(run_data_acquisition(asinList))
-        
-        if not acquisition_status:
-            logging.error("Data acquisition failed.")
-            return False
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
 
-        # Set up the Pub/Sub subscription and start listening for messages
-        print(f"Listening for messages on {subscription_path}..\n")
-        
-        try:
+    if loop.is_running():
+        # If loop is running, use create_task to schedule the coroutine
+        loop.create_task(run_data_acquisition(asin_list))
+    else:
+        # If loop is not running, start it up and run the coroutine
+        loop.run_until_complete(run_data_acquisition(asin_list))
+
+    logging.info(f"Listening for messages on {subscription_path}")
+
+    try:
+        # Start or attach the pub/sub subscription
+        if not loop.is_running():
             streaming_pull_future = subscriber.subscribe(subscription_path, callback=callback)
-            streaming_pull_future.result()
-        except KeyboardInterrupt:
-            streaming_pull_future.cancel()
-            streaming_pull_future.result()
-        except Exception as e:
-            logging.exception(f"Error setting up subscription: {e}")
-            return False
-        
-        return True
-
+            loop.run_until_complete(streaming_pull_future)
+    except KeyboardInterrupt:
+        streaming_pull_future.cancel()
+        logging.info("Subscription cancelled.")
     except Exception as e:
-        logging.exception(f"Error in execute_data_acquisition: {e}")
-        return False
+        logging.error(f"Failed to set up subscription: {e}")
+
+
+# =============================================================================
 
 # %%
-# =========================
+
+asin_list = ["B088YHHS8D"]
