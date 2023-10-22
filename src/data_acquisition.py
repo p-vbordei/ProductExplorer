@@ -32,14 +32,14 @@ async def publish_to_pubsub(asin):
     await loop.run_in_executor(None, publisher.publish, topic_path, data)
     logging.info(f"Published message for {asin}")
 
-async def process_asin(asin, db):
+async def process_asin(asin):
     """Process an individual ASIN."""
     try:
         # Fetch product reviews
         reviews = await get_product_reviews(asin)
         
         # Update Firestore with the reviews
-        await update_firestore_reviews(asin, reviews, db)
+        await update_firestore_reviews(asin, reviews)
         
         logging.info(f"Successfully processed {asin}")
         
@@ -87,7 +87,7 @@ async def get_product_reviews(asin):
         tasks = [fetch_reviews(session, page, asin) for page in pages]
         return await asyncio.gather(*tasks)
 
-async def update_firestore_reviews(asin, reviews, db):
+async def update_firestore_reviews(asin, reviews):
     """Update Firestore with fetched reviews asynchronously."""
     if not all(reviews):
         logging.warning(f"Skipping Firestore update for {asin} due to missing data.")
@@ -106,9 +106,8 @@ async def fetch_data_for_asin(message):
     asin_data = json.loads(message.data.decode("utf-8"))
     asin = asin_data.get("asin")
     if asin:
-        db = initialize_firestore()
         reviews = await get_product_reviews(asin)
-        await update_firestore_reviews(asin, reviews, db)
+        await update_firestore_reviews(asin, reviews)
     message.ack()
 
 async def callback(message):
@@ -121,8 +120,7 @@ async def run_data_acquisition(asin_list):
         asin_list = [asin_list]
 
     try:
-        db = initialize_firestore()
-        tasks = [process_asin(asin, db) for asin in asin_list]
+        tasks = [process_asin(asin) for asin in asin_list]
         await asyncio.gather(*tasks)
         return True
     except Exception as e:
@@ -135,7 +133,8 @@ def execute_data_acquisition(asin_list):
     
     initialize_pub_sub()
     initialize_rapid_api()
-    
+    initialize_firestore()
+
     try:
         loop = asyncio.get_running_loop()
     except RuntimeError:

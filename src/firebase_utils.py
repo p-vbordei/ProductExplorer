@@ -31,7 +31,7 @@ def get_secret(secret_name):
 
 def initialize_firestore():
     """Initialize Firestore client."""
-
+    global db
     # Check if running on App Engine
     if os.environ.get('GAE_ENV', '').startswith('standard'):
         # Running on App Engine, use default credentials
@@ -74,7 +74,6 @@ def initialize_firestore():
             firebase_admin.initialize_app(cred)
 
     db = firestore.client()
-    return db
 
 
 def initialize_gae():
@@ -109,7 +108,7 @@ def initialize_pub_sub():
 ########### PRODUCTS #############
 
 
-def get_product_details_from_asin(asin, db):
+def get_product_details_from_asin(asin):
     try:
         # Retrieve the product details from Firestore
         product_ref = db.collection('products').document(asin)
@@ -129,9 +128,9 @@ def get_product_details_from_asin(asin, db):
         logging.warning(f'No product details found for ASIN {asin}')
         return None
 
-def get_investigation_and_product_details(userId, investigationId, db):
+def get_investigation_and_product_details(userId, investigationId):
     try:
-        asinList = get_asins_from_investigation(userId, investigationId, db)
+        asinList = get_asins_from_investigation(userId, investigationId)
     except Exception as e:
         logging.error(f"Error getting ASINs for userId: {userId} and investigation: {investigationId}: {e}")
         return []
@@ -141,7 +140,7 @@ def get_investigation_and_product_details(userId, investigationId, db):
     if asinList is not None:
         for asin in asinList:
             try:
-                productDetails = get_product_details_from_asin(asin, db)
+                productDetails = get_product_details_from_asin(asin)
                 if productDetails is not None:
                     productDetails['asin'] = asin
                     products.append(productDetails)
@@ -151,7 +150,7 @@ def get_investigation_and_product_details(userId, investigationId, db):
 
     return products
 
-def update_firestore_individual_products(newProductsList, db):
+def update_firestore_individual_products(newProductsList):
     # Update the Firestore database
     for product in tqdm(newProductsList):
         doc_ref = db.collection('products').document(product['asin'])
@@ -160,7 +159,7 @@ def update_firestore_individual_products(newProductsList, db):
         except Exception as e:
             logging.error(f"Error updating document {product['asin']}: {e}")
 
-def save_product_details_to_firestore(db, userId, investigationId, productData):
+def save_product_details_to_firestore(userId, investigationId, productData):
     """
     Save or update product data to Firestore.
 
@@ -182,7 +181,7 @@ def save_product_details_to_firestore(db, userId, investigationId, productData):
         logging.error(f"Error saving/updating investigation results with id {investigationId}: {e}", exc_info=True)
         return False
 
-def get_product_data_from_investigation(db, userId, investigationId):
+def get_product_data_from_investigation(userId, investigationId):
     """
     Retrieve product data from Firestore based on an investigation ID.
 
@@ -209,7 +208,7 @@ def get_product_data_from_investigation(db, userId, investigationId):
 
 ########### REVIEWS #############
 
-def get_reviews_from_asin(asin, db):
+def get_reviews_from_asin(asin):
     try:
         # Retrieve the reviews from Firestore
         reviews_query = db.collection('products').document(asin).collection('reviews').stream()
@@ -234,9 +233,9 @@ def get_reviews_from_asin(asin, db):
         logging.warning(f'No product reviews found for ASIN {asin}')
         return None
 
-def get_investigation_and_reviews(userId, investigationId, db):
+def get_investigation_and_reviews(userId, investigationId):
     try:
-        asinList = get_asins_from_investigation(userId, investigationId, db)
+        asinList = get_asins_from_investigation(userId, investigationId)
     except Exception as e:
         logging.error(f"Error getting ASINs for investigation {investigationId}: {e}")
         return []
@@ -246,7 +245,7 @@ def get_investigation_and_reviews(userId, investigationId, db):
     if asinList is not None:
         for asin in asinList:
             try:
-                asinReviews = get_reviews_from_asin(asin, db)
+                asinReviews = get_reviews_from_asin(asin)
                 if asinReviews is not None:
                     reviewsList.append(asinReviews)
             except Exception as e:
@@ -255,15 +254,15 @@ def get_investigation_and_reviews(userId, investigationId, db):
 
     return reviewsList
 
-def get_clean_reviews(userId, investigationId, db):
+def get_clean_reviews(userId, investigationId):
     """Retrieve and clean reviews."""
     try:
-        update_investigation_status(userId, investigationId, "startedReviews", db)
+        update_investigation_status(userId, investigationId, "startedReviews")
     except Exception as e:
         logging.error(f"Error updating investigation status for {investigationId}: {e}")
 
     try:
-        reviews_download = get_investigation_and_reviews(userId, investigationId, db)
+        reviews_download = get_investigation_and_reviews(userId, investigationId)
         flattened_reviews = [item for sublist in reviews_download for item in sublist]
     except Exception as e:
         logging.error(f"Error flattening reviews for investigation {investigationId}: {e}")
@@ -271,7 +270,7 @@ def get_clean_reviews(userId, investigationId, db):
 
     return flattened_reviews
 
-def write_reviews_to_firestore(cleanReviewsList, db):
+def write_reviews_to_firestore(cleanReviewsList):
     # Group reviews by ASIN
     reviewsByAsin = defaultdict(list)
     for review in cleanReviewsList:
@@ -312,7 +311,7 @@ def write_reviews_to_firestore(cleanReviewsList, db):
 import logging
 import time
 
-def write_insights_to_firestore(userId, investigationId, quantifiedDataId, db):
+def write_insights_to_firestore(userId, investigationId, quantifiedDataId):
     try:
         # Initialize batch and start time
         batch = db.batch()
@@ -358,7 +357,7 @@ def write_insights_to_firestore(userId, investigationId, quantifiedDataId, db):
 
 # %%
 
-def count_reviews_for_asins(asin_list, db):
+def count_reviews_for_asins(asin_list):
     """
     Count the number of reviews for each ASIN in the given list.
 

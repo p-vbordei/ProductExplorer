@@ -467,7 +467,7 @@ def process_reviews_with_gpt(reviewsList):
 
 
 def run_reviews_investigation(userId: str, investigationId: str) -> None:
-    db = initialize_firestore()
+    initialize_firestore()
     if not db:
         logging.error("Error initializing Firestore.")
         return
@@ -475,11 +475,11 @@ def run_reviews_investigation(userId: str, investigationId: str) -> None:
     initialize_pub_sub()
     initialize_gae()
 
-    if not update_investigation_status(userId, investigationId, 'startedReviews', db):
+    if not update_investigation_status(userId, investigationId, 'startedReviews'):
         logging.error(f"Error updating investigation status to 'startedReviews'.")
         return
 
-    reviews = get_clean_reviews(userId, investigationId, db)
+    reviews = get_clean_reviews(userId, investigationId)
     print('Processing ', len(reviews), ' reviews')
     if not reviews:
         logging.error("Error getting clean reviews.")
@@ -490,17 +490,17 @@ def run_reviews_investigation(userId: str, investigationId: str) -> None:
         logging.error("Error processing reviews with GPT.")
         return
     
-    if not write_insights_to_firestore(userId, investigationId, frontendOutput, db):
+    if not write_insights_to_firestore(userId, investigationId, frontendOutput):
         logging.error("Error writing quantified data to Firestore.")
         return
     
     """
-    if not write_reviews_to_firestore(tagedReviews, db):
+    if not write_reviews_to_firestore(tagedReviews):
         logging.error("Error writing processed reviews to Firestore.")
         return
     """
 
-    if not update_investigation_status(userId, investigationId, 'finishedReviews', db):
+    if not update_investigation_status(userId, investigationId, 'finishedReviews'):
         logging.error(f"Error updating investigation status to 'finishedReviews'.")
         return
 
