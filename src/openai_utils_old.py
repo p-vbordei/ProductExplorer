@@ -1,7 +1,6 @@
 # openai_utils.py
 
 import aiohttp
-import json
 import asyncio
 import os
 import numpy as np
@@ -16,6 +15,11 @@ import logging
 logging.basicConfig(level=logging.INFO)
 import traceback
 from aiohttp import ContentTypeError, ClientResponseError
+
+try:
+    from src.firebase_utils import initialize_gae, initialize_pub_sub
+except (ImportError, ModuleNotFoundError):
+    from firebase_utils import initialize_gae, initialize_pub_sub
 
 embedding_model = "text-embedding-ada-002"
 embedding_encoding = "cl100k_base"
@@ -73,17 +77,6 @@ class ProgressLog:
     def __repr__(self):
         return f"Done runs {self.done}/{self.total}."
 
-async def process_message(message):
-    data = message.data.decode('utf-8')
-    content = json.loads(data)
-    session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=300))
-    semaphore = asyncio.Semaphore(6)
-    progress_log = ProgressLog(1)  # Assuming one task per message
-    await get_completion(content, session, semaphore, progress_log)
-    message.ack()
-
-async def callback(message):
-    await process_message(message)
 
 @retry(wait=wait_random_exponential(min=1, max=180), stop=stop_after_attempt(10))
 def chat_completion_request(messages, functions=None, function_call=None, temperature=0, model=GPT_MODEL):
@@ -118,8 +111,14 @@ def chat_completion_request(messages, functions=None, function_call=None, temper
         return e
 
 
-@retry(wait=wait_random_exponential(min=1, max=180), stop=stop_after_attempt(10),
-       before_sleep=lambda retry_state: print(f"Sleeping for {retry_state.next_action} seconds"),
+
+
+
+
+
+
+@retry(wait=wait_random_exponential(min=1, max=180), stop=stop_after_attempt(10), 
+       before_sleep=lambda retry_state: print(f"Sleeping for {retry_state.next_action} seconds"), 
        retry_error_callback=lambda retry_state: print(f"Attempt {retry_state.attempt_number} failed. Error: {retry_state.outcome.result()}"))
 async def get_completion(content, session, semaphore, progress_log, functions=None, function_call=None, GPT_MODEL=GPT_MODEL, TEMPERATURE=0):
     async with semaphore:
@@ -186,30 +185,25 @@ async def get_completion(content, session, semaphore, progress_log, functions=No
 
 
 async def get_completion_list(content_list, functions=None, function_call=None, GPT_MODEL=GPT_MODEL, TEMPERATURE=0):
-    global publisher, topic_path
+    semaphore = asyncio.Semaphore(6)  # Allow only 3 requests at a time to ensure you don't exceed the RPM
+    progress_log = ProgressLog(len(content_list))
+
+    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=300)) as session:
+        return await asyncio.gather(*[get_completion(content, session, semaphore, progress_log, functions, function_call, GPT_MODEL, TEMPERATURE) for content in content_list])
 
 
-    for content in content_list:
-        data = json.dumps(content).encode('utf-8')
-        publisher.publish(topic_path, data)
 
-async def get_completion_list_multifunction(content_list, functions_list, function_calls_list, GPT_MODEL=GPT_MODEL, TEMPERATURE=0):
-    global publisher, topic_path
 
-    for i in range(len(functions_list)):
-        for content in content_list:
-            data = json.dumps({"content": content, "functions": functions_list[i], "function_call": function_calls_list[i]}).encode('utf-8')
-            publisher.publish(topic_path, data)
+async def get_completion_list_multifunction(content_list, functions_list, function_calls_list, GPT_MODEL=GPT_MODEL, TEMPERATURE = 0):
+    semaphore = asyncio.Semaphore(6)
+    progress_log = ProgressLog(len(content_list) * len(functions_list))  # Adjust for multiple functions
 
-def start_subscriber():
-    global subscriber, subscription_path
-    loop = asyncio.get_event_loop()
-    subscriber.subscribe(subscription_path, callback=callback)
-    logging.info(f"Listening for messages on {subscription_path}")
-    try:
-        loop.run_forever()
-    except KeyboardInterrupt:
-        loop.stop()
+    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=300)) as session:
+        tasks = []
+        for i in range(len(functions_list)):
+            for content in content_list:
+                tasks.append(get_completion(content, session, semaphore, progress_log, functions_list[i], function_calls_list[i], GPT_MODEL, TEMPERATURE))
+        return await asyncio.gather(*tasks)
 
 
 async def get_embedding(text: str, model="text-embedding-ada-002") -> list[float]:

@@ -12,29 +12,19 @@ logging.basicConfig(level=logging.INFO)
 
 # Import custom modules
 try:
-    from src.firebase_utils import initialize_firestore, initialize_gae
+    from src.firebase_utils import initialize_firestore, initialize_gae, initialize_pub_sub
 except (ImportError, ModuleNotFoundError):
-    from firebase_utils import initialize_firestore, initialize_gae
+    from firebase_utils import initialize_firestore, initialize_gae, initialize_pub_sub
 
-def initialize_config():
+def initialize_rapid_api():
     """Initialize configurations"""
     global headers, reviews_url, api_rate, sleep_time
-    global project_id, topic_id, subscription_id, publisher, topic_path, subscriber, subscription_path
     
     # API Configuration
     headers = {"X-RapidAPI-Key": "YOUR_API_KEY", "X-RapidAPI-Host": "amazonlive.p.rapidapi.com"}
     reviews_url = "https://amazonlive.p.rapidapi.com/reviews"
     api_rate = 1
     sleep_time = 1 / api_rate
-
-    # Pub/Sub Configuration
-    project_id = "productexplorerdata"
-    topic_id = "asin-data-acquisition"
-    subscription_id = "asin-data-subscription"
-    publisher = pubsub_v1.PublisherClient()
-    topic_path = publisher.topic_path(project_id, topic_id)
-    subscriber = pubsub_v1.SubscriberClient()
-    subscription_path = subscriber.subscription_path(project_id, subscription_id)
 
 async def publish_to_pubsub(asin):
     """Publish ASIN to Pub/Sub asynchronously."""
@@ -142,6 +132,10 @@ async def run_data_acquisition(asin_list):
 
 def execute_data_acquisition(asin_list):
     """Execute data acquisition process."""
+    
+    initialize_pub_sub()
+    initialize_rapid_api()
+    
     try:
         loop = asyncio.get_running_loop()
     except RuntimeError:

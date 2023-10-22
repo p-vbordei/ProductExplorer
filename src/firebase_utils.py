@@ -7,8 +7,7 @@ import os
 import json
 from collections import defaultdict
 import logging
-
-from google.cloud import firestore, secretmanager
+from google.cloud import firestore, secretmanager, pubsub_v1
 import firebase_admin
 from firebase_admin import credentials, firestore
 
@@ -93,6 +92,19 @@ def initialize_gae():
     # Initialize Google Cloud Services
     os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = GOOGLE_APPLICATION_CREDENTIALS
 
+
+
+def initialize_pub_sub():
+    global project_id, topic_id, subscription_id, publisher, topic_path, subscriber, subscription_path
+
+    # Pub/Sub Configuration
+    project_id = "productexplorerdata"
+    topic_id = "asin-data-acquisition"
+    subscription_id = "asin-data-subscription"
+    publisher = pubsub_v1.PublisherClient()
+    topic_path = publisher.topic_path(project_id, topic_id)
+    subscriber = pubsub_v1.SubscriberClient()
+    subscription_path = subscriber.subscription_path(project_id, subscription_id)
 
 ########### PRODUCTS #############
 
@@ -291,11 +303,6 @@ def write_reviews_to_firestore(cleanReviewsList, db):
     elapsedTime = endTime - startTime
 
     logging.info(f"Successfully saved/updated all reviews. Time taken: {elapsedTime} seconds")
-
-
-
-
-
 
 
 
