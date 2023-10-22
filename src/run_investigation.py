@@ -7,13 +7,11 @@ logging.basicConfig(level=logging.INFO)
 
 try:
     from src import app, connex_app
-    from src.firebase_utils import initialize_firestore
     from src.investigations import start_investigation
     from src.data_acquisition import execute_data_acquisition
     from src.reviews_processing import run_reviews_investigation
     from src.users import use_investigation, update_investigation_status
 except ImportError:
-    from firebase_utils import initialize_firestore
     from investigations import start_investigation
     from data_acquisition import execute_data_acquisition
     from reviews_processing import run_reviews_investigation
@@ -23,14 +21,10 @@ except ImportError:
 # %%
 
 def run_end_to_end_investigation(data):
-    try:
-        db = initialize_firestore()
-    except Exception as e:
-        print(f"Error initializing Firestore: {e}")
-        return False
+
 
     try:
-        investigationData = start_investigation(data, db)
+        investigationData = start_investigation(data)
         if not investigationData:
             print("Failed to start the investigation.")
             return False
@@ -70,7 +64,7 @@ def run_end_to_end_investigation(data):
         return False
     
     try:
-        update_investigation_status(userId, investigationId, "finished", db)
+        update_investigation_status(userId, investigationId, "finished")
         print('Investigation completed successfully')
     except Exception as e:
         print(f"Error during updating investigation status: {e}")

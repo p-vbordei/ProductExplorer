@@ -321,4 +321,3 @@ gcloud pubsub subscriptions create asin-data-subscription  --topic=asin-data-acq
 project_id = "productexplorerdata"
 topic_id = "asin-data-acquisition"
 subscription_id = "asin-data-subscription"
-

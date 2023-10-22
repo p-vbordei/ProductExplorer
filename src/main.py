@@ -12,13 +12,28 @@ from src.investigations import start_investigation
 from src.data_acquisition import execute_data_acquisition
 from src.reviews_processing import run_reviews_investigation
 from src.run_investigation import run_end_to_end_investigation
-from src.firebase_utils import initialize_firestore
+from src.firebase_utils import initialize_firestore, initialize_gae, initialize_pub_sub
 # %%
 logging.info("This is an info message.")
 logging.warning("This is a warning message.")
 logging.error("This is an error message.")
 # %%
-db = initialize_firestore()
+
+try:
+    initialize_firestore()
+except Exception as e:
+    logging.error(f"Error initializing Firestore: {e}")
+
+try:
+    initialize_gae()
+except Exception as e:
+    logging.error(f"Error initializing GAE: {e}")
+
+try:
+    initialize_pub_sub()
+except Exception as e:
+    logging.error(f"Error initializing Pub/Sub: {e}")
+
 
 def api_start_investigation():
     """
