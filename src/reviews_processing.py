@@ -467,13 +467,6 @@ def process_reviews_with_gpt(reviewsList):
 
 
 def run_reviews_investigation(userId: str, investigationId: str) -> None:
-    initialize_firestore()
-    if not db:
-        logging.error("Error initializing Firestore.")
-        return
-    
-    initialize_pub_sub()
-    initialize_gae()
 
     if not update_investigation_status(userId, investigationId, 'startedReviews'):
         logging.error(f"Error updating investigation status to 'startedReviews'.")

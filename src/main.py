@@ -7,12 +7,23 @@ import logging
 import time
 logging.basicConfig(level=logging.INFO)
 
-from src import app, connex_app
-from src.investigations import start_investigation
-from src.data_acquisition import execute_data_acquisition
-from src.reviews_processing import run_reviews_investigation
-from src.run_investigation import run_end_to_end_investigation
-from src.firebase_utils import initialize_firestore, initialize_gae, initialize_pub_sub
+try:
+    from src import app, connex_app
+    from src.investigations import start_investigation
+    from src.data_acquisition import execute_data_acquisition
+    from src.reviews_processing import run_reviews_investigation
+    from src.run_investigation import run_end_to_end_investigation
+    from src.firebase_utils import initialize_firestore, initialize_gae, initialize_pub_sub
+except ImportError:
+    import app, connex_app
+    from investigations import start_investigation
+    from data_acquisition import execute_data_acquisition
+    from reviews_processing import run_reviews_investigation
+    from run_investigation import run_end_to_end_investigation
+    from firebase_utils import initialize_firestore, initialize_gae, initialize_pub_sub
+
+
+
 # %%
 logging.info("This is an info message.")
 logging.warning("This is a warning message.")
@@ -48,7 +59,7 @@ def api_start_investigation():
         return jsonify({"error": "userIDs and asinList are required"}), 400
 
     try:
-        result = start_investigation(data, db)
+        result = start_investigation(data)
         return jsonify(result), 200
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
