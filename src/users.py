@@ -6,14 +6,14 @@ from firebase_admin import firestore
 import logging
 logging.basicConfig(level=logging.INFO)
 
-def get_user_ref(userId, db):
+def get_user_ref(userId):
     try:
         return db.collection('users').document(userId)
     except Exception as e:
         logging.error(f"Error getting user reference for {userId}: {e}")
         return None
 
-def create_user(userData, db):
+def create_user(userData):
     try:
         user_ref = db.collection('users').document()
         userId = user_ref.id
@@ -24,9 +24,9 @@ def create_user(userData, db):
         logging.error(f"Error creating user: {e}")
         return None
 
-def get_user(userId, db):
+def get_user(userId):
     try:
-        user_ref = get_user_ref(userId, db).get()
+        user_ref = get_user_ref(userId).get()
         if user_ref.exists:
             return user_ref.to_dict()
         else:
@@ -35,9 +35,9 @@ def get_user(userId, db):
         logging.error(f"Error fetching user {userId}: {e}")
         return None
 
-def subscribe_user(userId, package, db):
+def subscribe_user(userId, package):
     try:
-        user_ref = get_user_ref(userId, db)
+        user_ref = get_user_ref(userId)
         subscription_ref = user_ref.collection('subscriptions').document()
         subscriptionId = subscription_ref.id
         subscriptionData = {
@@ -52,7 +52,7 @@ def subscribe_user(userId, package, db):
         logging.error(f"Error subscribing user {userId} to package {package}: {e}")
         return None
 
-def log_payment(paymentData, db):
+def log_payment(paymentData):
     try:
         payment_ref = db.collection('payments').document()
         paymentId = payment_ref.id
@@ -63,9 +63,9 @@ def log_payment(paymentData, db):
         logging.error(f"Error logging payment: {e}")
         return None
 
-def subscribe_user_to_package(userId, package, startDate, paymentIntentId, db):
+def subscribe_user_to_package(userId, package, startDate, paymentIntentId):
     try:
-        user_ref = get_user_ref(userId, db)
+        user_ref = get_user_ref(userId)
         subs = user_ref.collection('subscriptions').document()
         subs.set({
             'package': package,
@@ -83,9 +83,9 @@ def subscribe_user_to_package(userId, package, startDate, paymentIntentId, db):
 
 ########### Investigation Related ##############
 
-def use_investigation(userId, db):
+def use_investigation(userId):
     try:
-        user_ref = get_user_ref(userId, db)
+        user_ref = get_user_ref(userId)
         user = user_ref.get()
         remaining = user.get('remainingInvestigations')
         if remaining > 0:
@@ -99,9 +99,9 @@ def use_investigation(userId, db):
         logging.error(f"Error using investigation for user {userId}: {e}")
         return False
 
-def add_investigation(userId, asinList, db):
+def add_investigation(userId, asinList):
     try:
-        user_ref = get_user_ref(userId, db)
+        user_ref = get_user_ref(userId)
         user = user_ref.get()
         remaining = user.get('remainingInvestigations')
         if remaining > 0:
@@ -125,7 +125,7 @@ def add_investigation(userId, asinList, db):
         logging.error(f"Error adding investigation for user {userId}: {e}")
         return False
 
-def update_investigation_status(investigationId, newStatus, db):
+def update_investigation_status(investigationId, newStatus):
     try:
         investigation_ref = db.collection('investigations').document(investigationId)
         investigation = investigation_ref.get()
@@ -141,7 +141,7 @@ def update_investigation_status(investigationId, newStatus, db):
         logging.error(f"Error updating investigation status for {investigationId}: {e}")
         return False
 
-def log_investigation_review(investigationId, db):
+def log_investigation_review(investigationId):
     try:
         investigation_ref = db.collection('investigations').document(investigationId)
         investigation = investigation_ref.get()
@@ -156,9 +156,9 @@ def log_investigation_review(investigationId, db):
         logging.error(f"Error logging investigation review for {investigationId}: {e}")
         return False
 
-def has_investigations_available(userId, db):
+def has_investigations_available(userId):
     try:
-        user_ref = get_user_ref(userId, db).get()
+        user_ref = get_user_ref(userId).get()
         remaining = user_ref.get('remainingInvestigations')
         return remaining > 0
     except Exception as e:
