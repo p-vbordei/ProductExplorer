@@ -22,134 +22,88 @@ except ImportError:
 
 # %%
 
-class SecretManager:
-    _client = None
+def get_secret(secret_name):
+    client = secretmanager.SecretManagerServiceClient()
+    project_id = "productexplorerdata"
+    secret_version_name = f"projects/{project_id}/secrets/{secret_name}/versions/latest"
+    response = client.access_secret_version(request={"name": secret_version_name})
+    return response.payload.data.decode('UTF-8')
 
-    @classmethod
-    def get_client(cls):
-        if cls._client is None:
-            cls._client = secretmanager.SecretManagerServiceClient()
-        return cls._client
+def initialize_firestore():
+    """Initialize Firestore client."""
+    global db
+    # Check if running on App Engine
+    if os.environ.get('GAE_ENV', '').startswith('standard'):
+        # Running on App Engine, use default credentials
+        if not firebase_admin._apps:
+            firebase_admin.initialize_app()
+    else:
+        # Try to get the key content from environment variable
+        FIREBASE_KEY = os.getenv("FIREBASE_KEY")
 
-    @classmethod
-    def get_secret(cls, secret_name):
-        client = cls.get_client()
-        project_id = "productexplorerdata"
-        secret_version_name = f"projects/{project_id}/secrets/{secret_name}/versions/latest"
-        response = client.access_secret_version(request={"name": secret_version_name})
-        return response.payload.data.decode('UTF-8')
+        # If not found, try to get from secret management
+        if not FIREBASE_KEY:
+            try:
+                FIREBASE_KEY = get_secret("FIREBASE_KEY")
+            except Exception as e:
+                logging.error(f"Error fetching FIREBASE_KEY from secret manager: {e}")
 
-
-class FirestoreClient:
-    _instance = None
-
-    @classmethod
-    def get_instance(cls):
-        if cls._instance is None:
-            cls._instance = cls._initialize_firestore()
-        return cls._instance
-
-    @staticmethod
-    def _initialize_firestore():
-        global db  # Consider replacing this with a return statement to avoid global usage
-        # Check if running on App Engine
-        if os.environ.get('GAE_ENV', '').startswith('standard'):
-            # Running on App Engine, use default credentials
-            if not firebase_admin._apps:
-                firebase_admin.initialize_app()
-        else:
-            # Try to get the key content from environment variable
+        # If still not found, load from .env (for local development)
+        if not FIREBASE_KEY:
+            from dotenv import load_dotenv
+            load_dotenv()
             FIREBASE_KEY = os.getenv("FIREBASE_KEY")
 
-            # If not found, try to get from secret management
-            if not FIREBASE_KEY:
-                try:
-                    FIREBASE_KEY = SecretManager.get_secret("FIREBASE_KEY")  # Adjusted this line
-                except Exception as e:
-                    logging.error(f"Error fetching FIREBASE_KEY from secret manager: {e}")
+        if not FIREBASE_KEY:
+            raise ValueError("FIREBASE_KEY not found in environment or secrets")
 
-            # If still not found, load from .env (for local development)
-            if not FIREBASE_KEY:
-                from dotenv import load_dotenv
-                load_dotenv()
-                FIREBASE_KEY = os.getenv("FIREBASE_KEY")
-
-            if not FIREBASE_KEY:
-                raise ValueError("FIREBASE_KEY not found in environment or secrets")
-
-            # Check if FIREBASE_KEY is a path to a file
-            if os.path.exists(FIREBASE_KEY):
-                with open(FIREBASE_KEY, 'r') as file:
-                    cred_data = json.load(file)
-            else:
-                # Try to parse the key content as JSON
-                try:
-                    cred_data = json.loads(FIREBASE_KEY)
-                except json.JSONDecodeError:
-                    logging.error("Failed to parse FIREBASE_KEY content")
-                    raise ValueError("Failed to parse FIREBASE_KEY as JSON")
-
-            if not firebase_admin._apps:
-                cred = credentials.Certificate(cred_data)
-                firebase_admin.initialize_app(cred)
-
-        db = firestore.client()
-        return db  # This line is added to return the db instance, consider using this returned instance instead of the global db
-
-
-
-
-class GAEClient:
-    _instance = None
-
-    @classmethod
-    def get_instance(cls):
-        if cls._instance is None:
-            cls._instance = cls._initialize_gae()
-        return cls._instance
-
-    @staticmethod
-    def _initialize_gae():
-        GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-        
-        if os.environ.get('GAE_ENV', '').startswith('standard'):
-            if not firebase_admin._apps:
-                firebase_admin.initialize_app()
+        # Check if FIREBASE_KEY is a path to a file
+        if os.path.exists(FIREBASE_KEY):
+            with open(FIREBASE_KEY, 'r') as file:
+                cred_data = json.load(file)
         else:
-            cred = credentials.Certificate(GOOGLE_APPLICATION_CREDENTIALS)
-            if not firebase_admin._apps:
-                firebase_admin.initialize_app(cred)
-        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = GOOGLE_APPLICATION_CREDENTIALS
+            # Try to parse the key content as JSON
+            try:
+                cred_data = json.loads(FIREBASE_KEY)
+            except json.JSONDecodeError:
+                logging.error("Failed to parse FIREBASE_KEY content")
+                raise ValueError("Failed to parse FIREBASE_KEY as JSON")
+
+        if not firebase_admin._apps:
+            cred = credentials.Certificate(cred_data)
+            firebase_admin.initialize_app(cred)
+
+    db = firestore.client()
+
+
+def initialize_gae():
+    GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+    
+    # Initialize Firebase
+    if os.environ.get('GAE_ENV', '').startswith('standard'):
+        if not firebase_admin._apps:
+            firebase_admin.initialize_app()
+    else:
+        cred = credentials.Certificate(GOOGLE_APPLICATION_CREDENTIALS)
+        if not firebase_admin._apps:
+            firebase_admin.initialize_app(cred)
+
+    # Initialize Google Cloud Services
+    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = GOOGLE_APPLICATION_CREDENTIALS
 
 
 
+def initialize_pub_sub():
+    global project_id, topic_id, subscription_id, publisher, topic_path, subscriber, subscription_path
 
-class PubSubClient:
-    _instance = None
-
-    @classmethod
-    def get_instance(cls):
-        if cls._instance is None:
-            cls._instance = cls._initialize_pub_sub()
-        return cls._instance
-
-    @staticmethod
-    def _initialize_pub_sub():
-        # Define publisher and subscriber before using them
-        publisher = pubsub_v1.PublisherClient()
-        subscriber = pubsub_v1.SubscriberClient()
-        
-        project_id = "productexplorerdata"
-        topic_id = "asin-data-acquisition"
-        subscription_id = "asin-data-subscription"
-        topic_path = publisher.topic_path(project_id, topic_id)
-        subscription_path = subscriber.subscription_path(project_id, subscription_id)
-        
-        return publisher, subscriber, project_id, topic_id, subscription_id, topic_path, subscription_path
-
-
-db = FirestoreClient.get_instance()
-# publisher, subscriber, project_id, topic_id, subscription_id, topic_path, subscription_path = PubSubClient.get_instance()
+    # Pub/Sub Configuration
+    project_id = "productexplorerdata"
+    topic_id = "asin-data-acquisition"
+    subscription_id = "asin-data-subscription"
+    publisher = pubsub_v1.PublisherClient()
+    topic_path = publisher.topic_path(project_id, topic_id)
+    subscriber = pubsub_v1.SubscriberClient()
+    subscription_path = subscriber.subscription_path(project_id, subscription_id)
 
 ########### PRODUCTS #############
 
@@ -409,6 +363,7 @@ def count_reviews_for_asins(asin_list):
 
     Parameters:
     - asin_list (list): List of ASINs to count reviews for.
+    - db (object): Firestore database client.
 
     Returns:
     - dict: Dictionary with ASINs as keys and the number of reviews as values.

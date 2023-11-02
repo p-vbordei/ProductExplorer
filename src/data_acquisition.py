@@ -5,16 +5,15 @@ import asyncio
 import aiohttp
 import logging
 import json
-from google.cloud import pubsub_v1
+from firestore_client import FirestoreClient
+from pubsub_client import PubSubClient
 
 # Initialize logging
 logging.basicConfig(level=logging.INFO)
 
-# Import custom modules
-try:
-    from src.firebase_utils import initialize_firestore, initialize_gae, initialize_pub_sub
-except (ImportError, ModuleNotFoundError):
-    from firebase_utils import initialize_firestore, initialize_gae, initialize_pub_sub
+# Obtain the Firestore and Pub/Sub client instances
+db = FirestoreClient.get_instance()
+publisher, subscriber, project_id, topic_id, subscription_id, topic_path, subscription_path = PubSubClient.get_instance()
 
 def initialize_rapid_api():
     """Initialize configurations"""
@@ -131,9 +130,7 @@ async def run_data_acquisition(asin_list):
 def execute_data_acquisition(asin_list):
     """Execute data acquisition process."""
     
-    initialize_pub_sub()
     initialize_rapid_api()
-    initialize_firestore()
 
     try:
         loop = asyncio.get_running_loop()
@@ -162,8 +159,5 @@ def execute_data_acquisition(asin_list):
         logging.error(f"Failed to set up subscription: {e}")
 
 
+
 # =============================================================================
-
-# %%
-
-asin_list = ["B088YHHS8D"]
