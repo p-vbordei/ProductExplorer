@@ -2,6 +2,7 @@
 # users.py
 import firebase_admin
 from firebase_admin import firestore
+import requests
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -164,5 +165,31 @@ def has_investigations_available(userId, db):
     except Exception as e:
         logging.error(f"Error checking available investigations for user {userId}: {e}")
         return False
+    
+# Function to add email to whitelist after reCAPTCHA verification
+def add_email_to_whitelist(email, recaptcha_token, db):
+    secret_key = '6Lcw9vwoAAAAAITOFE9b37ry0jS4kVl6n1Pk4v4R'
+    recaptcha_verify_url = 'https://www.google.com/recaptcha/api/siteverify'
+    data = {'secret': secret_key, 'response': recaptcha_token}
+    recaptcha_response = requests.post(recaptcha_verify_url, data=data)
+    recaptcha_result = recaptcha_response.json()
+
+    if recaptcha_result.get('success'):
+        try:
+            # Add a new document in the 'whitelist' collection
+            doc_ref = db.collection('whitelist').document(email)
+            doc_ref.set({
+                'email': email,
+                'joinDate': firestore.SERVER_TIMESTAMP
+            })
+            logging.info(f"Email {email} added to whitelist.")
+            return {"message": "Email added to whitelist", "success": True}, 200
+        except Exception as e:
+            logging.error(f"Error adding to whitelist: {e}")
+            return {"error": str(e)}, 500
+    else:
+        logging.error("Failed reCAPTCHA verification.")
+        return {"error": "Failed reCAPTCHA verification", "success": False}, 400
+
 
 # =====================

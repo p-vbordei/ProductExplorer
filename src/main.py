@@ -14,7 +14,8 @@ from src.products_processing import run_products_investigation
 from src.reviews_processing import run_reviews_investigation
 from src.run_investigation import run_end_to_end_investigation
 from src.users import (create_user, get_user, subscribe_user, log_payment, 
-                       subscribe_user_to_package, has_investigations_available)
+                       subscribe_user_to_package, has_investigations_available, 
+                       add_email_to_whitelist)
 from src.firebase_utils import initialize_firestore
 # %%
 logging.info("This is an info message.")
@@ -251,6 +252,22 @@ def api_has_investigations_available(db=db):
     except Exception as e:
         logging.error(f"Error in api_has_investigations_available: {e}")
         return jsonify({"error": str(e)}), 500
+    
+def api_add_to_whitelist():
+    """
+    API endpoint to handle the add to whitelist request.
+    """
+    email = request.json.get('email')
+    recaptcha_token = request.json.get('recaptchaToken')
+
+    if not email or not recaptcha_token:
+        logging.warning("Email and reCAPTCHA token are required.")
+        return jsonify({"error": "Email and reCAPTCHA token are required"}), 400
+
+    # Call the function to add email to whitelist
+    result, status_code = add_email_to_whitelist(email, recaptcha_token, db)
+    return jsonify(result), status_code
+
 
 
 if __name__ == "__main__":

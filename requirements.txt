@@ -17,4 +17,3 @@ aiofiles==23.2.1
 openai==0.27.8
 termcolor==2.3.0
 google-cloud-secret-manager==2.16.3
-```
