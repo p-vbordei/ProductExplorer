@@ -8,14 +8,16 @@ import time
 logging.basicConfig(level=logging.INFO)
 
 try:
-    from src import app, connex_app
+    from src import connex_app
+    from src import app
     from src.investigations import start_investigation
     from src.data_acquisition import execute_data_acquisition
     from src.reviews_processing import run_reviews_investigation
     from src.run_investigation import run_end_to_end_investigation
     from src.firebase_utils import FirestoreClient, PubSubClient, GAEClient
 except ImportError:
-    import app, connex_app
+    import connex_app
+    import app
     from investigations import start_investigation
     from data_acquisition import execute_data_acquisition
     from reviews_processing import run_reviews_investigation
