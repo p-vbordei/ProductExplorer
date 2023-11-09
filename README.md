@@ -328,3 +328,8 @@ subscription_id = "asin-data-subscription"
 # Additional instals. To check if needed to run online
 pip install --upgrade google-api-core
 pip install firestore
+
+
+
+# Ultima data pe branch
+Am creat clase pentru db, gae si pub/sub pe care incerc sa le declar global. Exista erori in felul de apelare.
