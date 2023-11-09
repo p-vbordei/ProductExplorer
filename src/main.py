@@ -8,21 +8,35 @@ import time
 logging.basicConfig(level=logging.INFO)
 
 try:
-    from src import connex_app
-    from src import app
+    try:
+        from src import connex_app
+    except ImportError:
+        import connex_app
+except:
+    print("connex_app import failed")
+    pass
+
+try:
+    try:
+        from src import app
+    except ImportError:
+        import app
+except:
+    print("app import failed")
+    pass
+
+try:
     from src.investigations import start_investigation
     from src.data_acquisition import execute_data_acquisition
     from src.reviews_processing import run_reviews_investigation
     from src.run_investigation import run_end_to_end_investigation
-    from src.firebase_utils import FirestoreClient, PubSubClient, GAEClient
+    from src.firebase_utils import FirestoreClient, PubSubClient, GAEClient, SecretManager
 except ImportError:
-    import connex_app
-    import app
     from investigations import start_investigation
     from data_acquisition import execute_data_acquisition
     from reviews_processing import run_reviews_investigation
     from run_investigation import run_end_to_end_investigation
-    from firebase_utils import FirestoreClient, PubSubClient, GAEClient
+    from firebase_utils import FirestoreClient, PubSubClient, GAEClient, SecretManager
 
 
 try:
@@ -34,8 +48,6 @@ try:
     publisher, subscriber, project_id, topic_id, subscription_id, topic_path, subscription_path = PubSubClient.get_instance()
 except Exception as e:
     logging.error(f"Error initializing Pub/Sub: {e}")
-
-
 
 try:
     GAEClient.get_instance()
