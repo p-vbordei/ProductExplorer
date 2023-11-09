@@ -13,16 +13,32 @@ try:
     from src.data_acquisition import execute_data_acquisition
     from src.reviews_processing import run_reviews_investigation
     from src.run_investigation import run_end_to_end_investigation
-    from src.firebase_utils import initialize_firestore, initialize_gae, initialize_pub_sub
+    from src.firebase_utils import FirestoreClient, PubSubClient, GAEClient
 except ImportError:
     import app, connex_app
     from investigations import start_investigation
     from data_acquisition import execute_data_acquisition
     from reviews_processing import run_reviews_investigation
     from run_investigation import run_end_to_end_investigation
-    from firebase_utils import initialize_firestore, initialize_gae, initialize_pub_sub
+    from firebase_utils import FirestoreClient, PubSubClient, GAEClient
 
 
+try:
+    db = FirestoreClient.get_instance()
+except Exception as e:
+    logging.error(f"Error initializing Firestore: {e}")
+
+try:
+    publisher, subscriber, project_id, topic_id, subscription_id, topic_path, subscription_path = PubSubClient.get_instance()
+except Exception as e:
+    logging.error(f"Error initializing Pub/Sub: {e}")
+
+
+
+try:
+    GAEClient.get_instance()
+except Exception as e:
+    logging.error(f"Error initializing GAE: {e}")
 
 
 # %%
@@ -44,6 +60,7 @@ def api_start_investigation():
     if not userId or not asinList or not name:
         return jsonify({"error": "userIDs and asinList are required"}), 400
 
+    """    
     try:
         initialize_firestore()
     except Exception as e:
@@ -57,8 +74,9 @@ def api_start_investigation():
     try:
         initialize_pub_sub()
     except Exception as e:
-        logging.error(f"Error initializing Pub/Sub: {e}")
-
+        logging.error(f"Error initializing Pub/Sub: {e}") 
+        
+    """
 
 
     try:
@@ -75,6 +93,7 @@ def api_run_data_acquisition():
     Initiates data acquisition based on the provided list of ASINs.
     """
 
+    """    
     try:
         initialize_firestore()
     except Exception as e:
@@ -90,7 +109,7 @@ def api_run_data_acquisition():
     except Exception as e:
         logging.error(f"Error initializing Pub/Sub: {e}")
 
-
+    """    
 
 
     try:
@@ -130,6 +149,7 @@ def api_run_reviews_investigation():
     Initiates a reviews investigation based on the provided investigation ID and credential path.
     """
 
+    """    
     try:
         initialize_firestore()
     except Exception as e:
@@ -145,7 +165,7 @@ def api_run_reviews_investigation():
     except Exception as e:
         logging.error(f"Error initializing Pub/Sub: {e}")
 
-
+    """    
 
 
 
@@ -174,6 +194,7 @@ def api_run_end_to_end_investigation():
     """
     start_time = time.time()  # Start the timer
 
+    """    
     try:
         initialize_firestore()
     except Exception as e:
@@ -188,7 +209,7 @@ def api_run_end_to_end_investigation():
         initialize_pub_sub()
     except Exception as e:
         logging.error(f"Error initializing Pub/Sub: {e}")
-
+    """    
 
     try:
         data = request.json

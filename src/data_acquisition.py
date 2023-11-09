@@ -5,7 +5,13 @@ import asyncio
 import aiohttp
 import logging
 import json
-from firebase_utils import FirestoreClient, PubSubClient
+
+try:
+    from src.firebase_utils import FirestoreClient, PubSubClient, GAEClient
+except ImportError:
+    from firebase_utils import FirestoreClient, PubSubClient, GAEClient
+
+
 
 # Initialize logging
 logging.basicConfig(level=logging.INFO)
@@ -13,6 +19,7 @@ logging.basicConfig(level=logging.INFO)
 # Obtain the Firestore and Pub/Sub client instances
 db = FirestoreClient.get_instance()
 publisher, subscriber, project_id, topic_id, subscription_id, topic_path, subscription_path = PubSubClient.get_instance()
+GAEClient.get_instance()
 
 def initialize_rapid_api():
     """Initialize configurations"""
@@ -48,8 +55,11 @@ async def process_asin(asin):
 async def fetch_reviews(session, page_var, asin, retries=3):
     """Fetch product reviews asynchronously."""
     # Initialize Google App Engine
-    initialize_gae()
 
+    """    
+    initialize_gae()
+    """    
+    
     params = {
         "asin": asin,
         "location": "us",
