@@ -321,3 +321,10 @@ gcloud pubsub subscriptions create asin-data-subscription  --topic=asin-data-acq
 project_id = "productexplorerdata"
 topic_id = "asin-data-acquisition"
 subscription_id = "asin-data-subscription"
+
+
+
+
+# Additional instals. To check if needed to run online
+pip install --upgrade google-api-core
+pip install firestore

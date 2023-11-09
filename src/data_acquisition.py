@@ -5,8 +5,7 @@ import asyncio
 import aiohttp
 import logging
 import json
-from firestore_client import FirestoreClient
-from pubsub_client import PubSubClient
+from firebase_utils import FirestoreClient, PubSubClient
 
 # Initialize logging
 logging.basicConfig(level=logging.INFO)

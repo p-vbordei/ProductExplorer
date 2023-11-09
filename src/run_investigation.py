@@ -10,12 +10,12 @@ try:
     from src.investigations import start_investigation
     from src.data_acquisition import execute_data_acquisition
     from src.reviews_processing import run_reviews_investigation
-    from src.users import use_investigation, update_investigation_status
+    from src.users import update_investigation_status
 except ImportError:
     from investigations import start_investigation
     from data_acquisition import execute_data_acquisition
     from reviews_processing import run_reviews_investigation
-    from users import use_investigation,  update_investigation_status
+    from users import update_investigation_status
 
 
 # %%
