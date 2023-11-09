@@ -336,15 +336,17 @@ Am creat clase pentru db, gae si pub/sub pe care incerc sa le declar global. Exi
 
 
 # Set the environment variables
-export FLASK_APP=src/main.py
+export FLASK_APP=src
 export FLASK_ENV=development
 export PYTHONPATH=src
 export FLASK_DEBUG=1
+export FLASK_RUN_PORT=8080
 
   # or 'production' based on your use case
 
-# Optionally set the port (you've set the port in code to 8080)
-# export FLASK_RUN_PORT=8080
 
 # Now run your flask app
 flask run
+http://localhost:8080/ui/
+
+

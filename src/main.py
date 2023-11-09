@@ -22,8 +22,20 @@ try:
     except ImportError:
         import app
 except:
-    print("app import failed")
+    print("app import failed for src")
     pass
+
+
+try:
+    try:
+        from . import app
+    except ImportError:
+        import app
+except:
+    print("app import failed for dot")
+    pass
+
+
 
 try:
     from src.investigations import start_investigation
@@ -252,5 +264,5 @@ def api_run_end_to_end_investigation():
 
 
 if __name__ == "__main__":
-    app.run(port=8080)
+    connex_app.run(port=8080, debug = True)
 # ====================================
