@@ -37,6 +37,9 @@ async def publish_to_pubsub(asin):
     await loop.run_in_executor(None, publisher.publish, topic_path, data)
     logging.info(f"Published message for {asin}")
 
+
+
+# %%
 async def process_asin(asin):
     """Process an individual ASIN."""
     try:
@@ -170,3 +173,4 @@ def execute_data_acquisition(asin_list):
 
 
 # =============================================================================
+# %%

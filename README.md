@@ -277,6 +277,7 @@ Utility Functions:
 The firebase_utils.py file contains utility functions to interact with Firestore.
 Functions include updating investigation status, retrieving ASINs and reviews, writing reviews to Firestore, and saving clusters.
 
+gcloud app logs tail -s default 
 
 
 #################

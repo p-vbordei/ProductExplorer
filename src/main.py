@@ -261,8 +261,9 @@ def api_run_end_to_end_investigation():
         logging.error(f"Error in api_run_end_to_end_investigation: {e}")  # Log the error
         return jsonify({"error": str(e)}), 500
 
-
+# %%
 
 if __name__ == "__main__":
     connex_app.run(port=8080, debug = True)
 # ====================================
+# %%
