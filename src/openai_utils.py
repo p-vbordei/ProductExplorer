@@ -207,52 +207,25 @@ async def get_completion(content, session, semaphore, progress_log, functions=No
 
 
 async def get_completion_list(content_list, functions=None, function_call=None, GPT_MODEL=GPT_MODEL, TEMPERATURE=0):
-    #global publisher, topic_path
+    semaphore = asyncio.Semaphore(6)  # Allow only 3 requests at a time to ensure you don't exceed the RPM
+    progress_log = ProgressLog(len(content_list))
+
+    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=300)) as session:
+        return await asyncio.gather(*[get_completion(content, session, semaphore, progress_log, functions, function_call, GPT_MODEL, TEMPERATURE) for content in content_list])
 
 
-    for content in content_list:
-        data = json.dumps(content).encode('utf-8')
-        publisher.publish(topic_path, data)
-    
-    # Wait for responses
-    responses = []
-    for _ in range(len(functions_list) * len(content_list)):
-        try:
-            # Wait for a response with a timeout of 4 minutes
-            response = await asyncio.wait_for(response_queue.get(), timeout=240)
-            responses.append(response)
-        except asyncio.TimeoutError:
-            print("Timeout waiting for a response")
-            break
-
-    return responses
 
 
-async def get_completion_list_multifunction(content_list, functions_list, function_calls_list, GPT_MODEL=GPT_MODEL, TEMPERATURE=0):
-    if functions_list is None or content_list is None:
-        raise ValueError("functions_list or content_list is None")
+async def get_completion_list_multifunction(content_list, functions_list, function_calls_list, GPT_MODEL=GPT_MODEL, TEMPERATURE = 0):
+    semaphore = asyncio.Semaphore(6)
+    progress_log = ProgressLog(len(content_list) * len(functions_list))  # Adjust for multiple functions
 
-    if not isinstance(functions_list, list) or not isinstance(content_list, list):
-        raise TypeError("functions_list and content_list must be lists")
-
-    # Send all the messages
-    for i in range(len(functions_list)):
-        for content in content_list:
-            data = json.dumps({"content": content, "functions": functions_list[i], "function_call": function_calls_list[i]}).encode('utf-8')
-            publisher.publish(topic_path, data)
-
-    # Wait for responses
-    responses = []
-    for _ in range(len(functions_list) * len(content_list)):
-        try:
-            # Wait for a response with a timeout of 4 minutes
-            response = await asyncio.wait_for(response_queue.get(), timeout=240)
-            responses.append(response)
-        except asyncio.TimeoutError:
-            print("Timeout waiting for a response")
-            break
-
-    return responses
+    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=300)) as session:
+        tasks = []
+        for i in range(len(functions_list)):
+            for content in content_list:
+                tasks.append(get_completion(content, session, semaphore, progress_log, functions_list[i], function_calls_list[i], GPT_MODEL, TEMPERATURE))
+        return await asyncio.gather(*tasks)
 
 
 

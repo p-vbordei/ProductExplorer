@@ -143,7 +143,7 @@ class PubSubClient:
         
         return publisher, subscriber, project_id, topic_id, subscription_id, topic_path, subscription_path
 
-async def start_subscriber(publisher, subscriber, project_id, subscription_id, topic_path, subscription_path):
+"""async def start_subscriber(publisher, subscriber, project_id, subscription_id, topic_path, subscription_path):
     subscription_path = subscriber.subscription_path(project_id, subscription_id)
 
     async def async_callback(message):
@@ -190,13 +190,10 @@ async def async_callback(message, response_queue):
     except Exception as e:
         logging.error(f"Error processing message: {e}")
         message.nack()
-
+"""
 
 db = FirestoreClient.get_instance()
-pubsub_client = PubSubClient.get_instance()
-response_queue = asyncio.Queue()  # Create a queue for responses
-asyncio.create_task(pubsub_client.collect_responses(response_queue))
-
+# pubsub_client = PubSubClient.get_instance()
 
 ########### PRODUCTS #############
 
