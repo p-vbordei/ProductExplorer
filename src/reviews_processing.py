@@ -20,13 +20,28 @@ nest_asyncio.apply()
 try:
     from src import app
     from src.reviews_data_processing_utils import generate_batches, add_uid_to_reviews, aggregate_all_categories,  quantify_category_data, export_functions_for_reviews
-    from src.firebase_utils import get_clean_reviews , write_reviews_to_firestore, write_insights_to_firestore, update_investigation_status
+    from src.firebase_utils import get_clean_reviews , write_reviews_to_firestore, write_insights_to_firestore, update_investigation_status, FirestoreClient, PubSubClient, GAEClient, SecretManager
     from src.openai_utils import chat_completion_request, get_completion_list_multifunction, ProgressLog, get_completion
 except ImportError:
     from reviews_data_processing_utils import generate_batches, add_uid_to_reviews, aggregate_all_categories,  quantify_category_data, export_functions_for_reviews
-    from firebase_utils import get_clean_reviews , write_reviews_to_firestore, write_insights_to_firestore, update_investigation_status
+    from firebase_utils import get_clean_reviews , write_reviews_to_firestore, write_insights_to_firestore, update_investigation_status, FirestoreClient, PubSubClient, GAEClient, SecretManager
     from openai_utils import chat_completion_request, get_completion_list_multifunction, ProgressLog, get_completion
 
+
+try:
+    db = FirestoreClient.get_instance()
+except Exception as e:
+    logging.error(f"Error initializing Firestore: {e}")
+
+try:
+    publisher, subscriber, project_id, topic_id, subscription_id, topic_path, subscription_path = PubSubClient.get_instance()
+except Exception as e:
+    logging.error(f"Error initializing Pub/Sub: {e}")
+
+try:
+    GAEClient.get_instance()
+except Exception as e:
+    logging.error(f"Error initializing GAE: {e}")
 
 
 # %%
@@ -42,15 +57,13 @@ def process_reviews_with_gpt(reviewsList):
     - list: Updated reviews list with extracted insights.
     """
 
+    print("started process_reviews_with_gpt")
     try:
         # Allocate short Ids to reviews
         updatedReviewsList, uid_to_id_mapping = add_uid_to_reviews(reviewsList)
 
         # Prepare Review Batches
         reviewBatches = generate_batches(updatedReviewsList, max_tokens=6000)
-
-
-
         
         # Generate Content List for Batches
         contentList = []
@@ -66,9 +79,13 @@ def process_reviews_with_gpt(reviewsList):
         # DECLARE FUNCTIONS 
         marketFunctions,  extractJobsFunctions, marketResponseHealFunction, useCaseFunction, productComparisonFunction, featureRequestFunction, painPointsFunction, usageFrequencyFunction, usageTimeFunction, usageLocationFunction, customerDemographicsFunction, functionalJobFunction, socialJobFunction, emotionalJobFunction, supportingJobFunction = export_functions_for_reviews()
 
+        # Check if contentList is None or empty
+        if contentList is None or not contentList:
+            raise ValueError("contentList is None or empty")
 
+        # print(contentList)
 
-        
+        print("before run GPT Calls")
         # Run GPT Calls for the Market function on the batches
 
         functionsList = [marketFunctions, extractJobsFunctions]
@@ -81,8 +98,17 @@ def process_reviews_with_gpt(reviewsList):
             return responses
 
         responses = asyncio.run(main_for_data_extraction())
+
+        print(responses)
+
+        if responses is None or not isinstance(responses, list):
+            raise ValueError("Received 'None' or invalid responses from get_completion_list_multifunction")
+
         #################################################
-        
+
+
+        print ("before processing the response")
+
         # Process the responses
         evalResponses = []
         # Iterage through responses
@@ -102,7 +128,7 @@ def process_reviews_with_gpt(reviewsList):
         aggregatedResponses = aggregate_all_categories(evalResponses)
 
 
-        
+        print("after aggregate all categories")
 
         functionMapping = {
             "useCase": useCaseFunction,
@@ -118,14 +144,6 @@ def process_reviews_with_gpt(reviewsList):
             "emotionalJob": emotionalJobFunction,
             "supportingJob": supportingJobFunction
         }
-
-        
-
-
-
-        
-
-
 
         
         GPT_MODEL = 'gpt-3.5-turbo-16k'
@@ -151,6 +169,7 @@ def process_reviews_with_gpt(reviewsList):
 
         functionsResponses = asyncio.run(main_for_data_aggregation())
 
+        print("responses received")
         
         # Processes Results
         processedResults = []
@@ -475,6 +494,7 @@ def run_reviews_investigation(userId: str, investigationId: str) -> None:
     if not reviews:
         logging.error("Error getting clean reviews.")
         return
+    
 
     tagedReviews, frontendOutput = process_reviews_with_gpt(reviews)
     if not tagedReviews or not frontendOutput:
