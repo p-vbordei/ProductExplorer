@@ -7,12 +7,12 @@ logging.basicConfig(level=logging.INFO)
 
 try:
     from src import app, connex_app
-    from src.investigations import start_investigation
+    from src.firebase_utils import start_investigation
     from src.data_acquisition import execute_data_acquisition
     from src.reviews_processing import run_reviews_investigation
     from src.users import update_investigation_status
 except ImportError:
-    from investigations import start_investigation
+    from firebase_utils import start_investigation
     from data_acquisition import execute_data_acquisition
     from reviews_processing import run_reviews_investigation
     from users import update_investigation_status

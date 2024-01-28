@@ -20,18 +20,16 @@ nest_asyncio.apply()
 try:
     from src import app
     from src.reviews_data_processing_utils import generate_batches, add_uid_to_reviews, aggregate_all_categories,  quantify_category_data, export_functions_for_reviews
-    from src.firebase_utils import get_clean_reviews , write_reviews_to_firestore, write_insights_to_firestore
+    from src.firebase_utils import get_clean_reviews , write_reviews_to_firestore, write_insights_to_firestore, update_investigation_status
     from src.openai_utils import chat_completion_request, get_completion_list_multifunction, ProgressLog, get_completion
-    from src.investigations import update_investigation_status
 except ImportError:
     from reviews_data_processing_utils import generate_batches, add_uid_to_reviews, aggregate_all_categories,  quantify_category_data, export_functions_for_reviews
-    from firebase_utils import get_clean_reviews , write_reviews_to_firestore, write_insights_to_firestore
+    from firebase_utils import get_clean_reviews , write_reviews_to_firestore, write_insights_to_firestore, update_investigation_status
     from openai_utils import chat_completion_request, get_completion_list_multifunction, ProgressLog, get_completion
-    from investigations import update_investigation_status
 
 
 
-
+# %%
 def process_reviews_with_gpt(reviewsList):
     """
     Process reviews using GPT and extract insights.

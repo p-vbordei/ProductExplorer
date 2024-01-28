@@ -38,17 +38,15 @@ except:
 
 
 try:
-    from src.investigations import start_investigation
     from src.data_acquisition import execute_data_acquisition
     from src.reviews_processing import run_reviews_investigation
     from src.run_investigation import run_end_to_end_investigation
-    from src.firebase_utils import FirestoreClient, PubSubClient, GAEClient, SecretManager
+    from src.firebase_utils import FirestoreClient, PubSubClient, GAEClient, SecretManager, start_investigation
 except ImportError:
-    from investigations import start_investigation
     from data_acquisition import execute_data_acquisition
     from reviews_processing import run_reviews_investigation
     from run_investigation import run_end_to_end_investigation
-    from firebase_utils import FirestoreClient, PubSubClient, GAEClient, SecretManager
+    from firebase_utils import FirestoreClient, PubSubClient, GAEClient, SecretManager, start_investigation
 
 
 try:
@@ -68,9 +66,9 @@ except Exception as e:
 
 
 # %%
-logging.info("This is an info message.")
-logging.warning("This is a warning message.")
-logging.error("This is an error message.")
+# logging.info("This is an info message.")
+# logging.warning("This is a warning message.")
+# logging.error("This is an error message.")
 # %%
 
 
