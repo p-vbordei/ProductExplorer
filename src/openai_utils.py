@@ -47,8 +47,6 @@ try:
 except Exception as e:
     logging.error(f"Error initializing GAE: {e}")
 
-
-
 def get_openai_key():
     """Retrieve OpenAI API key."""
 
@@ -215,6 +213,20 @@ async def get_completion_list(content_list, functions=None, function_call=None, 
     for content in content_list:
         data = json.dumps(content).encode('utf-8')
         publisher.publish(topic_path, data)
+    
+    # Wait for responses
+    responses = []
+    for _ in range(len(functions_list) * len(content_list)):
+        try:
+            # Wait for a response with a timeout of 4 minutes
+            response = await asyncio.wait_for(response_queue.get(), timeout=240)
+            responses.append(response)
+        except asyncio.TimeoutError:
+            print("Timeout waiting for a response")
+            break
+
+    return responses
+
 
 async def get_completion_list_multifunction(content_list, functions_list, function_calls_list, GPT_MODEL=GPT_MODEL, TEMPERATURE=0):
     if functions_list is None or content_list is None:
@@ -242,28 +254,6 @@ async def get_completion_list_multifunction(content_list, functions_list, functi
 
     return responses
 
-def start_subscriber():
-    subscriber = pubsub_v1.SubscriberClient()
-    subscription_path = subscriber.subscription_path(project_id, subscription_id)
-
-    # Ensure that the callback function is async and properly handles messages
-    async def async_callback(message):
-        # Process the message (e.g., send to GPT-3)
-        # Ensure error handling and message acknowledgment
-        try:
-            await process_message(message)  # process_message should be an async function
-            message.ack()
-        except Exception as e:
-            logging.error(f"Error processing message: {e}")
-            message.nack()  # Negative acknowledgment in case of failure
-
-    # Add the subscriber to the event loop
-    future = subscriber.subscribe(subscription_path, callback=async_callback)
-    logging.info(f"Listening for messages on {subscription_path}")
-
-    # Run the subscriber future in the event loop
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(future)
 
 
 async def get_embedding(text: str, model="text-embedding-ada-002") -> list[float]:

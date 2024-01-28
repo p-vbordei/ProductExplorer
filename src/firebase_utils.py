@@ -3,6 +3,7 @@
 # firebase_utils.py
 # %%
 import pandas as pd
+import asyncio
 import os
 import json
 from collections import defaultdict
@@ -142,9 +143,60 @@ class PubSubClient:
         
         return publisher, subscriber, project_id, topic_id, subscription_id, topic_path, subscription_path
 
+async def start_subscriber(publisher, subscriber, project_id, subscription_id, topic_path, subscription_path):
+    subscription_path = subscriber.subscription_path(project_id, subscription_id)
+
+    async def async_callback(message):
+        try:
+            await process_message(message)  # process_message should be an async method in your class
+            message.ack()
+        except Exception as e:
+            logging.error(f"Error processing message: {e}")
+            message.nack()  # Negative acknowledgment in case of failure
+
+    # Add the subscriber to the event loop
+    future = subscriber.subscribe(subscription_path, callback=async_callback)
+    logging.info(f"Listening for messages on {subscription_path}")
+
+    # Run the subscriber future in the event loop
+    await future
+
+async def process_message(message):
+    # Implement your message processing logic here
+    pass
+
+async def subscriber_callback(message, response_queue):
+    try:
+        # Process the message and extract the response
+        response = await process_message(message)
+        await response_queue.put(response)
+        message.ack()
+    except Exception as e:
+        logging.error(f"Error processing message: {e}")
+        message.nack()
+
+# Publishing function
+async def publish_message(publisher, topic_path, message_data):
+    data = json.dumps(message_data).encode('utf-8')
+    await publisher.publish(topic_path, data)
+
+# Subscriber callback
+async def async_callback(message, response_queue):
+    try:
+        # Process the message and extract the response
+        response = json.loads(message.data.decode('utf-8'))
+        await response_queue.put(response)
+        message.ack()
+    except Exception as e:
+        logging.error(f"Error processing message: {e}")
+        message.nack()
+
 
 db = FirestoreClient.get_instance()
-# publisher, subscriber, project_id, topic_id, subscription_id, topic_path, subscription_path = PubSubClient.get_instance()
+pubsub_client = PubSubClient.get_instance()
+response_queue = asyncio.Queue()  # Create a queue for responses
+asyncio.create_task(pubsub_client.collect_responses(response_queue))
+
 
 ########### PRODUCTS #############
 
