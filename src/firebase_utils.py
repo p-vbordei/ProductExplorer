@@ -106,16 +106,27 @@ class GAEClient:
 
     @staticmethod
     def _initialize_gae():
-        GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-        
-        if os.environ.get('GAE_ENV', '').startswith('standard'):
+        # For Google App Engine and other Google Cloud environments, 
+        # the application default credentials should automatically be used.
+        if os.environ.get('GAE_ENV', '').startswith('standard') or \
+           os.environ.get('GOOGLE_CLOUD_PROJECT', ''):
+            # Check if Firebase app is already initialized to avoid reinitialization errors
             if not firebase_admin._apps:
+                # Automatically use the application default credentials
                 firebase_admin.initialize_app()
         else:
-            cred = credentials.Certificate(GOOGLE_APPLICATION_CREDENTIALS)
-            if not firebase_admin._apps:
-                firebase_admin.initialize_app(cred)
-        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = GOOGLE_APPLICATION_CREDENTIALS
+            # For local development, check for the 'GOOGLE_APPLICATION_CREDENTIALS' 
+            # environment variable which should point to the JSON key file
+            GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+            if GOOGLE_APPLICATION_CREDENTIALS and os.path.exists(GOOGLE_APPLICATION_CREDENTIALS):
+                cred = credentials.Certificate(GOOGLE_APPLICATION_CREDENTIALS)
+                if not firebase_admin._apps:
+                    firebase_admin.initialize_app(cred)
+            else:
+                raise EnvironmentError("GOOGLE_APPLICATION_CREDENTIALS not set or the file does not exist for local development.")
+
+        # Assuming firestore.client() is needed for the instance. Adjust accordingly.
+        return firestore.client()
 
 
 

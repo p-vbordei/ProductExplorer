@@ -313,8 +313,6 @@ gcloud app deploy
 https://productexplorerdata.uc.r.appspot.com/ui
 
 
-
-
 # Google Pub/Sub
 
 gcloud pubsub topics create asin-data-acquisition --project=productexplorerdata
@@ -324,12 +322,9 @@ topic_id = "asin-data-acquisition"
 subscription_id = "asin-data-subscription"
 
 
-
-
 # Additional instals. To check if needed to run online
 pip install --upgrade google-api-core
 pip install firestore
-
 
 
 # Ultima data pe branch
