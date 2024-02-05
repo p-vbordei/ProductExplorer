@@ -11,8 +11,6 @@ try:
 except ImportError:
     from firebase_utils import FirestoreClient, PubSubClient, GAEClient
 
-
-
 # Initialize logging
 logging.basicConfig(level=logging.INFO)
 
@@ -26,7 +24,7 @@ def initialize_rapid_api():
     global headers, reviews_url, api_rate, sleep_time
     
     # API Configuration
-    headers = {"X-RapidAPI-Key": "YOUR_API_KEY", "X-RapidAPI-Host": "amazonlive.p.rapidapi.com"}
+    headers = {"X-RapidAPI-Key": "4da31a08e5mshaca05d98a3d9d6ep1fffb1jsn019717508cc8", "X-RapidAPI-Host": "amazonlive.p.rapidapi.com"}
     reviews_url = "https://amazonlive.p.rapidapi.com/reviews"
     api_rate = 1
     sleep_time = 1 / api_rate
