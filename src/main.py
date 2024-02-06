@@ -37,16 +37,54 @@ except:
 
 
 try:
-    from data_acquisition import execute_data_acquisition
-    from reviews_processing import run_reviews_investigation
-    from run_investigation import run_end_to_end_investigation
     from firebase_utils import FirestoreClient, PubSubClient, GAEClient, start_investigation
 except ImportError as e:
     logging.error(f"import error, trying from src , error is {e}")
-    from src.data_acquisition import execute_data_acquisition
-    from src.reviews_processing import run_reviews_investigation
-    from src.run_investigation import run_end_to_end_investigation
-    from src.firebase_utils import FirestoreClient, PubSubClient, GAEClient, start_investigation
+    try:
+        from src.firebase_utils import FirestoreClient, PubSubClient, GAEClient, start_investigation
+    except ImportError as e:
+        logging.error(f"import error, trying from dot src , error is {e}")
+        from .firebase_utils import FirestoreClient, PubSubClient, GAEClient, start_investigation
+
+
+try:
+    from data_acquisition import execute_data_acquisition
+except ImportError as e:
+    logging.error(f"import error, trying from src , error is {e}")
+    try:
+        from src.data_acquisition import execute_data_acquisition
+    except ImportError as e:
+        logging.error(f"import error, trying from dot src , error is {e}")
+        from .data_acquisition import execute_data_acquisition
+
+
+
+try:
+    from run_investigation import run_end_to_end_investigation
+except ImportError as e:
+    logging.error(f"import error, trying from src , error is {e}")
+    try:
+        from src.run_investigation import run_end_to_end_investigation
+    except ImportError as e:
+        logging.error(f"import error, trying from dot src , error is {e}")
+        from .run_investigation import run_end_to_end_investigation
+
+
+
+
+try:
+    from reviews_processing import run_reviews_investigation
+except ImportError as e:
+    logging.error(f"import error, trying from src , error is {e}")
+    try:
+        from src.reviews_processing import run_reviews_investigation
+    except ImportError as e:
+        logging.error(f"import error, trying from dot src , error is {e}")
+        from .reviews_processing import run_reviews_investigation
+
+
+
+
 
 try:
     db = FirestoreClient.get_instance()
