@@ -36,17 +36,17 @@ except:
     pass
 
 
-
 try:
-    from src.data_acquisition import execute_data_acquisition
-    from src.reviews_processing import run_reviews_investigation
-    from src.run_investigation import run_end_to_end_investigation
-    from src.firebase_utils import FirestoreClient, PubSubClient, GAEClient, start_investigation
-except ImportError:
     from data_acquisition import execute_data_acquisition
     from reviews_processing import run_reviews_investigation
     from run_investigation import run_end_to_end_investigation
     from firebase_utils import FirestoreClient, PubSubClient, GAEClient, start_investigation
+except ImportError:
+    from src.data_acquisition import execute_data_acquisition
+    from src.reviews_processing import run_reviews_investigation
+    from src.run_investigation import run_end_to_end_investigation
+    from src.firebase_utils import FirestoreClient, PubSubClient, GAEClient, start_investigation
+
 
 
 try:
