@@ -123,13 +123,13 @@ async def callback(message):
     """Callback function for Pub/Sub subscription."""
     await fetch_data_for_asin(message)
 
-async def run_data_acquisition(asin_list):
-    # Check if asin_list is a single ASIN string and not a list
-    if isinstance(asin_list, str) and len(asin_list) == 10 and asin_list.startswith("B"):
-        asin_list = [asin_list]
+async def run_data_acquisition(asinList):
+    # Check if asinList is a single ASIN string and not a list
+    if isinstance(asinList, str) and len(asinList) == 10 and asinList.startswith("B"):
+        asinList = [asinList]
 
     try:
-        tasks = [process_asin(asin) for asin in asin_list]
+        tasks = [process_asin(asin) for asin in asinList]
         await asyncio.gather(*tasks)
         return True
     except Exception as e:
@@ -137,7 +137,7 @@ async def run_data_acquisition(asin_list):
         return False
 
 
-def execute_data_acquisition(asin_list):
+def execute_data_acquisition(asinList):
     """Execute data acquisition process."""
     
     initialize_rapid_api()
@@ -150,10 +150,10 @@ def execute_data_acquisition(asin_list):
 
     if loop.is_running():
         # If loop is running, use create_task to schedule the coroutine
-        loop.create_task(run_data_acquisition(asin_list))
+        loop.create_task(run_data_acquisition(asinList))
     else:
         # If loop is not running, start it up and run the coroutine
-        loop.run_until_complete(run_data_acquisition(asin_list))
+        loop.run_until_complete(run_data_acquisition(asinList))
 
     logging.info(f"Listening for messages on {subscription_path}")
 
