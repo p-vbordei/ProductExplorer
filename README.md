@@ -4,23 +4,6 @@ ProductExplorer
 A software to enhance product teams work, enabeling them quick access to review insights and proposed solutions. Powered by AI and Knowledge Graphs
 
 
-Run test visuals
-python ./src/visualization/DASH_Traits_Graph_Cytoscape.py
-
-Project Organization
-------------
-
-├── src                
-│   ├── __init__.py    
-│   ├── main.py
-│   ├── other code
-│
-├── swagger.yaml
-
-
-
---------
-
 
 
 ######## Project Description
@@ -283,7 +266,7 @@ gcloud app logs tail -s default
 #################
 ###### RUN #####
 in  ProductExplorer (project folder)
-python -m src.main
+python -m main
 http://192.168.31.31:8080/ui/
 
 # Running on Docker
@@ -293,14 +276,14 @@ docker build -t flask-gae-app .
 docker run -p 8080:8080 \
 -e OPENAI_API_KEY="xxx" \
 -e FIREBASE_KEY=/app/firebase-key.json \
--v /Users/vladbordei/Documents/Development/ProductExplorer/src/firebase-key.json:/app/firebase-key.json \
+-v /Users/vladbordei/Documents/Development/ProductExplorer/firebase-key.json:/app/firebase-key.json \
 flask-gae-app
 
 http://localhost:8080/ui/
 
 
 # Gunicorn Test
-gunicorn -b :8080 'src.__init__:app'
+gunicorn -b :8080 '__init__:app'
 
 
 
@@ -332,11 +315,13 @@ Am creat clase pentru db, gae si pub/sub pe care incerc sa le declar global. Exi
 
 
 # Set the environment variables
-export FLASK_APP=src
+# Set the environment variables
+export FLASK_APP=main 
 export FLASK_ENV=development
-export PYTHONPATH=src
+export PYTHONPATH=.
 export FLASK_DEBUG=1
 export FLASK_RUN_PORT=8080
+
 
   # or 'production' based on your use case
 

@@ -10,7 +10,7 @@ info:
 paths:
   /start_investigation:
     post:
-      operationId: src.main.api_start_investigation
+      operationId: main.api_start_investigation
       summary: Initiates a new investigation.
       description: |
         Initiates a new investigation based on the provided user ID and list of ASINs. 
@@ -47,7 +47,7 @@ paths:
                     
   /run_data_acquisition:
     post:
-      operationId: src.main.api_run_data_acquisition
+      operationId: main.api_run_data_acquisition
       summary: Initiates data acquisition for a list of ASINs.
       description: |
         Initiates the data acquisition process for a list of ASINs. Fetches product details and reviews 
@@ -85,7 +85,7 @@ paths:
 
   /run_reviews_investigation:
     post:
-      operationId: src.main.api_run_reviews_investigation
+      operationId: main.api_run_reviews_investigation
       summary: Initiates a reviews investigation.
       description: |
         Initiates a reviews investigation based on the provided investigation ID. 
@@ -122,7 +122,7 @@ paths:
 
   /run_end_to_end_investigation:
     post:
-      operationId: src.main.api_run_end_to_end_investigation
+      operationId: main.api_run_end_to_end_investigation
       summary: Initiates an end-to-end investigation.
       description: |
         This endpoint initiates an end-to-end investigation based on the provided user ID and list of ASINs. 

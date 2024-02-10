@@ -1,0 +1,38 @@
+# Environment variables go here, can be read by `python-dotenv` package:
+#
+#   `script.py`
+#   ----------------------------------------------------------------
+#    import dotenv
+#
+#    project_dir = os.path.join(os.path.dirname(__file__), os.pardir)
+#    dotenv_path = os.path.join(project_dir, '.env')
+#    dotenv.load_dotenv(dotenv_path)
+#   ----------------------------------------------------------------
+#
+# DO NOT ADD THIS FILE TO VERSION CONTROL!
+
+FIREBASE_KEY = '/Users/vladbordei/Documents/Development/ProductExplorer/firebase-key.json'
+GOOGLE_APPLICATION_CREDENTIALS='/Users/vladbordei/Documents/Development/ProductExplorer/gae-key.json'
+SERPAPI_API_KEY = '7d2a333f100708e81bbb5d1aa39d48ea42e076b2203f272476bae9f280169237'
+OPENAI_API_KEY="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"
+WOLFRAM_ALPHA_APPID = "7VVWQW-99U3PYLKAT"
+PROMPTLAYER_API_KEY = "pl_d5bdd7637dc51c0954764756e5e4a1fd"
+ELEVENLABS_API_KEY="f031ea3214bd3c910d0a6a2aed53b60d"
+GOOGLE_API_KEY="AIzaSyAsdV6k0C4NyFgRHl7vmsSkDKk4kEKDsYQ"
+PINECONE_API_KEY="33f49d08-5915-471a-9c14-5d988af6c045"
+PINECONE_ENV="us-east4-gcp"
+HUGGINGFACEHUB_API_TOKEN = "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"
+
+
+########### SOCIAL MEDIA ###########
+####################################
+
+##### TWITTER #####
+TWITTER_API_CONSUMER_KEY = "tTm0fYXNeaMk50XxEuuiY83Su"
+TWITTER_API_CONSUMER_SECRET = "roDzK2NpDdLbGPAVMpvZ6Up7QF9zPXUG4CIu1shoTAkhgNiVhD"
+TWITTER_BEARER_TOKEN = "AAAAAAAAAAAAAAAAAAAAAIOZnwEAAAAAdcmhBVQNkVe38o0yNoHt4eYOzUI%3DLui1EsjwHvbqAAvQYOUWo6RvZnsf4HQJ8YBynY1vXHjKZbOqzH"
+
+##### REDDIT #####
+REDDIT_CLIENT_ID="Lzw7mxww0-SZlcOL0RwY3g"
+REDDIT_CLIENT_SECRET="R-rsI7NSmKdnbIki1FONWVt3f0FmQQ"
+REDDIT_USER_AGENT="OAIE"

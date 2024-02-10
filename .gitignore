@@ -19,7 +19,7 @@ lib64/
 parts/
 sdist/
 var/
-src/.env
+.env
 *.egg-info/
 .installed.cfg
 *.egg
@@ -85,7 +85,7 @@ target/
 
 # Compiled files
 layout.css
-src/assets/demo/styles/badges.css
+assets/demo/styles/badges.css
 
 # vim
 *.swp
@@ -98,5 +98,5 @@ src/assets/demo/styles/badges.css
 #Docker Compose for now
 docker/
 
-src/firebase-key.json
-src/gae-key.json
+firebase-key.json
+gae-key.json
