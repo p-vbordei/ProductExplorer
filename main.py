@@ -19,17 +19,6 @@ except:
     print("app import failed")
     pass
 
-
-try:
-    try:
-       import app 
-    except ImportError:   
-        from . import app
-except:
-    print("app import failed")
-    pass
-
-
 try:
     from firebase_utils import FirestoreClient, PubSubClient, GAEClient, start_investigation
 except ImportError as e:

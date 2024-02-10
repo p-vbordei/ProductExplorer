@@ -5,8 +5,6 @@ import asyncio
 import aiohttp
 import logging
 import json
-
-
 from firebase_utils import FirestoreClient, PubSubClient, GAEClient
 
 
@@ -166,8 +164,5 @@ def execute_data_acquisition(asinList):
         logging.info("Subscription cancelled.")
     except Exception as e:
         logging.error(f"Failed to set up subscription: {e}")
-
-
-
 # =============================================================================
 # %%

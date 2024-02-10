@@ -327,6 +327,7 @@ export FLASK_RUN_PORT=8080
 
 
 # Now run your flask app
+export GOOGLE_APPLICATION_CREDENTIALS: "/Users/vladbordei/Documents/Development/ProductExplorerBE/gae-key.json"
 flask run
 http://localhost:8080/ui/
 
