@@ -2,28 +2,15 @@
 # main.py
 # %%
 from flask import jsonify, request
-import os
 import logging
 import time
 logging.basicConfig(level=logging.INFO)
 
-try:
-    import connex_app
-except:
-    print("connex_app import failed")
-    pass
-
-try:
-    import app
-except:
-    print("app import failed")
-    pass
 
 try:
     from firebase_utils import FirestoreClient, PubSubClient, GAEClient, start_investigation
 except ImportError as e:
     logging.error(f"import error is {e}")
-
 
 try:
     from data_acquisition import execute_data_acquisition
@@ -35,12 +22,10 @@ try:
 except ImportError as e:
     logging.error(f"import error is {e}")
 
-
 try:
     from reviews_processing import run_reviews_investigation
 except ImportError as e:
     logging.error(f"import error is {e}")
-
 
 try:
     db = FirestoreClient.get_instance()
@@ -252,9 +237,4 @@ def api_run_end_to_end_investigation():
         logging.error(f"Error in api_run_end_to_end_investigation: {e}")  # Log the error
         return jsonify({"error": str(e)}), 500
 
-# %%
-
-if __name__ == "__main__":
-    connex_app.run(port=8080, debug = True)
-# ====================================
 # %%

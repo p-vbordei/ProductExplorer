@@ -1,5 +1,5 @@
 #############
-# __init__.py
+# app.py
 import connexion
 
 # Create an instance of Connexion
@@ -10,4 +10,8 @@ connex_app.add_api('swagger.yaml')
 
 # Expose the underlying Flask app
 app = connex_app.app
+
+if __name__ == "__main__":
+    app.run(debug=True)
+
 #===============

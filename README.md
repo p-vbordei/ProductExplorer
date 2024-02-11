@@ -316,7 +316,7 @@ Am creat clase pentru db, gae si pub/sub pe care incerc sa le declar global. Exi
 
 # Set the environment variables
 # Set the environment variables
-export FLASK_APP=main 
+export FLASK_APP=app.py 
 export FLASK_ENV=development
 export PYTHONPATH=.
 export FLASK_DEBUG=1
