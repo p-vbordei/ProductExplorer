@@ -339,3 +339,8 @@ You can stream logs from the command line by running:
 
 To view your application in the web browser run:
   $ gcloud app browse
+
+
+When debugging
+!gcloud auth application-default login
+!export GOOGLE_APPLICATION_CREDENTIALS="/Users/vladbordei/Documents/Development/ProductExplorerBE/gae-key.json"

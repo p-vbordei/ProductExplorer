@@ -90,7 +90,7 @@ class FirestoreClient:
                 firebase_admin.initialize_app(cred)
 
         db = firestore.client()
-        return db  # This line is added to return the db instance, consider using this returned instance instead of the global db
+        return db
 
 
 
@@ -106,17 +106,11 @@ class GAEClient:
 
     @staticmethod
     def _initialize_gae():
-        # For Google App Engine and other Google Cloud environments, 
-        # the application default credentials should automatically be used.
         if os.environ.get('GAE_ENV', '').startswith('standard') or \
            os.environ.get('GOOGLE_CLOUD_PROJECT', ''):
-            # Check if Firebase app is already initialized to avoid reinitialization errors
             if not firebase_admin._apps:
-                # Automatically use the application default credentials
                 firebase_admin.initialize_app()
         else:
-            # For local development, check for the 'GOOGLE_APPLICATION_CREDENTIALS' 
-            # environment variable which should point to the JSON key file
             GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
             if GOOGLE_APPLICATION_CREDENTIALS and os.path.exists(GOOGLE_APPLICATION_CREDENTIALS):
                 cred = credentials.Certificate(GOOGLE_APPLICATION_CREDENTIALS)
@@ -125,7 +119,6 @@ class GAEClient:
             else:
                 raise EnvironmentError("GOOGLE_APPLICATION_CREDENTIALS not set or the file does not exist for local development.")
 
-        # Assuming firestore.client() is needed for the instance. Adjust accordingly.
         return firestore.client()
 
 
@@ -154,54 +147,6 @@ class PubSubClient:
         
         return publisher, subscriber, project_id, topic_id, subscription_id, topic_path, subscription_path
 
-"""async def start_subscriber(publisher, subscriber, project_id, subscription_id, topic_path, subscription_path):
-    subscription_path = subscriber.subscription_path(project_id, subscription_id)
-
-    async def async_callback(message):
-        try:
-            await process_message(message)  # process_message should be an async method in your class
-            message.ack()
-        except Exception as e:
-            logging.error(f"Error processing message: {e}")
-            message.nack()  # Negative acknowledgment in case of failure
-
-    # Add the subscriber to the event loop
-    future = subscriber.subscribe(subscription_path, callback=async_callback)
-    logging.info(f"Listening for messages on {subscription_path}")
-
-    # Run the subscriber future in the event loop
-    await future
-
-async def process_message(message):
-    # Implement your message processing logic here
-    pass
-
-async def subscriber_callback(message, response_queue):
-    try:
-        # Process the message and extract the response
-        response = await process_message(message)
-        await response_queue.put(response)
-        message.ack()
-    except Exception as e:
-        logging.error(f"Error processing message: {e}")
-        message.nack()
-
-# Publishing function
-async def publish_message(publisher, topic_path, message_data):
-    data = json.dumps(message_data).encode('utf-8')
-    await publisher.publish(topic_path, data)
-
-# Subscriber callback
-async def async_callback(message, response_queue):
-    try:
-        # Process the message and extract the response
-        response = json.loads(message.data.decode('utf-8'))
-        await response_queue.put(response)
-        message.ack()
-    except Exception as e:
-        logging.error(f"Error processing message: {e}")
-        message.nack()
-"""
 
 db = FirestoreClient.get_instance()
 # pubsub_client = PubSubClient.get_instance()
