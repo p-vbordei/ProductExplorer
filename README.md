@@ -315,7 +315,6 @@ Am creat clase pentru db, gae si pub/sub pe care incerc sa le declar global. Exi
 
 
 # Set the environment variables
-# Set the environment variables
 export FLASK_APP=app.py 
 export FLASK_ENV=development
 export PYTHONPATH=.
@@ -327,7 +326,7 @@ export FLASK_RUN_PORT=8080
 
 
 # Now run your flask app
-export GOOGLE_APPLICATION_CREDENTIALS: "/Users/vladbordei/Documents/Development/ProductExplorerBE/gae-key.json"
+export GOOGLE_APPLICATION_CREDENTIALS="/Users/vladbordei/Documents/Development/ProductExplorerBE/gae-key.json"
 flask run
 http://localhost:8080/ui/
 
