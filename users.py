@@ -125,21 +125,6 @@ def add_investigation(userId, asinList):
         logging.error(f"Error adding investigation for user {userId}: {e}")
         return False
 
-def update_investigation_status(investigationId, newStatus):
-    try:
-        investigation_ref = db.collection('investigations').document(investigationId)
-        investigation = investigation_ref.get()
-        if investigation.exists:
-            investigation_ref.update({
-                'status': newStatus,
-                f'{newStatus}Timestamp': firestore.SERVER_TIMESTAMP,
-            })
-            return True
-        else:
-            return False
-    except Exception as e:
-        logging.error(f"Error updating investigation status for {investigationId}: {e}")
-        return False
 
 def log_investigation_review(investigationId):
     try:

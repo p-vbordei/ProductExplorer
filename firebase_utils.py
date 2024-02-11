@@ -12,6 +12,7 @@ from google.cloud import firestore, secretmanager, pubsub_v1
 # from google.cloud.secretmanager_v1 import SecretManagerServiceClient
 import firebase_admin
 from firebase_admin import credentials, firestore
+from run_investigation import update_investigation_status
 
 from tqdm import tqdm
 import time
@@ -504,20 +505,6 @@ def complete_investigation(userId, investigationId, results):
         print(f"Error completing investigation {investigationId}: {e}")
         return False
 
-def update_investigation_status(userId, investigationId,  newStatus):
-    if not newStatus:
-        raise ValueError("New status is required to update the investigation.")
-
-    investigation_ref = db.collection('investigations').document(userId).collection('investigationCollections').document(investigationId)
-    investigation = investigation_ref.get()
-    if investigation.exists:
-        investigation_ref.update({
-            'status': newStatus,
-            f'{newStatus}Timestamp': firestore.SERVER_TIMESTAMP,
-        })
-        return True
-    else:
-        raise ValueError(f"Investigation with ID {investigationId} does not exist.")
 
 def get_asins_from_investigation(userId, investigationId):
     investigation_ref = db.collection('investigations').document(userId).collection('investigationCollections').document(investigationId)
