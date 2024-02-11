@@ -83,7 +83,7 @@ def process_reviews_with_gpt(reviewsList):
 
         functionsList = [marketFunctions, extractJobsFunctions]
         functionsCallList = [{"name": "market"}, {"name": "extractJobs"}]
-        GPT_MODEL = 'gpt-3.5-turbo-16k'
+        GPT_MODEL = 'gpt-3.5-turbo-0125'
 
         # Get responses from GPT
         async def main_for_data_extraction():
@@ -139,7 +139,7 @@ def process_reviews_with_gpt(reviewsList):
         }
 
         
-        GPT_MODEL = 'gpt-3.5-turbo-16k'
+        GPT_MODEL = 'gpt-3.5-turbo-0125'
         async def main_for_data_aggregation():
             
             semaphore = asyncio.Semaphore(10)  # Adjust as needed

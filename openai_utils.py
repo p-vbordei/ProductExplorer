@@ -17,14 +17,14 @@ logging.basicConfig(level=logging.INFO)
 import traceback
 from aiohttp import ContentTypeError, ClientResponseError
 
-embedding_model = "text-embedding-ada-002"
+embedding_model = "text-embedding-3-small"
 embedding_encoding = "cl100k_base"
-max_tokens = 8000
+max_tokens = 10000
 encoding = tiktoken.get_encoding(embedding_encoding)
 
 response_queue = asyncio.Queue() 
 
-GPT_MODEL = "gpt-3.5-turbo"
+GPT_MODEL = "gpt-3.5-turbo-0125"
 
 
 from firebase_utils import FirestoreClient, PubSubClient, GAEClient
@@ -226,7 +226,7 @@ async def get_completion_list_multifunction(content_list, functions_list, functi
 
 
 
-async def get_embedding(text: str, model="text-embedding-ada-002") -> list[float]:
+async def get_embedding(text: str, model="text-embedding-3-small") -> list[float]:
     async with aiohttp.ClientSession() as session:
         for attempt in range(6):  # Retry up to 6 times
             try:
@@ -248,7 +248,7 @@ async def get_embedding(text: str, model="text-embedding-ada-002") -> list[float
 
 max_tokens = 8048  # Define max tokens or get it from somewhere
 
-async def process_dataframe_async_embedding(df: pd.DataFrame, embedding_model="text-embedding-ada-002") -> pd.DataFrame:
+async def process_dataframe_async_embedding(df: pd.DataFrame, embedding_model="text-embedding-3-small") -> pd.DataFrame:
     loop = asyncio.get_event_loop()
     tasks = []
 
