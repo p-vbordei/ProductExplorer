@@ -112,8 +112,8 @@ async def fetch_reviews(session, page_var, asin, retries=3):
 async def get_product_reviews(asin):
     start = time.time()
     async with aiohttp.ClientSession() as session:
-        # pages = ["1", "2", "3", "4", "5"]
-        pages = ["1"]
+        pages = ["1", "2", "3", "4", "5"]
+        # pages = ["1"]
         tasks = [fetch_reviews(session, page_var, asin) for page_var in pages]
         results = await asyncio.gather(*tasks)
         print(f"Fetching product reviews for {asin} took {time.time() - start} seconds.")

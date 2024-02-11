@@ -18,7 +18,7 @@ except ImportError as e:
     logging.error(f"import  error is {e}")
 
 try:
-    from run_investigation import run_end_to_end_investigation
+    from run_investigation import run_end_to_end_investigation, ensure_event_loop
 except ImportError as e:
     logging.error(f"import error is {e}")
 
@@ -190,28 +190,13 @@ def api_run_reviews_investigation():
 
 
 
+from run_investigation import run_end_to_end_investigation, ensure_event_loop  # Ensure this is correctly imported
+
 def api_run_end_to_end_investigation():
     """
     Initiates an end-to-end investigation based on the provided user ID and list of ASINs.
     """
     start_time = time.time()  # Start the timer
-
-    """    
-    try:
-        initialize_firestore()
-    except Exception as e:
-        logging.error(f"Error initializing Firestore: {e}")
-
-    try:
-        initialize_gae()
-    except Exception as e:
-        logging.error(f"Error initializing GAE: {e}")
-
-    try:
-        initialize_pub_sub()
-    except Exception as e:
-        logging.error(f"Error initializing Pub/Sub: {e}")
-    """    
 
     try:
         data = request.json
@@ -222,19 +207,22 @@ def api_run_end_to_end_investigation():
         if not userId or not asinList or not name:
             return jsonify({"error": "userId and asinList and name are required"}), 400
 
-        result = run_end_to_end_investigation(data)
+        ensure_event_loop()  # Ensure an event loop is available for async operations
+
+        result = run_end_to_end_investigation(data)  # If this function is async, ensure it's awaited properly or run via asyncio.run() if it's the main async entry point
 
         if result:
             end_time = time.time()  # Stop the timer
             elapsed_time = end_time - start_time
-            logging.info(f"Total time taken for end-to-end investigation: {elapsed_time:.2f} seconds")  # Log the elapsed time
+            logging.info(f"Total time taken for end-to-end investigation: {elapsed_time:.2f} seconds")
 
             return jsonify({"message": "End-to-end investigation completed successfully"}), 200
         else:
             return jsonify({"error": "End-to-end investigation failed"}), 500
 
     except Exception as e:
-        logging.error(f"Error in api_run_end_to_end_investigation: {e}")  # Log the error
+        logging.error(f"Error in api_run_end_to_end_investigation: {e}")
         return jsonify({"error": str(e)}), 500
+
 
 # %%

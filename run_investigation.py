@@ -11,6 +11,19 @@ from data_acquisition import execute_data_acquisition
 from reviews_processing import run_reviews_investigation
 from users import update_investigation_status
 
+# utils.py or within your main Flask app module
+
+import asyncio
+
+def ensure_event_loop():
+    try:
+        if not asyncio.get_event_loop().is_running():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+    except RuntimeError as e:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
 
 # %%
 
