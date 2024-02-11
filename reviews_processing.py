@@ -17,9 +17,8 @@ nest_asyncio.apply()
 
 
 from reviews_data_processing_utils import generate_batches, add_uid_to_reviews, aggregate_all_categories,  quantify_category_data, export_functions_for_reviews
-from firebase_utils import get_clean_reviews , write_insights_to_firestore,  FirestoreClient, PubSubClient, GAEClient
+from firebase_utils import get_clean_reviews , write_insights_to_firestore,  FirestoreClient, PubSubClient, GAEClient, update_investigation_status
 from openai_utils import chat_completion_request, get_completion_list_multifunction, ProgressLog, get_completion
-from run_investigation import update_investigation_status
 
 try:
     db = FirestoreClient.get_instance()

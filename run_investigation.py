@@ -6,7 +6,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 
-from firebase_utils import start_investigation
+from firebase_utils import start_investigation, update_investigation_status
 from data_acquisition import execute_data_acquisition
 from reviews_processing import run_reviews_investigation
 
@@ -22,21 +22,6 @@ def ensure_event_loop():
     except RuntimeError as e:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-
-def update_investigation_status(userId, investigationId,  newStatus):
-    if not newStatus:
-        raise ValueError("New status is required to update the investigation.")
-
-    investigation_ref = db.collection('investigations').document(userId).collection('investigationCollections').document(investigationId)
-    investigation = investigation_ref.get()
-    if investigation.exists:
-        investigation_ref.update({
-            'status': newStatus,
-            f'{newStatus}Timestamp': firestore.SERVER_TIMESTAMP,
-        })
-        return True
-    else:
-        raise ValueError(f"Investigation with ID {investigationId} does not exist.")
 
 
 # %%
