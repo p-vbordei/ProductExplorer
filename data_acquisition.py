@@ -12,6 +12,7 @@ from google.cloud import firestore, secretmanager
 import firebase_admin
 from firebase_admin import credentials, firestore
 import json
+import os
 
 # Amazon Scraper details
 product_url = "https://amazonlive.p.rapidapi.com/product"
