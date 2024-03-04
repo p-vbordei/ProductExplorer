@@ -308,7 +308,7 @@ or 'production' based on your use case
 
 
 Run your flask app
-export GOOGLE_APPLICATION_CREDENTIALS="/Users/vladbordei/Documents/Development/ProductExplorerBE/gae-key.json"
+export GOOGLE_APPLICATION_CREDENTIALS="..."
 flask run
 http://localhost:8080/ui/
 
@@ -323,4 +323,4 @@ To view your application in the web browser run:
 
 When debugging
 !gcloud auth application-default login
-!export GOOGLE_APPLICATION_CREDENTIALS="/Users/vladbordei/Documents/Development/ProductExplorerBE/gae-key.json"
+!export GOOGLE_APPLICATION_CREDENTIALS="...."
