@@ -1,7 +1,6 @@
 ProductExplorer
 ==============================
 
-Overview
 ProductExplorer is a cutting-edge platform designed to revolutionize the product management landscape. Leveraging advanced AI algorithms and Knowledge Graph technology, this tool offers product teams an unparalleled ability to swiftly access comprehensive reviews insights and actionable solutions, optimizing product development and strategy.
 
 Technical Description
