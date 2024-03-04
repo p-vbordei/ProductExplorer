@@ -255,7 +255,7 @@ python -m main
 http://192.168.31.31:8080/ui/
 
 # Running on Docker
-# In the Working Dir
+In the Working Dir
 docker build -t flask-gae-app .
 
 docker run -p 8080:8080 \
