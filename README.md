@@ -35,71 +35,71 @@ Access the local UI at http://192.168.31.31:8080/ui/
 
 FIRESTORE Data Structure:
 
-Firestore Root
-|
-|-- users (Collection)
-|   |
-|   |-- userId (Document)
-|       |
-|       |-- subscriptions (Subcollection)
-|       |   |
-|       |   |-- subscriptionId (Document)
-|       |
-|       |-- ... (Other fields in the user document)
-|
-|-- payments (Collection)
-|   |
-|   |-- paymentId (Document)
-|
-|-- investigations (Collection)
-|   |
-|   |-- investigationId (Document)
-|
-|-- products (Collection)
-|   |
-|   |-- asin (Document)
-|       |
-|       |-- details (Field)
-|       |
-|       |-- reviews (Subcollection)
-|           |
-|           |-- reviewId (Document)
-|
-|-- productInsights (Collection)
-|   |
-|   |-- investigationId (Document)
-|
-|-- clusters (Collection)
-|   |
-|   |-- investigationId (Document)
-|       |
-|       |-- attributeClustersWithPercentage (Field)
-|       |
-|       |-- attributeClustersWithPercentageByAsin (Field)
-|
-|-- reviewsInsights (Collection)
-|   |
-|   |-- investigationId (Document)
-|       |
-|       |-- attributeWithPercentage (Subcollection)
-|           |
-|           |-- attribute (Document)
-|               |
-|               |-- clusters (Field)
-
+        Firestore Root
+        |
+        |-- users (Collection)
+        |   |
+        |   |-- userId (Document)
+        |       |
+        |       |-- subscriptions (Subcollection)
+        |       |   |
+        |       |   |-- subscriptionId (Document)
+        |       |
+        |       |-- ... (Other fields in the user document)
+        |
+        |-- payments (Collection)
+        |   |
+        |   |-- paymentId (Document)
+        |
+        |-- investigations (Collection)
+        |   |
+        |   |-- investigationId (Document)
+        |
+        |-- products (Collection)
+        |   |
+        |   |-- asin (Document)
+        |       |
+        |       |-- details (Field)
+        |       |
+        |       |-- reviews (Subcollection)
+        |           |
+        |           |-- reviewId (Document)
+        |
+        |-- productInsights (Collection)
+        |   |
+        |   |-- investigationId (Document)
+        |
+        |-- clusters (Collection)
+        |   |
+        |   |-- investigationId (Document)
+        |       |
+        |       |-- attributeClustersWithPercentage (Field)
+        |       |
+        |       |-- attributeClustersWithPercentageByAsin (Field)
+        |
+        |-- reviewsInsights (Collection)
+        |   |
+        |   |-- investigationId (Document)
+        |       |
+        |       |-- attributeWithPercentage (Subcollection)
+        |           |
+        |           |-- attribute (Document)
+        |               |
+        |               |-- clusters (Field)
+        
 
 
 FIRESTORE Data Structure:
 
-Users (collection)
-    Documents (e.g., userId1, userId2, ...)
-        Fields: 
-            - id: Auto-generated ID (string)
-            - name: User's name (string)
-            - email: User's email (string)
-            - currentPackage: Current subscribed package (string, optional)
-            - remainingInvestigations: Remaining investigations count (number, optional)
-        
+    Users (collection)
+        Documents (e.g., userId1, userId2, ...)
+            Fields: 
+                - id: Auto-generated ID (string)
+                - name: User's name (string)
+                - email: User's email (string)
+                - currentPackage: Current subscribed package (string, optional)
+                - remainingInvestigations: Remaining investigations count (number, optional)
+            
         Sub-collection: Subscriptions
             Documents (e.g., subscriptionId1, subscriptionId2, ...)
                 Fields:
@@ -110,57 +110,57 @@ Users (collection)
                     - paymentStatus: Payment status (string, optional)
                     - paymentIntent: Payment intent ID (string, optional)
 
-Investigations (collection)
-    Documents (e.g., investigationId1, investigationId2, ...)
-        Fields: 
-            - asins: List of ASINs (array of strings)
-            - userId: User's ID (string)
-            - status: Status of the investigation (string)
-            - receivedTimestamp: Timestamp when the investigation was received (timestamp)
-            - startedTimestamp: Timestamp when the investigation was started (timestamp, optional)
-            - finishedTimestamp: Timestamp when the investigation was finished (timestamp, optional)
-            - reviewedTimestamps: List of timestamps when the investigation was reviewed (array of timestamps)
-
-Payments (collection)
-    Documents (e.g., paymentId1, paymentId2, ...)
-        Fields: 
-            - id: Auto-generated ID (string)
-            - subscriptionId: Subscription ID (string)
-            - date: Date of the payment (timestamp)
-            - status: Status of the payment (string)
-            - userId: User's ID (string)
-            - amount: Amount paid (number)
-            - paymentIntent: Payment intent ID (string)
-
-
-Products (collection)
-    Documents (e.g., ASIN1234, ASIN5678, ...)
-        Fields: 
-            - details: Product details (object or map)
-        
-        Sub-collection: Reviews
-            Documents (e.g., reviewId1, reviewId2, ...)
-                Fields:
-                    - ... (Fields specific to each review, not detailed in the provided code)
-
-ProductInsights (collection)
-    Documents (e.g., investigationId1, investigationId2, ...)
-        Fields: 
-            - shortProductData: Summarized product data (object or map)
-            - otherProductData: Additional product data not included in the summary (object or map)
-
-Clusters (collection)
-    Documents (e.g., investigationId1, investigationId2, ...)
-        Fields: 
-            - attributeClustersWithPercentage: Clusters with percentage information (array of objects)
-            - attributeClustersWithPercentageByAsin: Clusters with percentage information by ASIN (array of objects)
-
-ReviewsInsights (collection)
-    Documents (e.g., investigationId1, investigationId2, ...)
-        Sub-collection: AttributeWithPercentage
-            Documents (e.g., attribute1, attribute2, ...)
-                Fields:
-                    - clusters: Data points list for the attribute (array of objects)
+    Investigations (collection)
+        Documents (e.g., investigationId1, investigationId2, ...)
+            Fields: 
+                - asins: List of ASINs (array of strings)
+                - userId: User's ID (string)
+                - status: Status of the investigation (string)
+                - receivedTimestamp: Timestamp when the investigation was received (timestamp)
+                - startedTimestamp: Timestamp when the investigation was started (timestamp, optional)
+                - finishedTimestamp: Timestamp when the investigation was finished (timestamp, optional)
+                - reviewedTimestamps: List of timestamps when the investigation was reviewed (array of timestamps)
+    
+    Payments (collection)
+        Documents (e.g., paymentId1, paymentId2, ...)
+            Fields: 
+                - id: Auto-generated ID (string)
+                - subscriptionId: Subscription ID (string)
+                - date: Date of the payment (timestamp)
+                - status: Status of the payment (string)
+                - userId: User's ID (string)
+                - amount: Amount paid (number)
+                - paymentIntent: Payment intent ID (string)
+    
+    
+    Products (collection)
+        Documents (e.g., ASIN1234, ASIN5678, ...)
+            Fields: 
+                - details: Product details (object or map)
+            
+            Sub-collection: Reviews
+                Documents (e.g., reviewId1, reviewId2, ...)
+                    Fields:
+                        - ... (Fields specific to each review, not detailed in the provided code)
+    
+    ProductInsights (collection)
+        Documents (e.g., investigationId1, investigationId2, ...)
+            Fields: 
+                - shortProductData: Summarized product data (object or map)
+                - otherProductData: Additional product data not included in the summary (object or map)
+    
+    Clusters (collection)
+        Documents (e.g., investigationId1, investigationId2, ...)
+            Fields: 
+                - attributeClustersWithPercentage: Clusters with percentage information (array of objects)
+                - attributeClustersWithPercentageByAsin: Clusters with percentage information by ASIN (array of objects)
+    
+    ReviewsInsights (collection)
+        Documents (e.g., investigationId1, investigationId2, ...)
+            Sub-collection: AttributeWithPercentage
+                Documents (e.g., attribute1, attribute2, ...)
+                    Fields:
+                        - clusters: Data points list for the attribute (array of objects)
 
 
 
