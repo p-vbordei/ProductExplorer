@@ -1,30 +1,33 @@
 ProductExplorer
 ==============================
 
-A software to enhance product teams work, enabeling them quick access to review insights and proposed solutions. Powered by AI and Knowledge Graphs
+Overview
+ProductExplorer is a cutting-edge platform designed to revolutionize the product management landscape. Leveraging advanced AI algorithms and Knowledge Graph technology, this tool offers product teams an unparalleled ability to swiftly access comprehensive reviews insights and actionable solutions, optimizing product development and strategy.
 
-######## Project Description
+Technical Description
+At its core, ProductExplorer aims to meticulously analyze customer feedback, providing in-depth product insights and recommending enhancements based on sophisticated review analysis. The platform's architecture is engineered around several key components:
 
-The primary goal of this application is to analyze customer reviews of a product, answer questions about the product, and suggest possible improvements based on the reviews. 
+Data Acquisition: Utilizes an API to fetch detailed product and reviews data from Amazon, ensuring a rich dataset for analysis.
+Review Processing: Employs advanced NLP techniques to process and cluster product review data, extracting significant attributes and sentiments.
+Insight Generation: Analyzes clustered data to quantify attributes, identifying key areas for product improvement and innovation.
+Core Technologies
+Semantic Similarity Models
+Utilizes state-of-the-art semantic similarity models to assess and cluster review content. SBERT and Hugging Face models are pivotal in understanding nuanced customer feedback.
+Topic Clustering
+Implements sophisticated clustering algorithms as outlined in SBERT documentation, enabling the identification of core topics within customer reviews for targeted insights. SBERT Clustering serves as a foundation for this process.
+Data Architecture: FIRESTORE Integration
+The platform's data management is structured within Firestore, facilitating efficient data storage and retrieval. This hierarchical schema encompasses:
 
-Here is a brief overview of the architecture:
-- Access an API to get product data and reviews data for products sold on Amazon.
-- Processing Reviews
-- Product Attribute Values are clustered toghtether based on simmilarity. Labels are generated for each cluster.
-- Quantification is done over the observed attribute values/ clusters. 
+User Management: Stores user profiles, subscriptions, and associated metadata.
+Payment Processing: Records payment transactions, linking them to user subscriptions.
+Investigative Analysis: Organizes product investigations, including status tracking and outcome documentation.
+Product Insights: Centralizes product data alongside aggregated review insights for easy access and analysis.
+Attribute Clustering: Details the clustering of product attributes based on customer feedback, aiding in the quantification of insights.
+Deployment and Usage
+Local Setup:
 
-
-######### SEMANTIC SIMMILARITY MODELS
-
-https://www.sbert.net/docs/pretrained_models.html
-https://huggingface.co/sentence-transformers/all-mpnet-base-v2
-
-
-
-######### Topic Clustering
-
-https://www.sbert.net/examples/applications/clustering/README.html
-
+Initialize the platform within the ProductExplorer project directory: python -m main
+Access the local UI at http://192.168.31.31:8080/ui/
 
 
 ##########
