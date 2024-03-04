@@ -3,27 +3,15 @@ ProductExplorer
 
 A software to enhance product teams work, enabeling them quick access to review insights and proposed solutions. Powered by AI and Knowledge Graphs
 
-
-
-
 ######## Project Description
 
 The primary goal of this application is to analyze customer reviews of a product, answer questions about the product, and suggest possible improvements based on the reviews. 
 
 Here is a brief overview of the architecture:
 - Access an API to get product data and reviews data for products sold on Amazon.
-- Processing Reviews: For each review, the assistant generates a response using the chat model. Each response has a series of 
+- Processing Reviews
 - Product Attribute Values are clustered toghtether based on simmilarity. Labels are generated for each cluster.
 - Quantification is done over the observed attribute values/ clusters. 
-
-
-####### NOT YET IMPLEMENTED
-Conversation Memory: The ConversationBufferMemory is initialized to store the conversation history.
-Agent Chain: The initialize_agent function is called to create an agent chain that combines the initialized tools, language model, memory, and conversation template.
-User Interaction Loop: A while loop is used to accept user inputs, process them with the agent chain, and print the assistant's responses.
-
-The application, as a whole, allows users to ask questions and get responses from the AI assistant, which can use various tools and its memory to provide accurate and relevant answers. It can also learn from the reviews and questions it processes, which can help improve its responses over time.
-
 
 
 ######### SEMANTIC SIMMILARITY MODELS
@@ -174,9 +162,6 @@ ReviewsInsights (collection)
 
 
 users.py - Implements user management logic including creating users, fetching user data, subscribing users, logging payments, adding/tracking investigations, and checking investigation limits. Relies on Firestore for persistence.
-
-
-
 
 
 
