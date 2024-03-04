@@ -267,13 +267,12 @@ flask-gae-app
 http://localhost:8080/ui/
 
 
-# Gunicorn Test
+Gunicorn Test
 gunicorn -b :8080 '__init__:app'
 
 
-
 # GAE Run
-# In the Working Dir
+In the Working Dir
 gcloud auth login
 gcloud config set project productexplorerdata
 gcloud app deploy
@@ -290,33 +289,27 @@ topic_id = "asin-data-acquisition"
 subscription_id = "asin-data-subscription"
 
 
-# Additional instals. To check if needed to run online
+Additional instals. To check if needed to run online
 pip install --upgrade google-api-core
 pip install firestore
 
 
-# Ultima data pe branch
-Am creat clase pentru db, gae si pub/sub pe care incerc sa le declar global. Exista erori in felul de apelare.
-
-
-# Set the environment variables
+Set the environment variables
 export FLASK_APP=app.py 
 export FLASK_ENV=development
 export PYTHONPATH=.
 export FLASK_DEBUG=1
 export FLASK_RUN_PORT=8080
 
+or 'production' based on your use case
 
-  # or 'production' based on your use case
 
-
-# Now run your flask app
+Run your flask app
 export GOOGLE_APPLICATION_CREDENTIALS="/Users/vladbordei/Documents/Development/ProductExplorerBE/gae-key.json"
 flask run
 http://localhost:8080/ui/
 
-
-# Where it was deployed
+Demo / deployed
 [https://productexplorerdata.uc.r.appspot.com]
 
 You can stream logs from the command line by running:
@@ -324,7 +317,6 @@ You can stream logs from the command line by running:
 
 To view your application in the web browser run:
   $ gcloud app browse
-
 
 When debugging
 !gcloud auth application-default login
